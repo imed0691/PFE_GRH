@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import './Auth.css';
 
 function Signup({ onSignupSuccess, onSwitchToLogin }) {
@@ -30,14 +31,14 @@ function Signup({ onSignupSuccess, onSwitchToLogin }) {
       });
       const data = await response.json();
       if (response.ok) {
-        alert("Registration successful!");
+        toast.success("Registration successful!");
         onSignupSuccess();
       } else {
-        alert(data.message);
+        toast.error(data.message || "Registration failed");
       }
     } catch (error) {
       console.error("Registration error:", error);
-      alert("Error during registration");
+      toast.error("Error during registration");
     }
   };
 

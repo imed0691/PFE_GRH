@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import './Auth.css';
 
 function Login({ onLoginSuccess, onSwitchToSignup }) {
@@ -15,13 +16,14 @@ function Login({ onLoginSuccess, onSwitchToSignup }) {
       });
       const data = await response.json();
       if (response.ok) {
+        toast.success(`Welcome back, ${data.user?.prenom || 'User'}!`);
         onLoginSuccess(data.user);
       } else {
-        alert(data.message);
+        toast.error(data.message || 'Login failed');
       }
     } catch (error) {
       console.error("Login error:", error);
-      alert("Error connecting to server");
+      toast.error("Error connecting to server");
     }
   };
 
