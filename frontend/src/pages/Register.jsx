@@ -6,17 +6,20 @@ function Signup({ onSignupSuccess, onSwitchToLogin }) {
   const [formData, setFormData] = useState({
     nom: '',
     prenom: '',
-    role: 'Student',
+    role: 'Employee',
     email: '',
     password: ''
   });
 
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false); // Ajout du state pour le mot de passe
 
+  // Nouveaux rôles adaptés à une université algérienne
   const roles = [
-    'HR Manager', 'Rector', 'Vice Rector', 
-    'Dean', 'Vice Dean', 'Head of Department', 
-    'Teacher', 'Student'
+    { value: 'Employee', label: 'Employé / Enseignant (ATS, Professeur)' },
+    { value: 'Manager', label: 'Chef de Département / Doyen / Recteur' },
+    { value: 'HR_Manager', label: 'Service du Personnel / RH' },
+    { value: 'Admin', label: 'Administrateur Informatique' }
   ];
 
   const handleChange = (e) => {
@@ -126,9 +129,9 @@ function Signup({ onSignupSuccess, onSwitchToLogin }) {
         </div>
 
         <div className="form-group">
-          <label>Rôle</label>
+          <label>Rôle (Droits d'accès sur le logiciel)</label>
           <select name="role" value={formData.role} onChange={handleChange}>
-            {roles.map(r => <option key={r} value={r}>{r}</option>)}
+            {roles.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
           </select>
         </div>
 
@@ -147,14 +150,39 @@ function Signup({ onSignupSuccess, onSwitchToLogin }) {
 
         <div className="form-group">
           <label>Mot de passe</label>
-          <input 
-            type="password" 
-            name="password" 
-            value={formData.password}
-            onChange={handleChange} 
-            className={errors.password ? 'input-error' : ''}
-            placeholder="••••••••"
-          />
+          <div style={{ position: 'relative' }}>
+            <input 
+              type={showPassword ? "text" : "password"} 
+              name="password" 
+              value={formData.password}
+              onChange={handleChange} 
+              className={errors.password ? 'input-error' : ''}
+              placeholder="••••••••"
+              style={{ paddingRight: '40px' }}
+            />
+            <span 
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                cursor: 'pointer',
+                color: '#718096',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                userSelect: 'none'
+              }}
+              title={showPassword ? "Cacher le mot de passe" : "Afficher le mot de passe"}
+            >
+              {showPassword ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              )}
+            </span>
+          </div>
           {errors.password && <span className="error-text">{errors.password}</span>}
           {!errors.password && <span className="help-text">Minimum 6 caractères</span>}
         </div>

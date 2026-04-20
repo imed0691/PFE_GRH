@@ -134,3 +134,9 @@
 .toggle-link span:hover {
   text-decoration: underline;
 }
+
+/* Désactiver l'icône oeil native des navigateurs (comme Edge) pour éviter les doublons */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
