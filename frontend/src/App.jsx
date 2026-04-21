@@ -1,41 +1,72 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import './App.css'
 import Login from './pages/Login'
-import Signup from './pages/Register'
+import DashboardHR from './pages/DashboardHR'
 
 function App() {
   const [user, setUser] = useState(null);
-  const [view, setView] = useState('login'); // 'login' ou 'signup'
+
+  // Check if a user is already logged in on page reload
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    const storedToken = localStorage.getItem('token');
+
+    if (storedUser && storedToken) {
+      const parsedUser = JSON.parse(storedUser);
+      // Si c'est une vieille session sans rôle, on force la déconnexion
+      if (!parsedUser.role) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      } else {
+        setUser(parsedUser);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    setUser(null);
+  };
 
   if (!user) {
     return (
       <>
         <Toaster position="top-center" />
-        {view === 'login' ? (
-          <Login 
-            onLoginSuccess={(u) => setUser(u)} 
-            onSwitchToSignup={() => setView('signup')} 
-          />
-        ) : (
-          <Signup 
-            onSignupSuccess={() => setView('login')} 
-            onSwitchToLogin={() => setView('login')} 
-          />
-        )}
+        <Login onLoginSuccess={(u) => setUser(u)} />
       </>
     );
   }
 
+  // Redirect to special Dashboard for HR Manager
+  if (user.role === 'RH_MANAGER') {
+    return (
+      <>
+        <Toaster position="top-right" />
+        <DashboardHR user={user} onLogout={handleLogout} />
+      </>
+    );
+  }
+
+  // Standard view for other employees (Teacher, Dean, etc.)
   return (
     <div className="container">
       <Toaster position="top-right" />
 
-      <div className="content">
-        <h2>Hello, world</h2>
+      <div className="content" style={{ textAlign: 'center', marginTop: '50px' }}>
+        <h2>Personal Space</h2>
+        <h3>Welcome,!! {user.prenom} {user.nom}</h3>
+        <p style={{ marginTop: '10px', color: '#666' }}>
+          Logged in as: <strong>{user.role}</strong>
+        </p>
       </div>
 
-      <button onClick={() => setUser(null)}>Logout</button>
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
+        <button onClick={handleLogout} style={{ padding: '10px 20px', cursor: 'pointer', background: '#e53e3e', color: 'white', border: 'none', borderRadius: '5px' }}>
+          Logout
+        </button>
+      </div>
     </div>
   )
 }
