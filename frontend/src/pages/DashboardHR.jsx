@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import AddEmployee from './AddEmployee';
+import ManageDepartments from './ManageDepartments';
+import ManageSessions from './ManageSessions';
 import './DashboardHR.css';
 
 function DashboardHR({ user, onLogout }) {
   const [users, setUsers] = useState([]);
-  const [view, setView] = useState('list'); // 'list' or 'add'
+  const [view, setView] = useState('list'); // 'list', 'add', or 'departments'
   const [loading, setLoading] = useState(true);
 
   const fetchUsers = async () => {
@@ -83,6 +85,18 @@ function DashboardHR({ user, onLogout }) {
           >
             ➕ Add Employee
           </button>
+          <button 
+            className={`nav-item ${view === 'departments' ? 'active' : ''}`}
+            onClick={() => setView('departments')}
+          >
+            🏢 Departments
+          </button>
+          <button 
+            className={`nav-item ${view === 'sessions' ? 'active' : ''}`}
+            onClick={() => setView('sessions')}
+          >
+            📚 Academic Sessions
+          </button>
         </nav>
 
         <button className="btn-logout" onClick={onLogout}>
@@ -93,7 +107,7 @@ function DashboardHR({ user, onLogout }) {
       {/* Main Content Area */}
       <main className="main-content">
         <header className="topbar">
-          <h1>{view === 'list' ? 'Personnel Management' : 'New Hire'}</h1>
+          <h1>{view === 'list' ? 'Personnel Management' : view === 'add' ? 'New Hire' : view === 'departments' ? 'Manage Departments' : 'Academic Sessions'}</h1>
           <div className="date-display">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </header>
 
@@ -103,6 +117,10 @@ function DashboardHR({ user, onLogout }) {
               onCancel={() => setView('list')} 
               onSuccess={() => setView('list')} 
             />
+          ) : view === 'departments' ? (
+            <ManageDepartments />
+          ) : view === 'sessions' ? (
+            <ManageSessions />
           ) : (
             <div className="table-card">
               {loading ? (
@@ -114,6 +132,7 @@ function DashboardHR({ user, onLogout }) {
                       <th>ID</th>
                       <th>Full Name</th>
                       <th>Email</th>
+                      <th>Department</th>
                       <th>Role</th>
                       <th>Actions</th>
                     </tr>
@@ -124,6 +143,7 @@ function DashboardHR({ user, onLogout }) {
                         <td>#{u.id}</td>
                         <td><strong>{u.nom}</strong> {u.prenom}</td>
                         <td>{u.email}</td>
+                        <td>{u.department_name || '-'}</td>
                         <td><span className={`role-tag role-${u.role.toLowerCase()}`}>{u.role}</span></td>
                         <td>
                           {u.role !== 'RH_MANAGER' && (

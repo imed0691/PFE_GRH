@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import './DashboardHR.css'; // Reusing the premium CSS
 
@@ -8,8 +8,29 @@ function AddEmployee({ onCancel, onSuccess }) {
     prenom: '',
     email: '',
     password: '',
-    role: 'ENSEIGNANT' // default
+    role: 'ENSEIGNANT', // default
+    department_id: ''
   });
+
+  const [departments, setDepartments] = useState([]);
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('http://localhost:5000/api/departments', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setDepartments(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch departments", error);
+      }
+    };
+    fetchDepartments();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -23,7 +44,6 @@ function AddEmployee({ onCancel, onSuccess }) {
       toast.error('Session expired');
       return;
     }
-
     const loadToast = toast.loading('Creating account...');
 
     try {
@@ -72,7 +92,34 @@ function AddEmployee({ onCancel, onSuccess }) {
 
         <div className="form-group">
           <label>University Email</label>
-          <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="john.doe@univ.dz" />
+          <div style={{ display: 'flex' }}>
+            <input 
+              type="text" 
+              value={formData.email.replace('@univ.dz', '')} 
+              onChange={(e) => {
+                const cleanValue = e.target.value.replace(/@/g, '');
+                setFormData({ ...formData, email: cleanValue ? cleanValue + '@univ.dz' : '' });
+              }} 
+              required 
+              placeholder="john.doe"
+              style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0, borderRight: 'none', flex: 1 }}
+            />
+            <span style={{ 
+              padding: '0 16px', 
+              backgroundColor: '#f1f5f9', 
+              color: '#64748b', 
+              border: '1px solid #e2e8f0', 
+              borderLeft: 'none', 
+              borderTopRightRadius: '8px', 
+              borderBottomRightRadius: '8px', 
+              fontWeight: '500', 
+              display: 'flex', 
+              alignItems: 'center',
+              fontSize: '14px'
+            }}>
+              @univ.dz
+            </span>
+          </div>
         </div>
 
         <div className="form-row">
@@ -81,6 +128,16 @@ function AddEmployee({ onCancel, onSuccess }) {
             <input type="text" name="password" value={formData.password} onChange={handleChange} required placeholder="Temporary password" />
           </div>
           
+          <div className="form-group">
+            <label>Department</label>
+            <select name="department_id" value={formData.department_id} onChange={handleChange}>
+              <option value="">-- No Department --</option>
+              {departments.map(d => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="form-group">
             <label>Role</label>
             <select name="role" value={formData.role} onChange={handleChange}>

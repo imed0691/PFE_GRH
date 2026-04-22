@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
+const departmentRoutes = require('./routes/departmentRoutes');
+const sessionRoutes = require('./routes/sessionRoutes');
 
 const app = express();
 
@@ -11,6 +13,8 @@ app.use(express.json());
 
 // Utilisation des routes
 app.use('/api', authRoutes);
+app.use('/api', departmentRoutes);
+app.use('/api', sessionRoutes);
 
 // Route de test pour vérifier la liaison avec le frontend
 app.get('/api/hello', (req, res) => {
