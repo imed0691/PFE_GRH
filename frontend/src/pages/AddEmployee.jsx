@@ -8,7 +8,7 @@ function AddEmployee({ onCancel, onSuccess }) {
     prenom: '',
     email: '',
     password: '',
-    role: 'ENSEIGNANT', // default
+    role: 'TEACHER', // default
     department_id: ''
   });
 
@@ -141,12 +141,12 @@ function AddEmployee({ onCancel, onSuccess }) {
           <div className="form-group">
             <label>Role</label>
             <select name="role" value={formData.role} onChange={handleChange}>
-              <option value="ENSEIGNANT">Teacher</option>
-              <option value="CHEF_DEPARTEMENT">Head of Department</option>
-              <option value="VICE_DOYEN">Vice Dean</option>
-              <option value="DOYEN">Dean</option>
-              <option value="VICE_RECTEUR">Vice Rector</option>
-              <option value="RECTEUR">Rector</option>
+              <option value="TEACHER">Teacher</option>
+              <option value="DEPARTMENT_HEAD">Head of Department</option>
+              <option value="VICE_DEAN">Vice Dean</option>
+              <option value="DEAN">Dean</option>
+              <option value="VICE_RECTOR">Vice Rector</option>
+              <option value="RECTOR">Rector</option>
             </select>
           </div>
         </div>

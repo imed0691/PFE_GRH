@@ -11,10 +11,11 @@ function ManageSessions() {
   
   const [formData, setFormData] = useState({
     module_name: '',
-    session_type: 'Cours',
+    session_type: 'Lecture',
+    study_level: 'L1',
     teacher_id: '',
     department_id: '',
-    day_of_week: 'Lundi',
+    day_of_week: 'Monday',
     start_time: '08:00',
     end_time: '10:00'
   });
@@ -36,11 +37,11 @@ function ManageSessions() {
         setDepartments(await resDepts.json());
         
         const allUsers = await resUsers.json();
-        // Filtrer pour ne garder que les enseignants
-        setTeachers(allUsers.filter(u => u.role.toUpperCase() === 'ENSEIGNANT'));
+        // Keep only teachers
+        setTeachers(allUsers.filter(u => u.role.toUpperCase() === 'TEACHER'));
       }
     } catch (error) {
-      toast.error('Erreur lors du chargement des données');
+      toast.error('Error loading data');
     } finally {
       setLoading(false);
     }
@@ -57,12 +58,12 @@ function ManageSessions() {
   const handleAddSession = async (e) => {
     e.preventDefault();
     if (!formData.teacher_id || !formData.department_id) {
-      toast.error("Veuillez sélectionner un enseignant et un département");
+      toast.error("Please select a teacher and a department");
       return;
     }
 
     const token = localStorage.getItem('token');
-    const loadToast = toast.loading('Création de la séance...');
+    const loadToast = toast.loading('Scheduling session...');
 
     try {
       const res = await fetch('http://localhost:5000/api/sessions', {
@@ -83,16 +84,16 @@ function ManageSessions() {
         setFormData({ ...formData, module_name: '' });
         fetchData();
       } else {
-        toast.error(data.message || 'Erreur lors de la création');
+        toast.error(data.message || 'Error during creation');
       }
     } catch (error) {
       toast.dismiss(loadToast);
-      toast.error('Erreur serveur');
+      toast.error('Server error');
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm(`Êtes-vous sûr de vouloir annuler ce cours ?`)) return;
+    if (!window.confirm(`Are you sure you want to cancel this session?`)) return;
 
     try {
       const token = localStorage.getItem('token');
@@ -102,13 +103,13 @@ function ManageSessions() {
       });
 
       if (res.ok) {
-        toast.success('Séance supprimée');
+        toast.success('Session cancelled');
         fetchData();
       } else {
-        toast.error('Erreur lors de la suppression');
+        toast.error('Error during cancellation');
       }
     } catch (error) {
-      toast.error('Erreur serveur');
+      toast.error('Server error');
     }
   };
 
@@ -117,33 +118,43 @@ function ManageSessions() {
       <form onSubmit={handleAddSession} className="add-form" style={{ marginBottom: '30px' }}>
         <div className="form-row">
           <div className="form-group">
-            <label>Module / Matière</label>
-            <input type="text" name="module_name" value={formData.module_name} onChange={handleChange} required placeholder="ex: Mathématiques" />
+            <label>Module / Subject</label>
+            <input type="text" name="module_name" value={formData.module_name} onChange={handleChange} required placeholder="e.g. Mathematics" />
+          </div>
+          <div className="form-group">
+            <label>Study Level</label>
+            <select name="study_level" value={formData.study_level} onChange={handleChange}>
+              <option value="L1">L1</option>
+              <option value="L2">L2</option>
+              <option value="L3">L3</option>
+              <option value="M1">M1</option>
+              <option value="M2">M2</option>
+            </select>
           </div>
           <div className="form-group">
             <label>Type</label>
             <select name="session_type" value={formData.session_type} onChange={handleChange}>
-              <option value="Cours">Cours Magistral</option>
-              <option value="TD">Travaux Dirigés (TD)</option>
-              <option value="TP">Travaux Pratiques (TP)</option>
+              <option value="Lecture">Lecture</option>
+              <option value="Tutorial">Tutorial (TD)</option>
+              <option value="Practical">Practical (TP)</option>
             </select>
           </div>
         </div>
 
         <div className="form-row">
           <div className="form-group">
-            <label>Enseignant</label>
+            <label>Teacher</label>
             <select name="teacher_id" value={formData.teacher_id} onChange={handleChange} required>
-              <option value="">-- Choisir un enseignant --</option>
+              <option value="">-- Choose a teacher --</option>
               {teachers.map(t => (
                 <option key={t.id} value={t.id}>{t.nom} {t.prenom}</option>
               ))}
             </select>
           </div>
           <div className="form-group">
-            <label>Département pertinent</label>
+            <label>Relevant Department</label>
             <select name="department_id" value={formData.department_id} onChange={handleChange} required>
-              <option value="">-- Choisir le département --</option>
+              <option value="">-- Choose the department --</option>
               {departments.map(d => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}
@@ -153,44 +164,45 @@ function ManageSessions() {
 
         <div className="form-row">
           <div className="form-group">
-            <label>Jour</label>
+            <label>Day</label>
             <select name="day_of_week" value={formData.day_of_week} onChange={handleChange}>
-              <option value="Lundi">Lundi</option>
-              <option value="Mardi">Mardi</option>
-              <option value="Mercredi">Mercredi</option>
-              <option value="Jeudi">Jeudi</option>
-              <option value="Vendredi">Vendredi</option>
-              <option value="Samedi">Samedi</option>
-              <option value="Dimanche">Dimanche</option>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+              <option value="Saturday">Saturday</option>
+              <option value="Sunday">Sunday</option>
             </select>
           </div>
           <div className="form-group">
-            <label>Heure de début</label>
+            <label>Start Time</label>
             <input type="time" name="start_time" value={formData.start_time} onChange={handleChange} required />
           </div>
           <div className="form-group">
-            <label>Heure de fin</label>
+            <label>End Time</label>
             <input type="time" name="end_time" value={formData.end_time} onChange={handleChange} required />
           </div>
         </div>
         
         <div className="form-actions" style={{ justifyContent: 'flex-start', marginTop: '10px' }}>
-          <button type="submit" className="btn-submit">➕ Planifier la séance</button>
+          <button type="submit" className="btn-submit">➕ Schedule Session</button>
         </div>
       </form>
 
       {loading ? (
-        <div className="loading-spinner">Chargement de l'emploi du temps...</div>
+        <div className="loading-spinner">Loading schedule...</div>
       ) : (
         <table className="modern-table">
           <thead>
             <tr>
-              <th>Jour</th>
-              <th>Horaire</th>
-              <th>Module</th>
+              <th>Day</th>
+              <th>Time</th>
+              <th>Module / Subject</th>
+              <th>Level</th>
               <th>Type</th>
-              <th>Enseignant</th>
-              <th>Département</th>
+              <th>Teacher</th>
+              <th>Department</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -200,16 +212,17 @@ function ManageSessions() {
                 <td><strong>{s.day_of_week}</strong></td>
                 <td>{s.start_time.substring(0,5)} - {s.end_time.substring(0,5)}</td>
                 <td>{s.module_name}</td>
+                <td><span className="role-tag" style={{ background: '#dbeafe', color: '#1e40af' }}>{s.study_level}</span></td>
                 <td><span className="role-tag" style={{ background: '#e2e8f0', color: '#475569' }}>{s.session_type}</span></td>
                 <td>{s.teacher_prenom} {s.teacher_nom}</td>
                 <td>{s.department_name}</td>
                 <td>
-                  <button className="btn-delete" onClick={() => handleDelete(s.id)}>Annuler</button>
+                  <button className="btn-delete" onClick={() => handleDelete(s.id)}>Cancel</button>
                 </td>
               </tr>
             ))}
             {sessions.length === 0 && (
-              <tr><td colSpan="7" className="empty-state">Aucune séance planifiée pour le moment.</td></tr>
+              <tr><td colSpan="8" className="empty-state">No sessions scheduled at the moment.</td></tr>
             )}
           </tbody>
         </table>

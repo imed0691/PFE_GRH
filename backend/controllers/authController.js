@@ -2,16 +2,16 @@ const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Logique d'inscription
+// Signup logic
 exports.signup = async (req, res) => {
   const { nom, prenom, role, email, password, department_id } = req.body;
   
-  // Vérification de rôles uniques (Doyen, Recteur, Vice-Doyen, Vice-Recteur), insensible à la casse
+  // Unique role validation (Dean, Rector, Vice-Dean, Vice-Rector), case-insensitive
   const roleLower = role ? role.toLowerCase() : '';
   const uniqueRoles = [
-    'doyen', 'recteur', 
-    'vice doyen', 'vice-doyen', 'vice_doyen', 
-    'vice recteur', 'vice-recteur', 'vice_recteur'
+    'dean', 'rector', 
+    'vice dean', 'vice-dean', 'vice_dean', 
+    'vice rector', 'vice-rector', 'vice_rector'
   ];
 
   if (uniqueRoles.includes(roleLower)) {
@@ -25,19 +25,19 @@ exports.signup = async (req, res) => {
       });
       
       if (count > 0) {
-        return res.status(400).json({ message: `Impossible : Un ${role} existe déjà dans le système.` });
+        return res.status(400).json({ message: `A ${role} already exists in the system.` });
       }
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
   }
 
-  // Vérification: un seul Chef de Département par département
-  if (roleLower === 'chef_departement') {
+  // Validation: only one Head of Department per department
+  if (roleLower === 'department_head') {
     if (!department_id) {
-      return res.status(400).json({ message: "Un Chef de Département doit obligatoirement être assigné à un département." });
+      return res.status(400).json({ message: "A Head of Department must be assigned to a department." });
     }
-    const checkChefQuery = "SELECT count(*) as count FROM users WHERE LOWER(role) = 'chef_departement' AND department_id = ?";
+    const checkChefQuery = "SELECT count(*) as count FROM users WHERE LOWER(role) = 'department_head' AND department_id = ?";
     try {
       const count = await new Promise((resolve, reject) => {
         db.query(checkChefQuery, [department_id], (err, results) => {
@@ -47,7 +47,7 @@ exports.signup = async (req, res) => {
       });
       
       if (count > 0) {
-        return res.status(400).json({ message: "Désolé, ce département a déjà un Chef de Département assigné !" });
+        return res.status(400).json({ message: "This department already has a Head of Department assigned." });
       }
     } catch (err) {
       return res.status(500).json({ error: err.message });
@@ -70,7 +70,7 @@ exports.signup = async (req, res) => {
   }
 };
 
-// Logique de connexion
+// Login logic
 exports.login = (req, res) => {
   const { email, password } = req.body;
   const query = "SELECT * FROM users WHERE email = ?";
@@ -84,7 +84,7 @@ exports.login = (req, res) => {
 
     if (!isMatch) return res.status(401).json({ message: "Incorrect password" });
 
-    // Génération du token JWT
+    // Generate JWT token
     const token = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
@@ -93,13 +93,13 @@ exports.login = (req, res) => {
 
     res.json({ 
       message: "Login successful", 
-      token, // On renvoie le token au frontend
+      token,
       user: { id: user.id, nom: user.nom, prenom: user.prenom, role: user.role } 
     });
   });
 };
 
-// Récupérer tous les utilisateurs
+// Get all users
 exports.getAllUsers = (req, res) => {
   const query = `
     SELECT u.id, u.nom, u.prenom, u.email, u.role, u.department_id, d.name as department_name 
@@ -114,7 +114,7 @@ exports.getAllUsers = (req, res) => {
   });
 };
 
-// Supprimer un utilisateur
+// Delete a user
 exports.deleteUser = (req, res) => {
   const userId = req.params.id;
   const query = "DELETE FROM users WHERE id = ?";
