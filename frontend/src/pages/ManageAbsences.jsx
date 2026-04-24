@@ -4,6 +4,11 @@ import toast from 'react-hot-toast';
 function ManageAbsences() {
   const [absences, setAbsences] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedReasons, setExpandedReasons] = useState({});
+
+  const toggleReason = (id) => {
+    setExpandedReasons(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const fetchAbsences = async () => {
     setLoading(true);
@@ -69,7 +74,19 @@ function ManageAbsences() {
             <tr key={a.id}>
               <td>{new Date(a.date).toLocaleDateString('fr-FR')}</td>
               <td><strong>{a.nom}</strong> {a.prenom}</td>
-              <td>{a.reason}</td>
+              <td>
+                {expandedReasons[a.id] || a.reason.length <= 50 
+                  ? a.reason 
+                  : `${a.reason.substring(0, 50)}... `}
+                {a.reason.length > 50 && (
+                  <button 
+                    onClick={() => toggleReason(a.id)}
+                    style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.85em', textDecoration: 'underline', padding: 0, marginLeft: '5px' }}
+                  >
+                    {expandedReasons[a.id] ? 'Voir moins' : 'Voir plus'}
+                  </button>
+                )}
+              </td>
               <td>
                 <span className="role-tag" style={{
                   background: a.status === 'Approved' ? '#d1fae5' : a.status === 'Rejected' ? '#fee2e2' : '#fef3c7',

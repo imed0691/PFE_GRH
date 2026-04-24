@@ -9,8 +9,8 @@ const checkRole = require('../middlewares/roleMiddleware');
 router.post('/signup', verifyToken, checkRole(['RH_MANAGER']), authController.signup);
 router.post('/login', authController.login);
 
-// Nouvelles routes pour la gestion des utilisateurs (Réservées au RH)
-router.get('/users', verifyToken, checkRole(['RH_MANAGER']), authController.getAllUsers);
+// Nouvelles routes pour la gestion des utilisateurs (Réservées au RH et Chefs de département)
+router.get('/users', verifyToken, checkRole(['RH_MANAGER', 'DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT']), authController.getAllUsers);
 router.delete('/users/:id', verifyToken, checkRole(['RH_MANAGER']), authController.deleteUser);
 
 module.exports = router;

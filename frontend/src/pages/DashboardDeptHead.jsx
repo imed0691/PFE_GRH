@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import AddEmployee from './AddEmployee';
-import ManageDepartments from './ManageDepartments';
 import ManageSessions from './ManageSessions';
 import ManageAbsences from './ManageAbsences';
-import ManageSalaries from './ManageSalaries';
 import ManageReminders from './ManageReminders';
-import './DashboardHR.css';
+import './DashboardDeptHead.css';
 
-function DashboardHR({ user, onLogout }) {
+function DashboardDeptHead({ user, onLogout }) {
   const [users, setUsers] = useState([]);
-  const [view, setView] = useState('list'); // 'list', 'add', or 'departments'
+  const [view, setView] = useState('list'); // 'list', 'sessions', 'absences', 'reminders'
   const [loading, setLoading] = useState(true);
   const [unreadAbsences, setUnreadAbsences] = useState(0);
 
@@ -23,10 +20,15 @@ function DashboardHR({ user, onLogout }) {
       });
       const data = await res.json();
       if (res.ok) {
-        setUsers(data);
+        // Filter to mostly show teachers in the same department
+        const teachers = data.filter(u => 
+          (u.role === 'TEACHER' || u.role === 'ENSEIGNANT') && 
+          u.department_id === user.department_id
+        );
+        setUsers(teachers);
       }
     } catch (error) {
-      toast.error("Error fetching employees");
+      toast.error("Error fetching teachers");
     } finally {
       setLoading(false);
     }
@@ -75,41 +77,22 @@ function DashboardHR({ user, onLogout }) {
     }
   }, [view]);
 
-  const handleDelete = async (id, nom) => {
-    if (!window.confirm(`Are you sure you want to delete ${nom}?`)) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/users/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (res.ok) {
-        toast.success("User deleted");
-        fetchUsers(); // Refresh list
-      } else {
-        toast.error("Error deleting user");
-      }
-    } catch (error) {
-      toast.error("Server error");
-    }
-  };
-
   return (
     <div className="dashboard-container">
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-header">
-          <div className="logo-icon">🎓</div>
+          <div className="logo-icon">🏛️</div>
           <h2>PFE_GRH</h2>
         </div>
         
         <div className="user-profile">
-          <div className="avatar">{user.prenom[0]}{user.nom[0]}</div>
+          <div className="avatar" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+            {user.prenom[0]}{user.nom[0]}
+          </div>
           <div className="user-info">
             <h4>{user.prenom} {user.nom}</h4>
-            <span className="badge-role">HR Manager</span>
+            <span className="badge-role" style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981' }}>Head of Department</span>
           </div>
         </div>
 
@@ -118,31 +101,19 @@ function DashboardHR({ user, onLogout }) {
             className={`nav-item ${view === 'list' ? 'active' : ''}`}
             onClick={() => setView('list')}
           >
-            📋 Staff List
-          </button>
-          <button 
-            className={`nav-item ${view === 'add' ? 'active' : ''}`}
-            onClick={() => setView('add')}
-          >
-            ➕ Add Employee
-          </button>
-          <button 
-            className={`nav-item ${view === 'departments' ? 'active' : ''}`}
-            onClick={() => setView('departments')}
-          >
-            🏢 Departments
+            👨‍🏫 Department Teachers
           </button>
           <button 
             className={`nav-item ${view === 'sessions' ? 'active' : ''}`}
             onClick={() => setView('sessions')}
           >
-            📚 Academic Sessions
+            📅 Academic Schedules
           </button>
           <button 
             className={`nav-item ${view === 'absences' ? 'active' : ''}`}
             onClick={() => setView('absences')}
           >
-            🏖️ Manage Absences
+            ✔️ Validate Absences
             {unreadAbsences > 0 && (
                <span style={{background: '#ef4444', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '10px', marginLeft: 'auto'}}>
                  {unreadAbsences}
@@ -150,16 +121,10 @@ function DashboardHR({ user, onLogout }) {
             )}
           </button>
           <button 
-            className={`nav-item ${view === 'salaries' ? 'active' : ''}`}
-            onClick={() => setView('salaries')}
-          >
-            💰 Salaries
-          </button>
-          <button 
             className={`nav-item ${view === 'reminders' ? 'active' : ''}`}
             onClick={() => setView('reminders')}
           >
-            📢 Reminders
+            📢 Send Notifications
           </button>
         </nav>
 
@@ -172,35 +137,27 @@ function DashboardHR({ user, onLogout }) {
       <main className="main-content">
         <header className="topbar">
           <h1>
-            {view === 'list' ? 'Personnel Management' : 
-             view === 'add' ? 'New Hire' : 
-             view === 'departments' ? 'Manage Departments' : 
-             view === 'sessions' ? 'Academic Sessions' :
-             view === 'absences' ? 'Absences Management' :
-             view === 'salaries' ? 'Salary Calculation' :
-             'Send Reminders'}
+            {view === 'list' ? 'Teachers Directory' : 
+             view === 'sessions' ? 'Department Schedules' :
+             view === 'absences' ? 'Absence Validations' :
+             'Department Notifications'}
           </h1>
           <div className="date-display">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </header>
 
         <div className="content-area">
-          {view === 'add' ? (
-            <AddEmployee 
-              onCancel={() => setView('list')} 
-              onSuccess={() => setView('list')} 
-            />
-          ) : view === 'departments' ? (
-            <ManageDepartments />
-          ) : view === 'sessions' ? (
+          {view === 'sessions' ? (
             <ManageSessions />
           ) : view === 'absences' ? (
             <ManageAbsences />
-          ) : view === 'salaries' ? (
-            <ManageSalaries />
           ) : view === 'reminders' ? (
             <ManageReminders />
           ) : (
             <div className="table-card">
+              <div className="card-header">
+                <h3>Teachers in your Department</h3>
+                <p>View the list of active teaching staff</p>
+              </div>
               {loading ? (
                 <div className="loading-spinner">Loading data...</div>
               ) : (
@@ -212,7 +169,6 @@ function DashboardHR({ user, onLogout }) {
                       <th>Email</th>
                       <th>Department</th>
                       <th>Role</th>
-                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -223,17 +179,10 @@ function DashboardHR({ user, onLogout }) {
                         <td>{u.email}</td>
                         <td>{u.department_name || '-'}</td>
                         <td><span className={`role-tag role-${u.role.toLowerCase()}`}>{u.role}</span></td>
-                        <td>
-                          {u.role !== 'RH_MANAGER' && (
-                            <button className="btn-delete" onClick={() => handleDelete(u.id, u.nom)}>
-                              Delete
-                            </button>
-                          )}
-                        </td>
                       </tr>
                     ))}
                     {users.length === 0 && (
-                      <tr><td colSpan="5" className="empty-state">No employees found.</td></tr>
+                      <tr><td colSpan="5" className="empty-state">No teachers found.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -246,4 +195,4 @@ function DashboardHR({ user, onLogout }) {
   );
 }
 
-export default DashboardHR;
+export default DashboardDeptHead;

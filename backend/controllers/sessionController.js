@@ -67,10 +67,19 @@ exports.getTeacherDashboardData = (req, res) => {
   const statsQuery = "SELECT volume_horaire, absences FROM users WHERE id = ?";
 
   // 3. Get reminders
-  const remindersQuery = "SELECT id, message as text, type FROM reminders WHERE teacher_id = ? OR teacher_id IS NULL ORDER BY created_at DESC LIMIT 5";
+  const remindersQuery = `
+    SELECT r.id, r.message as text, r.type, u.nom as sender_nom, u.prenom as sender_prenom, u.role as sender_role,
+           COALESCE(rs.is_read, FALSE) as is_read
+    FROM reminders r 
+    LEFT JOIN users u ON r.sender_id = u.id 
+    LEFT JOIN reminder_status rs ON r.id = rs.reminder_id AND rs.user_id = ?
+    WHERE (r.teacher_id = ? OR r.teacher_id IS NULL) 
+      AND (rs.is_deleted IS NULL OR rs.is_deleted = FALSE)
+    ORDER BY r.created_at DESC LIMIT 5
+  `;
 
   // 4. Get absences
-  const absencesQuery = "SELECT id, date, reason, status FROM absence_requests WHERE teacher_id = ? ORDER BY created_at DESC";
+  const absencesQuery = "SELECT id, date, reason, status, is_read_by_teacher FROM absence_requests WHERE teacher_id = ? ORDER BY created_at DESC";
 
   db.query(sessionsQuery, [teacherId], (err, sessions) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -78,7 +87,7 @@ exports.getTeacherDashboardData = (req, res) => {
     db.query(statsQuery, [teacherId], (err, statsResult) => {
       if (err) return res.status(500).json({ error: err.message });
 
-      db.query(remindersQuery, [teacherId], (err, remindersResult) => {
+      db.query(remindersQuery, [teacherId, teacherId], (err, remindersResult) => {
         if (err) return res.status(500).json({ error: err.message });
 
         db.query(absencesQuery, [teacherId], (err, absencesResult) => {

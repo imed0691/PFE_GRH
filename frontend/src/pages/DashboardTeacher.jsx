@@ -13,6 +13,61 @@ function DashboardTeacher({ user, onLogout }) {
   const [view, setView] = useState('schedule'); // 'schedule', 'absences', 'reminders'
   const [absenceReason, setAbsenceReason] = useState('');
   const [absenceDate, setAbsenceDate] = useState('');
+  const [expandedReasons, setExpandedReasons] = useState({});
+
+  const toggleReason = (id) => {
+    setExpandedReasons(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const unreadRemindersCount = data.reminders ? data.reminders.filter(r => !r.is_read).length : 0;
+  const unreadAbsencesCount = data.my_absences ? data.my_absences.filter(a => !a.is_read_by_teacher).length : 0;
+
+  const markRemindersAsRead = async () => {
+    if (!data.reminders || data.reminders.length === 0 || unreadRemindersCount === 0) return;
+    
+    const unreadIds = data.reminders.filter(r => !r.is_read).map(r => r.id);
+    if (unreadIds.length === 0) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('http://localhost:5000/api/reminders/read', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ reminderIds: unreadIds })
+      });
+      // Update local state
+      setData(prev => ({
+        ...prev,
+        reminders: prev.reminders.map(r => ({ ...r, is_read: true }))
+      }));
+    } catch (e) { console.error(e); }
+  };
+
+  const markAbsencesAsRead = async () => {
+    if (!data.my_absences || data.my_absences.length === 0 || unreadAbsencesCount === 0) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('http://localhost:5000/api/absences/read-teacher', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      // Update local state
+      setData(prev => ({
+        ...prev,
+        my_absences: prev.my_absences.map(a => ({ ...a, is_read_by_teacher: true }))
+      }));
+    } catch (e) { console.error(e); }
+  };
+
+  useEffect(() => {
+    if (view === 'reminders') {
+      markRemindersAsRead();
+    }
+    if (view === 'absences') {
+      markAbsencesAsRead();
+    }
+  }, [view, data.reminders, data.my_absences]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -71,6 +126,45 @@ function DashboardTeacher({ user, onLogout }) {
     }
   };
 
+  const handleDeleteReminder = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/reminders/${id}/hide`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setData(prev => ({
+          ...prev,
+          reminders: prev.reminders.filter(r => r.id !== id)
+        }));
+        toast.success("Reminder deleted");
+      }
+    } catch (error) {
+      toast.error("Error deleting reminder");
+    }
+  };
+
+  const handleClearAllReminders = async () => {
+    if (!data.reminders || data.reminders.length === 0) return;
+    
+    const allIds = data.reminders.map(r => r.id);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/reminders/hide-all`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ reminderIds: allIds })
+      });
+      if (res.ok) {
+        setData(prev => ({ ...prev, reminders: [] }));
+        toast.success("All reminders cleared");
+      }
+    } catch (error) {
+      toast.error("Error clearing reminders");
+    }
+  };
+
   const volumeRestant = data.stats.volume_horaire - data.stats.heures_assurees;
 
   return (
@@ -102,15 +196,20 @@ function DashboardTeacher({ user, onLogout }) {
             onClick={() => setView('absences')}
           >
             🏖️ Absences
+            {unreadAbsencesCount > 0 && (
+               <span style={{background: '#ef4444', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '10px', marginLeft: 'auto'}}>
+                 {unreadAbsencesCount}
+               </span>
+            )}
           </button>
           <button 
             className={`nav-item ${view === 'reminders' ? 'active' : ''}`}
             onClick={() => setView('reminders')}
           >
             🔔 Reminders
-            {data.reminders && data.reminders.length > 0 && (
+            {unreadRemindersCount > 0 && (
                <span style={{background: '#ef4444', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '10px', marginLeft: 'auto'}}>
-                 {data.reminders.length}
+                 {unreadRemindersCount}
                </span>
             )}
           </button>
@@ -248,8 +347,25 @@ function DashboardTeacher({ user, onLogout }) {
                       <tbody>
                         {data.my_absences && data.my_absences.map(a => (
                           <tr key={a.id}>
-                            <td>{new Date(a.date).toLocaleDateString('en-US')}</td>
-                            <td>{a.reason}</td>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {!a.is_read_by_teacher && <span style={{ width: '8px', height: '8px', background: '#3b82f6', borderRadius: '50%', display: 'inline-block' }}></span>}
+                                {new Date(a.date).toLocaleDateString('en-US')}
+                              </div>
+                            </td>
+                            <td>
+                              {expandedReasons[a.id] || a.reason.length <= 50 
+                                ? a.reason 
+                                : `${a.reason.substring(0, 50)}... `}
+                              {a.reason.length > 50 && (
+                                <button 
+                                  onClick={() => toggleReason(a.id)}
+                                  style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.85em', textDecoration: 'underline', padding: 0, marginLeft: '5px' }}
+                                >
+                                  {expandedReasons[a.id] ? 'Voir moins' : 'Voir plus'}
+                                </button>
+                              )}
+                            </td>
                             <td>
                               <span className="role-tag" style={{
                                 background: a.status === 'Approved' ? '#d1fae5' : a.status === 'Rejected' ? '#fee2e2' : '#fef3c7',
@@ -271,7 +387,17 @@ function DashboardTeacher({ user, onLogout }) {
 
               {view === 'reminders' && (
                 <div className="table-card">
-                  <h3 style={{ marginTop: 0, marginBottom: '20px' }}>Communications from HR</h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h3 style={{ margin: 0 }}>Communications from HR & Dept</h3>
+                    {data.reminders && data.reminders.length > 0 && (
+                      <button 
+                        onClick={handleClearAllReminders}
+                        style={{ padding: '6px 12px', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                      >
+                        🗑️ Clear All
+                      </button>
+                    )}
+                  </div>
                   {data.reminders && data.reminders.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                       {data.reminders.map(r => (
@@ -281,8 +407,25 @@ function DashboardTeacher({ user, onLogout }) {
                           borderLeft: `4px solid ${r.type === 'error' ? '#ef4444' : r.type === 'warning' ? '#f59e0b' : '#3b82f6'}`,
                           background: r.type === 'error' ? '#fef2f2' : r.type === 'warning' ? '#fffbeb' : '#eff6ff'
                         }}>
-                          <div style={{ fontWeight: 'bold', marginBottom: '5px', color: r.type === 'error' ? '#991b1b' : r.type === 'warning' ? '#92400e' : '#1e40af' }}>
-                            {r.type === 'error' ? 'Urgent' : r.type === 'warning' ? 'Important' : 'Information'}
+                          <div style={{ fontWeight: 'bold', marginBottom: '5px', color: r.type === 'error' ? '#991b1b' : r.type === 'warning' ? '#92400e' : '#1e40af', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                              {!r.is_read && <span style={{ width: '8px', height: '8px', background: '#3b82f6', borderRadius: '50%', display: 'inline-block' }}></span>}
+                              <span>{r.type === 'error' ? 'Urgent' : r.type === 'warning' ? 'Important' : 'Information'}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                              {r.sender_nom && (
+                                <span style={{ fontSize: '0.85em', fontWeight: 'normal', color: '#64748b' }}>
+                                  From: {r.sender_prenom} {r.sender_nom} ({r.sender_role})
+                                </span>
+                              )}
+                              <button 
+                                onClick={() => handleDeleteReminder(r.id)}
+                                style={{ background: 'rgba(0,0,0,0.05)', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px', color: '#64748b' }}
+                                title="Delete"
+                              >
+                                ✕
+                              </button>
+                            </div>
                           </div>
                           <div style={{ color: '#334155', lineHeight: '1.5' }}>{r.text}</div>
                         </div>

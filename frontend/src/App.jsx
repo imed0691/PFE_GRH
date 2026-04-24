@@ -4,6 +4,7 @@ import './App.css'
 import Login from './pages/Login'
 import DashboardHR from './pages/DashboardHR'
 import DashboardTeacher from './pages/DashboardTeacher'
+import DashboardDeptHead from './pages/DashboardDeptHead'
 
 function App() {
   const [user, setUser] = useState(null);
@@ -56,6 +57,16 @@ function App() {
       <>
         <Toaster position="top-right" />
         <DashboardTeacher user={user} onLogout={handleLogout} />
+      </>
+    );
+  }
+
+  // Redirect to Department Head Dashboard
+  if (user.role === 'DEPARTMENT_HEAD' || user.role === 'CHEF_DEPARTEMENT') {
+    return (
+      <>
+        <Toaster position="top-right" />
+        <DashboardDeptHead user={user} onLogout={handleLogout} />
       </>
     );
   }

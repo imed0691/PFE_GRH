@@ -17,7 +17,7 @@ exports.reportAbsence = (req, res) => {
 // RH: Voir toutes les absences
 exports.getAllAbsences = (req, res) => {
   const query = `
-    SELECT a.id, a.date, a.reason, a.status, a.created_at, u.nom, u.prenom 
+    SELECT a.id, a.date, a.reason, a.status, a.created_at, a.is_read_by_admin, a.is_read_by_teacher, u.nom, u.prenom 
     FROM absence_requests a
     JOIN users u ON a.teacher_id = u.id
     ORDER BY a.created_at DESC
@@ -37,8 +37,8 @@ exports.updateAbsenceStatus = (req, res) => {
     return res.status(400).json({ message: "Statut invalide." });
   }
 
-  // Mettre à jour le statut de l'absence
-  db.query("UPDATE absence_requests SET status = ? WHERE id = ?", [status, id], (err, result) => {
+  // Mettre à jour le statut de l'absence et la marquer comme non lue par l'enseignant
+  db.query("UPDATE absence_requests SET status = ?, is_read_by_teacher = FALSE WHERE id = ?", [status, id], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
 
     // Si approuvée, incrémenter le nombre d'absences de l'enseignant
@@ -51,5 +51,24 @@ exports.updateAbsenceStatus = (req, res) => {
     }
 
     res.json({ message: `Absence ${status === 'Approved' ? 'approuvée' : 'rejetée'}` });
+  });
+};
+
+// Admin: Marquer toutes les absences comme lues
+exports.markAsReadAdmin = (req, res) => {
+  const query = "UPDATE absence_requests SET is_read_by_admin = TRUE WHERE is_read_by_admin = FALSE";
+  db.query(query, (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: "Absences marquées comme lues par l'admin" });
+  });
+};
+
+// Teacher: Marquer toutes ses absences comme lues
+exports.markAsReadTeacher = (req, res) => {
+  const teacherId = req.user.id;
+  const query = "UPDATE absence_requests SET is_read_by_teacher = TRUE WHERE teacher_id = ? AND is_read_by_teacher = FALSE";
+  db.query(query, [teacherId], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: "Absences marquées comme lues par l'enseignant" });
   });
 };

@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS absence_requests (
     date DATE NOT NULL,
     reason TEXT NOT NULL,
     status VARCHAR(50) DEFAULT 'Pending', -- 'Pending', 'Approved', 'Rejected'
+    is_read_by_admin BOOLEAN DEFAULT FALSE,
+    is_read_by_teacher BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -57,8 +59,20 @@ CREATE TABLE IF NOT EXISTS absence_requests (
 CREATE TABLE IF NOT EXISTS reminders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     teacher_id INT NULL, -- NULL = pour tous les enseignants
+    sender_id INT NULL, -- L'expéditeur du rappel (RH, Chef Département, etc.)
     message TEXT NOT NULL,
     type VARCHAR(20) DEFAULT 'info',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 6. Création de la table pour suivre l'état des rappels par utilisateur
+CREATE TABLE IF NOT EXISTS reminder_status (
+    user_id INT NOT NULL,
+    reminder_id INT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (user_id, reminder_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (reminder_id) REFERENCES reminders(id) ON DELETE CASCADE
 );
