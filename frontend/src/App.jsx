@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast'
 import './App.css'
 import Login from './pages/Login'
 import DashboardHR from './pages/DashboardHR'
+import DashboardTeacher from './pages/DashboardTeacher'
 
 function App() {
   const [user, setUser] = useState(null);
@@ -45,6 +46,16 @@ function App() {
       <>
         <Toaster position="top-right" />
         <DashboardHR user={user} onLogout={handleLogout} />
+      </>
+    );
+  }
+
+  // Redirect to Teacher Dashboard
+  if (user.role === 'TEACHER' || user.role === 'ENSEIGNANT') {
+    return (
+      <>
+        <Toaster position="top-right" />
+        <DashboardTeacher user={user} onLogout={handleLogout} />
       </>
     );
   }

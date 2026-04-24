@@ -3,7 +3,7 @@ const db = require('../config/db');
 // Get all sessions (with teacher and department details)
 exports.getAllSessions = (req, res) => {
   const query = `
-    SELECT s.id, s.module_name, s.session_type, s.study_level, s.day_of_week, s.start_time, s.end_time,
+    SELECT s.id, s.module_name, s.session_type, s.study_level, s.day_of_week, s.start_time, s.end_time, s.section, s.groupe,
            u.nom as teacher_nom, u.prenom as teacher_prenom,
            d.name as department_name
     FROM academic_sessions s
@@ -20,15 +20,15 @@ exports.getAllSessions = (req, res) => {
 
 // Create a new session
 exports.createSession = (req, res) => {
-  const { module_name, session_type, study_level, teacher_id, department_id, day_of_week, start_time, end_time } = req.body;
+  const { module_name, session_type, study_level, teacher_id, department_id, day_of_week, start_time, end_time, section, groupe } = req.body;
   
   if (!module_name || !session_type || !study_level || !teacher_id || !department_id || !day_of_week || !start_time || !end_time) {
     return res.status(400).json({ message: "All fields are required." });
   }
 
-  const query = "INSERT INTO academic_sessions (module_name, session_type, study_level, teacher_id, department_id, day_of_week, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+  const query = "INSERT INTO academic_sessions (module_name, session_type, study_level, teacher_id, department_id, day_of_week, start_time, end_time, section, groupe) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
   
-  db.query(query, [module_name, session_type, study_level, teacher_id, department_id, day_of_week, start_time, end_time], (err, result) => {
+  db.query(query, [module_name, session_type, study_level, teacher_id, department_id, day_of_week, start_time, end_time, section || null, groupe || null], (err, result) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -46,5 +46,83 @@ exports.deleteSession = (req, res) => {
     if (result.affectedRows === 0) return res.status(404).json({ message: "Session not found" });
     
     res.json({ message: "Session deleted successfully" });
+  });
+};
+
+// Get Teacher Dashboard Data (all schedule + stats + reminders)
+exports.getTeacherDashboardData = (req, res) => {
+  const teacherId = req.params.id;
+
+  // 1. Get ALL sessions for the teacher
+  const sessionsQuery = `
+    SELECT s.id, s.module_name, s.session_type, s.study_level, s.day_of_week, s.start_time, s.end_time, s.section, s.groupe,
+           d.name as department_name
+    FROM academic_sessions s
+    JOIN departments d ON s.department_id = d.id
+    WHERE s.teacher_id = ?
+    ORDER BY FIELD(s.day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'), s.start_time ASC
+  `;
+
+  // 2. Get teacher stats
+  const statsQuery = "SELECT volume_horaire, absences FROM users WHERE id = ?";
+
+  // 3. Get reminders
+  const remindersQuery = "SELECT id, message as text, type FROM reminders WHERE teacher_id = ? OR teacher_id IS NULL ORDER BY created_at DESC LIMIT 5";
+
+  // 4. Get absences
+  const absencesQuery = "SELECT id, date, reason, status FROM absence_requests WHERE teacher_id = ? ORDER BY created_at DESC";
+
+  db.query(sessionsQuery, [teacherId], (err, sessions) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    db.query(statsQuery, [teacherId], (err, statsResult) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      db.query(remindersQuery, [teacherId], (err, remindersResult) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        db.query(absencesQuery, [teacherId], (err, absencesResult) => {
+          if (err) return res.status(500).json({ error: err.message });
+
+          const stats = statsResult[0] || { volume_horaire: 192, absences: 0 };
+          
+          // Calcul dynamique des heures assurées
+          let completedHours = 120; // Base fictive pour les semaines précédentes
+          const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          const today = new Date();
+          const todayIndex = today.getDay();
+          const currentHour = today.getHours() + today.getMinutes() / 60;
+
+          sessions.forEach(s => {
+            const sessionDayIndex = daysOfWeek.indexOf(s.day_of_week);
+            const [sh, sm] = s.start_time.split(':').map(Number);
+            const [eh, em] = s.end_time.split(':').map(Number);
+            const duration = (eh + em/60) - (sh + sm/60);
+
+            // Si le jour de la session est passé, ou si c'est aujourd'hui et l'heure est passée
+            if (sessionDayIndex < todayIndex) {
+              completedHours += duration;
+            } else if (sessionDayIndex === todayIndex && (eh + em/60) <= currentHour) {
+              completedHours += duration;
+            }
+          });
+
+          // Soustraire les absences (moyenne de 1.5h par absence, ou exact si on croise les dates)
+          completedHours -= (stats.absences * 1.5);
+          if (completedHours < 0) completedHours = 0;
+
+          res.json({
+            all_sessions: sessions,
+            stats: {
+              volume_horaire: stats.volume_horaire,
+              heures_assurees: Math.round(completedHours * 10) / 10, // Arrondi à 1 décimale
+              absences: stats.absences
+            },
+            reminders: remindersResult,
+            my_absences: absencesResult
+          });
+        });
+      });
+    });
   });
 };

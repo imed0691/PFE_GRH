@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 // Signup logic
 exports.signup = async (req, res) => {
-  const { nom, prenom, role, email, password, department_id } = req.body;
+  const { nom, prenom, role, email, password, department_id, grade, hourly_rate, absence_penalty } = req.body;
   
   // Unique role validation (Dean, Rector, Vice-Dean, Vice-Rector), case-insensitive
   const roleLower = role ? role.toLowerCase() : '';
@@ -56,9 +56,13 @@ exports.signup = async (req, res) => {
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const query = "INSERT INTO users (nom, prenom, role, email, password, department_id) VALUES (?, ?, ?, ?, ?, ?)";
+    const query = "INSERT INTO users (nom, prenom, role, email, password, department_id, grade, hourly_rate, absence_penalty) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
-    db.query(query, [nom, prenom, role, email, hashedPassword, department_id || null], (err, result) => {
+    const gradeVal = roleLower === 'teacher' ? (grade || 'Teacher') : 'Teacher';
+    const hrVal = roleLower === 'teacher' ? (hourly_rate || 0) : 0;
+    const apVal = roleLower === 'teacher' ? (absence_penalty || 0) : 0;
+
+    db.query(query, [nom, prenom, role, email, hashedPassword, department_id || null, gradeVal, hrVal, apVal], (err, result) => {
       if (err) {
         if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: "This email already exists" });
         return res.status(500).json({ error: err.message });

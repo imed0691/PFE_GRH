@@ -9,7 +9,10 @@ function AddEmployee({ onCancel, onSuccess }) {
     email: '',
     password: '',
     role: 'TEACHER', // default
-    department_id: ''
+    department_id: '',
+    grade: 'Teacher',
+    hourly_rate: '',
+    absence_penalty: ''
   });
 
   const [departments, setDepartments] = useState([]);
@@ -150,6 +153,34 @@ function AddEmployee({ onCancel, onSuccess }) {
             </select>
           </div>
         </div>
+
+        {formData.role === 'TEACHER' && (
+          <div className="form-row">
+            <div className="form-group">
+              <label>Academic Grade</label>
+              <select name="grade" value={formData.grade} onChange={handleChange}>
+                <option value="Teacher">Teacher (Default)</option>
+                <option value="Vacataire">Vacataire</option>
+                <option value="Assistant">Assistant</option>
+                <option value="Maître-Assistant B">Maître-Assistant B (MAB)</option>
+                <option value="Maître-Assistant A">Maître-Assistant A (MAA)</option>
+                <option value="Maître de Conférences B">Maître de Conférences B (MCB)</option>
+                <option value="Maître de Conférences A">Maître de Conférences A (MCA)</option>
+                <option value="Professeur">Professeur</option>
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label>Extra Hourly Rate (DA)</label>
+              <input type="number" name="hourly_rate" value={formData.hourly_rate} onChange={handleChange} placeholder="e.g. 600" />
+            </div>
+
+            <div className="form-group">
+              <label>Absence Penalty (DA)</label>
+              <input type="number" name="absence_penalty" value={formData.absence_penalty} onChange={handleChange} placeholder="e.g. 2000" />
+            </div>
+          </div>
+        )}
 
         <div className="form-actions">
           <button type="button" className="btn-cancel" onClick={onCancel}>Cancel</button>

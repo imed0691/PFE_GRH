@@ -17,7 +17,9 @@ function ManageSessions() {
     department_id: '',
     day_of_week: 'Monday',
     start_time: '08:00',
-    end_time: '10:00'
+    end_time: '10:00',
+    section: '',
+    groupe: ''
   });
 
   const fetchData = async () => {
@@ -81,7 +83,7 @@ function ManageSessions() {
       if (res.ok) {
         toast.success(data.message);
         // Reset form partially
-        setFormData({ ...formData, module_name: '' });
+        setFormData({ ...formData, module_name: '', section: '', groupe: '' });
         fetchData();
       } else {
         toast.error(data.message || 'Error during creation');
@@ -139,6 +141,19 @@ function ManageSessions() {
               <option value="Practical">Practical (TP)</option>
             </select>
           </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Section</label>
+            <input type="text" name="section" value={formData.section} onChange={handleChange} required placeholder="e.g. A" />
+          </div>
+          {(formData.session_type === 'Tutorial' || formData.session_type === 'Practical') && (
+            <div className="form-group">
+              <label>Group</label>
+              <input type="text" name="groupe" value={formData.groupe} onChange={handleChange} placeholder="e.g. G1" />
+            </div>
+          )}
         </div>
 
         <div className="form-row">
@@ -201,6 +216,7 @@ function ManageSessions() {
               <th>Module / Subject</th>
               <th>Level</th>
               <th>Type</th>
+              <th>Sec/Grp</th>
               <th>Teacher</th>
               <th>Department</th>
               <th>Actions</th>
@@ -214,6 +230,13 @@ function ManageSessions() {
                 <td>{s.module_name}</td>
                 <td><span className="role-tag" style={{ background: '#dbeafe', color: '#1e40af' }}>{s.study_level}</span></td>
                 <td><span className="role-tag" style={{ background: '#e2e8f0', color: '#475569' }}>{s.session_type}</span></td>
+                <td>
+                  {(s.section || s.groupe) ? (
+                    <span style={{ fontSize: '0.9em', color: '#666' }}>
+                      {s.section && `Sec: ${s.section}`} {s.groupe && `Grp: ${s.groupe}`}
+                    </span>
+                  ) : '-'}
+                </td>
                 <td>{s.teacher_prenom} {s.teacher_nom}</td>
                 <td>{s.department_name}</td>
                 <td>
@@ -222,7 +245,7 @@ function ManageSessions() {
               </tr>
             ))}
             {sessions.length === 0 && (
-              <tr><td colSpan="8" className="empty-state">No sessions scheduled at the moment.</td></tr>
+              <tr><td colSpan="9" className="empty-state">No sessions scheduled at the moment.</td></tr>
             )}
           </tbody>
         </table>

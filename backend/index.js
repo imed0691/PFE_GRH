@@ -4,6 +4,9 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
+const absenceRoutes = require('./routes/absenceRoutes');
+const reminderRoutes = require('./routes/reminderRoutes');
+const salaryRoutes = require('./routes/salaryRoutes');
 
 const app = express();
 
@@ -15,6 +18,9 @@ app.use(express.json());
 app.use('/api', authRoutes);
 app.use('/api', departmentRoutes);
 app.use('/api', sessionRoutes);
+app.use('/api', absenceRoutes);
+app.use('/api', reminderRoutes);
+app.use('/api', salaryRoutes);
 
 // Route de test pour vérifier la liaison avec le frontend
 app.get('/api/hello', (req, res) => {

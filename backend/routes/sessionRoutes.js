@@ -7,4 +7,7 @@ router.get('/sessions', sessionController.getAllSessions);
 router.post('/sessions', sessionController.createSession);
 router.delete('/sessions/:id', sessionController.deleteSession);
 
+// Teacher dashboard route
+router.get('/teacher/dashboard/:id', sessionController.getTeacherDashboardData);
+
 module.exports = router;

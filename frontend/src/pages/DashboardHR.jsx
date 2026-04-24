@@ -3,6 +3,9 @@ import toast from 'react-hot-toast';
 import AddEmployee from './AddEmployee';
 import ManageDepartments from './ManageDepartments';
 import ManageSessions from './ManageSessions';
+import ManageAbsences from './ManageAbsences';
+import ManageSalaries from './ManageSalaries';
+import ManageReminders from './ManageReminders';
 import './DashboardHR.css';
 
 function DashboardHR({ user, onLogout }) {
@@ -97,6 +100,24 @@ function DashboardHR({ user, onLogout }) {
           >
             📚 Academic Sessions
           </button>
+          <button 
+            className={`nav-item ${view === 'absences' ? 'active' : ''}`}
+            onClick={() => setView('absences')}
+          >
+            🏖️ Manage Absences
+          </button>
+          <button 
+            className={`nav-item ${view === 'salaries' ? 'active' : ''}`}
+            onClick={() => setView('salaries')}
+          >
+            💰 Salaries
+          </button>
+          <button 
+            className={`nav-item ${view === 'reminders' ? 'active' : ''}`}
+            onClick={() => setView('reminders')}
+          >
+            📢 Reminders
+          </button>
         </nav>
 
         <button className="btn-logout" onClick={onLogout}>
@@ -107,7 +128,15 @@ function DashboardHR({ user, onLogout }) {
       {/* Main Content Area */}
       <main className="main-content">
         <header className="topbar">
-          <h1>{view === 'list' ? 'Personnel Management' : view === 'add' ? 'New Hire' : view === 'departments' ? 'Manage Departments' : 'Academic Sessions'}</h1>
+          <h1>
+            {view === 'list' ? 'Personnel Management' : 
+             view === 'add' ? 'New Hire' : 
+             view === 'departments' ? 'Manage Departments' : 
+             view === 'sessions' ? 'Academic Sessions' :
+             view === 'absences' ? 'Absences Management' :
+             view === 'salaries' ? 'Salary Calculation' :
+             'Send Reminders'}
+          </h1>
           <div className="date-display">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </header>
 
@@ -121,6 +150,12 @@ function DashboardHR({ user, onLogout }) {
             <ManageDepartments />
           ) : view === 'sessions' ? (
             <ManageSessions />
+          ) : view === 'absences' ? (
+            <ManageAbsences />
+          ) : view === 'salaries' ? (
+            <ManageSalaries />
+          ) : view === 'reminders' ? (
+            <ManageReminders />
           ) : (
             <div className="table-card">
               {loading ? (
