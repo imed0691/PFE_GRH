@@ -1,0 +1,211 @@
+/* Variables et couleurs pour le Vice-Recteur (Vice Rector) */
+:root {
+  --vicerec-primary: #10b981; /* Emerald Green */
+  --vicerec-primary-hover: #059669;
+  --bg-sidebar: #064e3b; /* Very dark green */
+  --bg-main: #f0fdf4; /* Light green tinted background */
+  --card-bg: #ffffff;
+  --text-main: #1f2937;
+  --text-muted: #6b7280;
+  --danger: #ef4444;
+  --border: #e5e7eb;
+}
+
+/* Layout global */
+.dashboard-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-main);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  background-color: var(--bg-sidebar);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.sidebar-header {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.logo-icon {
+  font-size: 24px;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.user-profile {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.avatar {
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, #10b981, #34d399);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+  text-transform: uppercase;
+}
+
+.user-info h4 {
+  margin: 0 0 5px 0;
+  font-size: 14px;
+}
+
+.badge-role {
+  font-size: 11px;
+  background: rgba(255,255,255,0.2);
+  padding: 3px 8px;
+  border-radius: 12px;
+  color: #a7f3d0;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-item {
+  background: transparent;
+  border: none;
+  color: #6ee7b7;
+  padding: 15px 24px;
+  text-align: left;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-item:hover, .nav-item.active {
+  background: rgba(255,255,255,0.05);
+  color: white;
+  border-left: 4px solid var(--vicerec-primary);
+}
+
+.btn-logout {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border: none;
+  padding: 15px;
+  margin: 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-logout:hover {
+  background: var(--danger);
+  color: white;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.topbar {
+  background: white;
+  padding: 20px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--text-main);
+}
+
+.date-display {
+  color: var(--text-muted);
+  font-size: 14px;
+  text-transform: capitalize;
+}
+
+.content-area {
+  padding: 40px;
+}
+
+/* Cards & Forms */
+.table-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  padding: 30px;
+  max-width: 1000px;
+  margin: 0 auto;
+  animation: fadeIn 0.4s ease;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  padding: 20px;
+  text-align: center;
+  animation: fadeIn 0.4s ease;
+  border-bottom: 4px solid var(--vicerec-primary);
+}
+
+.stat-card h3 {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+}
+
+.stat-card .stat-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--text-main);
+  margin: 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
