@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS academic_sessions (
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     section VARCHAR(50) NULL,
-    groupe VARCHAR(50) NULL,
+    groupe VARCHAR(50) NULL
 );
 
 -- 4. Création de la table des demandes d'absence

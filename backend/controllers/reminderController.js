@@ -11,7 +11,10 @@ exports.createReminder = (req, res) => {
 
   const query = "INSERT INTO reminders (teacher_id, sender_id, message, type) VALUES (?, ?, ?, ?)";
   db.query(query, [teacher_id || null, sender_id, message, type || 'info'], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error("Reminder DB Error:", err);
+      return res.status(500).json({ message: "Database error: " + err.message, error: err.message });
+    }
     res.status(201).json({ message: "Rappel envoyé." });
   });
 };

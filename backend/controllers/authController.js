@@ -64,8 +64,9 @@ exports.signup = async (req, res) => {
 
     db.query(query, [nom, prenom, role, email, hashedPassword, department_id || null, gradeVal, hrVal, apVal], (err, result) => {
       if (err) {
+        console.error("Signup DB Error:", err);
         if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: "This email already exists" });
-        return res.status(500).json({ error: err.message });
+        return res.status(500).json({ message: err.message, error: err.message });
       }
       res.status(201).json({ message: "User created successfully" });
     });
