@@ -41,8 +41,12 @@ function ManageSessions() {
         const allUsers = await resUsers.json();
         // Keep only teachers
         setTeachers(allUsers.filter(u => u.role.toUpperCase() === 'TEACHER'));
+      } else {
+        console.error("Failed to fetch data:", resSessions.status, resUsers.status, resDepts.status);
+        toast.error("Failed to fetch some dashboard data from server.");
       }
     } catch (error) {
+      console.error(error);
       toast.error('Error loading data');
     } finally {
       setLoading(false);
