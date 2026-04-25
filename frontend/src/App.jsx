@@ -5,6 +5,10 @@ import Login from './pages/Login'
 import DashboardHR from './pages/DashboardHR'
 import DashboardTeacher from './pages/DashboardTeacher'
 import DashboardDeptHead from './pages/DashboardDeptHead'
+import DashboardDean from './pages/DashboardDean'
+import DashboardViceDean from './pages/DashboardViceDean'
+import DashboardRector from './pages/DashboardRector'
+import DashboardViceRector from './pages/DashboardViceRector'
 
 function App() {
   const [user, setUser] = useState(null);
@@ -71,7 +75,47 @@ function App() {
     );
   }
 
-  // Standard view for other employees (Teacher, Dean, etc.)
+  // Redirect to Dean Dashboard
+  if (user.role === 'DEAN' || user.role === 'DOYEN') {
+    return (
+      <>
+        <Toaster position="top-right" />
+        <DashboardDean user={user} onLogout={handleLogout} />
+      </>
+    );
+  }
+
+  // Redirect to Vice Dean Dashboard
+  if (user.role === 'VICE_DEAN' || user.role === 'VICE_DOYEN') {
+    return (
+      <>
+        <Toaster position="top-right" />
+        <DashboardViceDean user={user} onLogout={handleLogout} />
+      </>
+    );
+  }
+
+  // Redirect to Rector Dashboard
+  if (user.role === 'RECTOR' || user.role === 'RECTEUR') {
+    return (
+      <>
+        <Toaster position="top-right" />
+        <DashboardRector user={user} onLogout={handleLogout} />
+      </>
+    );
+  }
+
+  // Redirect to Vice Rector Dashboard
+  if (user.role === 'VICE_RECTOR' || user.role === 'VICE_RECTEUR') {
+    return (
+      <>
+        <Toaster position="top-right" />
+        <DashboardViceRector user={user} onLogout={handleLogout} />
+      </>
+    );
+  }
+
+  // Standard view for other employees
   return (
     <div className="container">
       <Toaster position="top-right" />

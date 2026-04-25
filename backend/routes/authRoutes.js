@@ -10,7 +10,7 @@ router.post('/signup', verifyToken, checkRole(['RH_MANAGER']), authController.si
 router.post('/login', authController.login);
 
 // Nouvelles routes pour la gestion des utilisateurs (Réservées au RH et Chefs de département)
-router.get('/users', verifyToken, checkRole(['RH_MANAGER', 'DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT']), authController.getAllUsers);
+router.get('/users', verifyToken, checkRole(['RH_MANAGER', 'DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT', 'DEAN', 'DOYEN', 'VICE_DEAN', 'VICE_DOYEN', 'RECTOR', 'RECTEUR', 'VICE_RECTOR', 'VICE_RECTEUR']), authController.getAllUsers);
 router.delete('/users/:id', verifyToken, checkRole(['RH_MANAGER']), authController.deleteUser);
 
 module.exports = router;

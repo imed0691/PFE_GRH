@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import Select from 'react-select';
 import './DashboardHR.css';
 
 function ManageSessions() {
@@ -7,6 +8,7 @@ function ManageSessions() {
   const [teachers, setTeachers] = useState([]);
   const [departments, setDepartments] = useState([]);
   
+  const [filterTeacherDeptId, setFilterTeacherDeptId] = useState('');
   const [loading, setLoading] = useState(true);
   
   const [formData, setFormData] = useState({
@@ -59,6 +61,21 @@ function ManageSessions() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  let filteredTeachers = teachers;
+  if (filterTeacherDeptId) {
+    filteredTeachers = teachers.filter(t => t.department_id === parseInt(filterTeacherDeptId));
+  }
+  const teacherOptions = filteredTeachers.map(t => ({ value: t.id, label: `${t.nom} ${t.prenom} (${t.department_name || 'No Dept'})` }));
+  
+  const handleTeacherChange = (selectedOption) => {
+    setFormData({ ...formData, teacher_id: selectedOption ? selectedOption.value : '' });
+  };
+
+  const deptOptions = departments.map(d => ({ value: d.id, label: d.name }));
+  const handleDeptChange = (selectedOption) => {
+    setFormData({ ...formData, department_id: selectedOption ? selectedOption.value : '' });
   };
 
   const handleAddSession = async (e) => {
@@ -162,22 +179,40 @@ function ManageSessions() {
 
         <div className="form-row">
           <div className="form-group">
-            <label>Teacher</label>
-            <select name="teacher_id" value={formData.teacher_id} onChange={handleChange} required>
-              <option value="">-- Choose a teacher --</option>
-              {teachers.map(t => (
-                <option key={t.id} value={t.id}>{t.nom} {t.prenom}</option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Relevant Department</label>
-            <select name="department_id" value={formData.department_id} onChange={handleChange} required>
-              <option value="">-- Choose the department --</option>
+            <label>Filter Teachers by Dept (Optional)</label>
+            <select value={filterTeacherDeptId} onChange={(e) => {
+              setFilterTeacherDeptId(e.target.value);
+              setFormData({...formData, teacher_id: ''}); // reset selected teacher
+            }} style={{ padding: '8px', borderRadius: '5px', border: '1px solid #ddd', width: '100%', height: '38px' }}>
+              <option value="">-- All Departments --</option>
               {departments.map(d => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}
             </select>
+          </div>
+          <div className="form-group">
+            <label>Select Teacher</label>
+            <Select
+              options={teacherOptions}
+              onChange={handleTeacherChange}
+              placeholder="-- Search teacher --"
+              isClearable
+              isSearchable
+              value={teacherOptions.find(o => o.value === formData.teacher_id) || null}
+              styles={{ control: (base) => ({ ...base, padding: '2px', borderRadius: '8px', borderColor: '#e5e7eb', '&:hover': { borderColor: '#4f46e5' } }) }}
+            />
+          </div>
+          <div className="form-group">
+            <label>Relevant Department</label>
+            <Select
+              options={deptOptions}
+              onChange={handleDeptChange}
+              placeholder="-- Search department --"
+              isClearable
+              isSearchable
+              value={deptOptions.find(o => o.value === formData.department_id) || null}
+              styles={{ control: (base) => ({ ...base, padding: '2px', borderRadius: '8px', borderColor: '#e5e7eb', '&:hover': { borderColor: '#4f46e5' } }) }}
+            />
           </div>
         </div>
 
