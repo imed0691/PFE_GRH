@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
+import { useLanguage } from './i18n/LanguageContext'
 import './App.css'
 import Login from './pages/Login'
 import DashboardHR from './pages/DashboardHR'
@@ -9,9 +10,11 @@ import DashboardDean from './pages/DashboardDean'
 import DashboardViceDean from './pages/DashboardViceDean'
 import DashboardRector from './pages/DashboardRector'
 import DashboardViceRector from './pages/DashboardViceRector'
+import ChangePasswordModal from './components/ChangePasswordModal'
 
 function App() {
   const [user, setUser] = useState(null);
+  const { t } = useLanguage();
 
   // Check if a user is already logged in on page reload
   useEffect(() => {
@@ -36,11 +39,27 @@ function App() {
     setUser(null);
   };
 
+  const handlePasswordChanged = () => {
+    const updatedUser = { ...user, must_change_password: 0 };
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+
   if (!user) {
     return (
       <>
         <Toaster position="top-center" />
         <Login onLoginSuccess={(u) => setUser(u)} />
+      </>
+    );
+  }
+
+  // Force password change on first login (Exempt RH_MANAGER)
+  if (user.must_change_password && user.role !== 'RH_MANAGER') {
+    return (
+      <>
+        <Toaster position="top-center" />
+        <ChangePasswordModal onPasswordChanged={handlePasswordChanged} />
       </>
     );
   }
@@ -121,16 +140,16 @@ function App() {
       <Toaster position="top-right" />
 
       <div className="content" style={{ textAlign: 'center', marginTop: '50px' }}>
-        <h2>Personal Space</h2>
-        <h3>Welcome,!! {user.prenom} {user.nom}</h3>
+        <h2>{t('app.personalSpace')}</h2>
+        <h3>{t('app.welcomeUser')} {user.prenom} {user.nom}</h3>
         <p style={{ marginTop: '10px', color: '#666' }}>
-          Logged in as: <strong>{user.role}</strong>
+          {t('app.loggedInAs')} <strong>{t('roles.' + user.role) || user.role}</strong>
         </p>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
         <button onClick={handleLogout} style={{ padding: '10px 20px', cursor: 'pointer', background: '#e53e3e', color: 'white', border: 'none', borderRadius: '5px' }}>
-          Logout
+          {t('common.logout')}
         </button>
       </div>
     </div>

@@ -1,0 +1,70 @@
+.modern-lang-switcher {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.lang-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: white;
+  border: 2px solid #f1f5f9;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.lang-btn:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  transform: translateY(-2px);
+}
+
+.lang-btn.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.lang-code {
+  font-size: 18px;
+  font-weight: 800;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.lang-btn.active .lang-code {
+  color: #3b82f6;
+}
+
+.lang-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.lang-btn.active .lang-label {
+  color: #1e3a8a;
+}
+
+.active-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
+  background: #3b82f6;
+  border-radius: 50%;
+}
+
+@media (max-width: 480px) {
+  .modern-lang-switcher {
+    grid-template-columns: 1fr;
+  }
+}

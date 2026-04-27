@@ -5,7 +5,7 @@ USE pfe_db;
 -- 1. Création de la table des départements
 CREATE TABLE IF NOT EXISTS departments (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE
+    name VARCHAR(191) NOT NULL UNIQUE
 );
 
 -- 2. Création de la table des utilisateurs
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     nom VARCHAR(255) NOT NULL,
     prenom VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(191) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     department_id INT NULL,
     volume_horaire INT DEFAULT 192,
@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
     absence_penalty INT DEFAULT 0,
     base_salary INT DEFAULT 0,
     extra_hours INT DEFAULT 0,
+    must_change_password BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
 );
 

@@ -4,8 +4,8 @@ const bcrypt = require('bcryptjs');
 
 const seedAdmin = async () => {
   try {
-    const defaultEmail = 'admine@univ.dz';
-    const defaultPassword = 'admine'; // Vous changerez ce mot de passe plus tard
+    const defaultEmail = 'admin@univ.dz';
+    const defaultPassword = 'admin'; // Vous changerez ce mot de passe plus tard
 
     // 1. Vérifier si un compte existe déjà
     const checkQuery = "SELECT * FROM users WHERE email = ?";

@@ -99,7 +99,14 @@ exports.login = (req, res) => {
     res.json({ 
       message: "Login successful", 
       token,
-      user: { id: user.id, nom: user.nom, prenom: user.prenom, role: user.role, department_id: user.department_id } 
+      user: { 
+        id: user.id, 
+        nom: user.nom, 
+        prenom: user.prenom, 
+        role: user.role, 
+        department_id: user.department_id,
+        must_change_password: user.must_change_password 
+      } 
     });
   });
 };
@@ -129,5 +136,64 @@ exports.deleteUser = (req, res) => {
     if (result.affectedRows === 0) return res.status(404).json({ message: "User not found" });
     
     res.json({ message: "User deleted successfully" });
+  });
+};
+
+// Helper function for password validation
+const validatePassword = (pass) => {
+  return pass.length >= 8 && /[A-Z]/.test(pass) && /[a-z]/.test(pass) && /[0-9]/.test(pass);
+};
+
+// Change Password logic
+exports.changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.user.id;
+
+  if (!newPassword || !validatePassword(newPassword)) {
+    return res.status(400).json({ message: "Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number." });
+  }
+
+  try {
+    // 1. Get current user password
+    const userQuery = "SELECT password, must_change_password FROM users WHERE id = ?";
+    db.query(userQuery, [userId], async (err, results) => {
+      if (err || results.length === 0) return res.status(500).json({ message: "User not found" });
+      
+      const user = results[0];
+
+      // 2. If it's not the first login, verify current password
+      if (!user.must_change_password) {
+        if (!currentPassword) return res.status(400).json({ message: "Current password is required" });
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) return res.status(401).json({ message: "Incorrect current password" });
+      }
+
+      // 3. Hash and update
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const query = "UPDATE users SET password = ?, must_change_password = 0 WHERE id = ?";
+      
+      db.query(query, [hashedPassword, userId], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: "Password updated successfully" });
+      });
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error processing request" });
+  }
+};
+
+// Update Profile logic
+exports.updateProfile = (req, res) => {
+  const { nom, prenom } = req.body;
+  const userId = req.user.id;
+
+  if (!nom || !prenom) {
+    return res.status(400).json({ message: "Name and surname are required" });
+  }
+
+  const query = "UPDATE users SET nom = ?, prenom = ? WHERE id = ?";
+  db.query(query, [nom, prenom, userId], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: "Profile updated successfully", user: { nom, prenom } });
   });
 };

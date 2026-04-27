@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { useLanguage } from '../i18n/LanguageContext';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import AddEmployee from './AddEmployee';
 import ManageDepartments from './ManageDepartments';
 import ManageSessions from './ManageSessions';
@@ -12,6 +14,7 @@ import ManageRecruitments from './ManageRecruitments';
 import ManageEvaluations from './ManageEvaluations';
 import ManageResearch from './ManageResearch';
 import NotificationFeed from './NotificationFeed';
+import Settings from './Settings';
 import useNotificationBadges from '../hooks/useNotificationBadges';
 import NotifBadge from '../components/NotifBadge';
 import './DashboardHR.css';
@@ -22,6 +25,13 @@ function DashboardHR({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [unreadAbsences, setUnreadAbsences] = useState(0);
   const { badges, markSeen } = useNotificationBadges();
+  const { t, locale } = useLanguage();
+
+  const handleProfileUpdate = (newData) => {
+    const updatedUser = { ...user, ...newData };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    window.location.reload(); 
+  };
 
   const setView = (newView) => {
     setViewRaw(newView);
@@ -42,7 +52,7 @@ function DashboardHR({ user, onLogout }) {
         setUsers(data);
       }
     } catch (error) {
-      toast.error("Error fetching employees");
+      toast.error(t('hr.errorFetchEmployees'));
     } finally {
       setLoading(false);
     }
@@ -92,7 +102,7 @@ function DashboardHR({ user, onLogout }) {
   }, [view]);
 
   const handleDelete = async (id, nom) => {
-    if (!window.confirm(`Are you sure you want to delete ${nom}?`)) return;
+    if (!window.confirm(`${t('hr.confirmDelete')} ${nom}?`)) return;
 
     try {
       const token = localStorage.getItem('token');
@@ -102,13 +112,13 @@ function DashboardHR({ user, onLogout }) {
       });
 
       if (res.ok) {
-        toast.success("User deleted");
-        fetchUsers(); // Refresh list
+        toast.success(t('hr.userDeleted'));
+        fetchUsers();
       } else {
-        toast.error("Error deleting user");
+        toast.error(t('hr.errorDeleting'));
       }
     } catch (error) {
-      toast.error("Server error");
+      toast.error(t('common.serverError'));
     }
   };
 
@@ -117,7 +127,6 @@ function DashboardHR({ user, onLogout }) {
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-header">
-          <div className="logo-icon">🎓</div>
           <h2>PFE_GRH</h2>
         </div>
         
@@ -125,28 +134,29 @@ function DashboardHR({ user, onLogout }) {
           <div className="avatar">{user.prenom[0]}{user.nom[0]}</div>
           <div className="user-info">
             <h4>{user.prenom} {user.nom}</h4>
-            <span className="badge-role">HR Manager</span>
+            <span className="badge-role">{t('roles.RH_MANAGER')}</span>
           </div>
         </div>
 
         <nav className="sidebar-nav">
-          <button className={`nav-item ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}>📋 Staff List</button>
-          <button className={`nav-item ${view === 'add' ? 'active' : ''}`} onClick={() => setView('add')}>➕ Add Employee</button>
-          <button className={`nav-item ${view === 'departments' ? 'active' : ''}`} onClick={() => setView('departments')}>🏢 Departments</button>
-          <button className={`nav-item ${view === 'sessions' ? 'active' : ''}`} onClick={() => setView('sessions')}>📚 Sessions</button>
-          <button className={`nav-item ${view === 'absences' ? 'active' : ''}`} onClick={() => setView('absences')}>🏖️ Absences <NotifBadge count={unreadAbsences || badges.absences} /></button>
-          <button className={`nav-item ${view === 'salaries' ? 'active' : ''}`} onClick={() => setView('salaries')}>💰 Salaries</button>
-          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>📢 Reminders</button>
-          <button className={`nav-item ${view === 'documents' ? 'active' : ''}`} onClick={() => setView('documents')}>📄 Documents <NotifBadge count={badges.documents} /></button>
-          <button className={`nav-item ${view === 'promotions' ? 'active' : ''}`} onClick={() => setView('promotions')}>📈 Promotions <NotifBadge count={badges.promotions} /></button>
-          <button className={`nav-item ${view === 'recruitment' ? 'active' : ''}`} onClick={() => setView('recruitment')}>🤝 Recruitment <NotifBadge count={badges.recruitments} /></button>
-          <button className={`nav-item ${view === 'evaluations' ? 'active' : ''}`} onClick={() => setView('evaluations')}>⭐ Evaluations <NotifBadge count={badges.evaluations} /></button>
-          <button className={`nav-item ${view === 'research' ? 'active' : ''}`} onClick={() => setView('research')}>🔬 Research <NotifBadge count={badges.research} /></button>
-          <button className={`nav-item ${view === 'feed' ? 'active' : ''}`} onClick={() => setView('feed')}>📰 Activity Feed</button>
+          <button className={`nav-item ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}>{t('sidebar.staffList')}</button>
+          <button className={`nav-item ${view === 'add' ? 'active' : ''}`} onClick={() => setView('add')}>{t('sidebar.addEmployee')}</button>
+          <button className={`nav-item ${view === 'departments' ? 'active' : ''}`} onClick={() => setView('departments')}>{t('sidebar.departments')}</button>
+          <button className={`nav-item ${view === 'sessions' ? 'active' : ''}`} onClick={() => setView('sessions')}>{t('sidebar.sessions')}</button>
+          <button className={`nav-item ${view === 'absences' ? 'active' : ''}`} onClick={() => setView('absences')}>{t('sidebar.absences')} <NotifBadge count={unreadAbsences || badges.absences} /></button>
+          <button className={`nav-item ${view === 'salaries' ? 'active' : ''}`} onClick={() => setView('salaries')}>{t('sidebar.salaries')}</button>
+          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.reminders')}</button>
+          <button className={`nav-item ${view === 'documents' ? 'active' : ''}`} onClick={() => setView('documents')}>{t('sidebar.documents')} <NotifBadge count={badges.documents} /></button>
+          <button className={`nav-item ${view === 'promotions' ? 'active' : ''}`} onClick={() => setView('promotions')}>{t('sidebar.promotions')} <NotifBadge count={badges.promotions} /></button>
+          <button className={`nav-item ${view === 'recruitment' ? 'active' : ''}`} onClick={() => setView('recruitment')}>{t('sidebar.recruitment')} <NotifBadge count={badges.recruitments} /></button>
+          <button className={`nav-item ${view === 'evaluations' ? 'active' : ''}`} onClick={() => setView('evaluations')}>{t('sidebar.evaluations')} <NotifBadge count={badges.evaluations} /></button>
+          <button className={`nav-item ${view === 'research' ? 'active' : ''}`} onClick={() => setView('research')}>{t('sidebar.research')} <NotifBadge count={badges.research} /></button>
+          <button className={`nav-item ${view === 'feed' ? 'active' : ''}`} onClick={() => setView('feed')}>{t('sidebar.activityFeed')}</button>
+          <button className={`nav-item ${view === 'settings' ? 'active' : ''}`} onClick={() => setView('settings')}>{t('settings.title')}</button>
         </nav>
 
         <button className="btn-logout" onClick={onLogout}>
-          🚪 Logout
+          {t('common.logout')}
         </button>
       </aside>
 
@@ -154,20 +164,21 @@ function DashboardHR({ user, onLogout }) {
       <main className="main-content">
         <header className="topbar">
           <h1>
-            {view === 'list' ? 'Personnel Management' : 
-             view === 'add' ? 'New Hire' : 
-             view === 'departments' ? 'Manage Departments' : 
-             view === 'sessions' ? 'Academic Sessions' :
-             view === 'absences' ? 'Absences Management' :
-             view === 'salaries' ? 'Salary Calculation' :
-             view === 'documents' ? 'Document Requests' :
-             view === 'promotions' ? 'Career Advancements' :
-             view === 'recruitment' ? 'Recruitment Management' :
-             view === 'evaluations' ? 'Performance Evaluations' :
-             view === 'research' ? 'Research Activities' :
-             'Send Reminders'}
+            {view === 'list' ? t('topbar.personnelManagement') : 
+             view === 'add' ? t('topbar.newHire') : 
+             view === 'departments' ? t('topbar.manageDepartments') : 
+             view === 'sessions' ? t('topbar.academicSessions') :
+             view === 'absences' ? t('topbar.absencesManagement') :
+             view === 'salaries' ? t('topbar.salaryCalculation') :
+             view === 'documents' ? t('topbar.documentRequests') :
+             view === 'promotions' ? t('topbar.careerAdvancements') :
+             view === 'recruitment' ? t('topbar.recruitmentManagement') :
+             view === 'evaluations' ? t('topbar.performanceEvaluations') :
+             view === 'research' ? t('topbar.researchActivities') :
+             view === 'settings' ? t('settings.title') :
+             t('topbar.sendReminders')}
           </h1>
-          <div className="date-display">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+          <div className="date-display">{new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </header>
 
         <div className="content-area">
@@ -198,20 +209,22 @@ function DashboardHR({ user, onLogout }) {
             <NotificationFeed />
           ) : view === 'reminders' ? (
             <ManageReminders />
+          ) : view === 'settings' ? (
+            <Settings user={user} onProfileUpdate={handleProfileUpdate} />
           ) : (
             <div className="table-card">
               {loading ? (
-                <div className="loading-spinner">Loading data...</div>
+                <div className="loading-spinner">{t('common.loadingData')}</div>
               ) : (
                 <table className="modern-table">
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>Full Name</th>
-                      <th>Email</th>
-                      <th>Department</th>
-                      <th>Role</th>
-                      <th>Actions</th>
+                      <th>{t('common.id')}</th>
+                      <th>{t('common.fullName')}</th>
+                      <th>{t('common.email')}</th>
+                      <th>{t('common.department')}</th>
+                      <th>{t('common.role')}</th>
+                      <th>{t('common.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -221,18 +234,18 @@ function DashboardHR({ user, onLogout }) {
                         <td><strong>{u.nom}</strong> {u.prenom}</td>
                         <td>{u.email}</td>
                         <td>{u.department_name || '-'}</td>
-                        <td><span className={`role-tag role-${u.role.toLowerCase()}`}>{u.role}</span></td>
+                        <td><span className={`role-tag role-${u.role.toLowerCase()}`}>{t('roles.' + u.role) || u.role}</span></td>
                         <td>
                           {u.role !== 'RH_MANAGER' && (
                             <button className="btn-delete" onClick={() => handleDelete(u.id, u.nom)}>
-                              Delete
+                              {t('common.delete')}
                             </button>
                           )}
                         </td>
                       </tr>
                     ))}
                     {users.length === 0 && (
-                      <tr><td colSpan="5" className="empty-state">No employees found.</td></tr>
+                      <tr><td colSpan="5" className="empty-state">{t('hr.noEmployeesFound')}</td></tr>
                     )}
                   </tbody>
                 </table>
