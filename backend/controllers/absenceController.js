@@ -2,8 +2,10 @@ const db = require('../config/db');
 
 // Enseignant: Signaler une absence
 exports.reportAbsence = (req, res) => {
-  const { teacher_id, date, reason } = req.body;
-  if (!teacher_id || !date || !reason) {
+  const teacher_id = req.user.id;
+  const { date, reason } = req.body;
+  
+  if (!date || !reason) {
     return res.status(400).json({ message: "Tous les champs sont requis." });
   }
 
@@ -16,24 +18,37 @@ exports.reportAbsence = (req, res) => {
 
 // RH: Voir toutes les absences
 exports.getAllAbsences = (req, res) => {
+  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  const userId = req.user.id;
+
   const query = `
-    SELECT a.id, a.date, a.reason, a.status, a.created_at, a.is_read_by_admin, a.is_read_by_teacher, u.nom, u.prenom 
+    SELECT a.id, a.date, a.reason, a.status, a.created_at, a.is_read_by_admin, a.is_read_by_teacher, u.nom, u.prenom, u.department_id 
     FROM absence_requests a
     JOIN users u ON a.teacher_id = u.id
     ORDER BY a.created_at DESC
   `;
   db.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
+    
+    if (userRole === 'DEPARTMENT_HEAD' || userRole === 'CHEF_DEPARTEMENT') {
+      db.query('SELECT department_id FROM users WHERE id = ?', [userId], (err, deptRes) => {
+          if (err || deptRes.length === 0) return res.json([]);
+          const headDeptId = deptRes[0].department_id;
+          return res.json(results.filter(a => a.department_id === headDeptId));
+      });
+      return;
+    }
+
     res.json(results);
   });
 };
 
-// RH: Approuver ou rejeter une absence
+// RH/Dept Head: Mettre à jour le statut
 exports.updateAbsenceStatus = (req, res) => {
   const { id } = req.params;
-  const { status } = req.body; // 'Approved' ou 'Rejected'
+  const { status } = req.body; // 'Recommended', 'Approved' ou 'Rejected'
 
-  if (status !== 'Approved' && status !== 'Rejected') {
+  if (status !== 'Recommended' && status !== 'Approved' && status !== 'Rejected') {
     return res.status(400).json({ message: "Statut invalide." });
   }
 
@@ -50,7 +65,7 @@ exports.updateAbsenceStatus = (req, res) => {
       });
     }
 
-    res.json({ message: `Absence ${status === 'Approved' ? 'approuvée' : 'rejetée'}` });
+    res.json({ message: `Absence status updated to ${status}` });
   });
 };
 

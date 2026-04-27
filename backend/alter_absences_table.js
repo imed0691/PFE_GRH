@@ -1,21 +1,16 @@
 require('dotenv').config();
 const db = require('./config/db');
 
-const query = `
-  ALTER TABLE absence_requests 
-  ADD COLUMN is_read_by_admin BOOLEAN DEFAULT FALSE,
-  ADD COLUMN is_read_by_teacher BOOLEAN DEFAULT TRUE;
+const alterTableQuery = `
+ALTER TABLE absence_requests 
+MODIFY COLUMN status ENUM('Pending', 'Recommended', 'Approved', 'Rejected') DEFAULT 'Pending';
 `;
 
-db.query(query, (error, results) => {
-  if (error) {
-    if (error.code === 'ER_DUP_FIELDNAME') {
-      console.log("Columns already exist.");
+db.query(alterTableQuery, (err, results) => {
+    if (err) {
+        console.error("Error altering absence_requests table:", err);
     } else {
-      console.error("Error altering table:", error);
+        console.log("absence_requests table altered successfully.");
     }
-  } else {
-    console.log("Successfully altered absence_requests table.");
-  }
-  process.exit();
+    process.exit();
 });

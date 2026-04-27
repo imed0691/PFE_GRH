@@ -5,6 +5,17 @@ function ManageAbsences() {
   const [absences, setAbsences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedReasons, setExpandedReasons] = useState({});
+  const [userRole, setUserRole] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserRole(payload.role);
+      } catch (e) {}
+    }
+  }, []);
 
   const toggleReason = (id) => {
     setExpandedReasons(prev => ({ ...prev, [id]: !prev[id] }));
@@ -44,7 +55,7 @@ function ManageAbsences() {
       });
 
       if (res.ok) {
-        toast.success(`Absence ${status === 'Approved' ? 'approved' : 'rejected'}`);
+        toast.success(`Absence status updated to ${status}`);
         fetchAbsences();
       } else {
         toast.error("Error updating status");
@@ -53,6 +64,13 @@ function ManageAbsences() {
       toast.error('Server error');
     }
   };
+
+  const isDeptHead = userRole === 'DEPARTMENT_HEAD' || userRole === 'CHEF_DEPARTEMENT';
+  const isHigherAdmin = [
+    'DEAN', 'DOYEN', 'VICE_DEAN', 'VICE_DOYEN', 
+    'RECTOR', 'RECTEUR', 'VICE_RECTOR', 'VICE_RECTEUR',
+    'HR', 'RH', 'HR_MANAGER', 'RH_MANAGER'
+  ].includes(userRole);
 
   if (loading) return <div className="loading-spinner">Loading...</div>;
 
@@ -74,7 +92,7 @@ function ManageAbsences() {
             <tr key={a.id}>
               <td>{new Date(a.date).toLocaleDateString('fr-FR')}</td>
               <td><strong>{a.nom}</strong> {a.prenom}</td>
-              <td>
+              <td style={{ maxWidth: '300px', wordBreak: 'break-word' }}>
                 {expandedReasons[a.id] || a.reason.length <= 50 
                   ? a.reason 
                   : `${a.reason.substring(0, 50)}... `}
@@ -89,18 +107,28 @@ function ManageAbsences() {
               </td>
               <td>
                 <span className="role-tag" style={{
-                  background: a.status === 'Approved' ? '#d1fae5' : a.status === 'Rejected' ? '#fee2e2' : '#fef3c7',
-                  color: a.status === 'Approved' ? '#065f46' : a.status === 'Rejected' ? '#991b1b' : '#92400e'
+                  background: a.status === 'Approved' ? '#d1fae5' : a.status === 'Rejected' ? '#fee2e2' : a.status === 'Recommended' ? '#dbeafe' : '#fef3c7',
+                  color: a.status === 'Approved' ? '#065f46' : a.status === 'Rejected' ? '#991b1b' : a.status === 'Recommended' ? '#1e40af' : '#92400e'
                 }}>
-                  {a.status === 'Pending' ? 'Pending' : a.status === 'Approved' ? 'Approved' : 'Rejected'}
+                  {a.status}
                 </span>
               </td>
               <td>
-                {a.status === 'Pending' && (
+                {a.status === 'Pending' && isDeptHead && (
+                  <button onClick={() => handleUpdateStatus(a.id, 'Recommended')} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>
+                    Recommend Approval
+                  </button>
+                )}
+                
+                {a.status === 'Recommended' && isHigherAdmin && (
                   <div style={{ display: 'flex', gap: '10px' }}>
-                    <button onClick={() => handleUpdateStatus(a.id, 'Approved')} style={{ background: '#10b981', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>✓</button>
-                    <button onClick={() => handleUpdateStatus(a.id, 'Rejected')} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>✗</button>
+                    <button onClick={() => handleUpdateStatus(a.id, 'Approved')} style={{ background: '#10b981', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>✓ Final Approve</button>
+                    <button onClick={() => handleUpdateStatus(a.id, 'Rejected')} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>✗ Reject</button>
                   </div>
+                )}
+
+                {a.status === 'Pending' && isHigherAdmin && (
+                  <span style={{ fontSize: '12px', color: '#64748b', fontStyle: 'italic' }}>Waiting for Dept recommendation</span>
                 )}
               </td>
             </tr>

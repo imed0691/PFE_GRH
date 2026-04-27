@@ -7,6 +7,13 @@ const sessionRoutes = require('./routes/sessionRoutes');
 const absenceRoutes = require('./routes/absenceRoutes');
 const reminderRoutes = require('./routes/reminderRoutes');
 const salaryRoutes = require('./routes/salaryRoutes');
+const promotionRoutes = require('./routes/promotionRoutes');
+const documentRoutes = require('./routes/documentRoutes');
+const recruitmentRoutes = require('./routes/recruitmentRoutes');
+const evaluationRoutes = require('./routes/evaluationRoutes');
+const researchRoutes = require('./routes/researchRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const feedRoutes = require('./routes/feedRoutes');
 
 const app = express();
 
@@ -21,6 +28,13 @@ app.use('/api', sessionRoutes);
 app.use('/api', absenceRoutes);
 app.use('/api', reminderRoutes);
 app.use('/api', salaryRoutes);
+app.use('/api', promotionRoutes);
+app.use('/api', documentRoutes);
+app.use('/api', recruitmentRoutes);
+app.use('/api', evaluationRoutes);
+app.use('/api', researchRoutes);
+app.use('/api', notificationRoutes);
+app.use('/api', feedRoutes);
 
 // Route de test pour vérifier la liaison avec le frontend
 app.get('/api/hello', (req, res) => {

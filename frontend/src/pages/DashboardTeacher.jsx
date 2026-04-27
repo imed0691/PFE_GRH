@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import './DashboardTeacher.css';
+import ManagePromotions from './ManagePromotions';
+import ManageDocuments from './ManageDocuments';
+import ManageResearch from './ManageResearch';
+import ManageEvaluations from './ManageEvaluations';
+import NotificationFeed from './NotificationFeed';
+import useNotificationBadges from '../hooks/useNotificationBadges';
+import NotifBadge from '../components/NotifBadge';
 
 function DashboardTeacher({ user, onLogout }) {
   const [data, setData] = useState({
@@ -10,7 +17,15 @@ function DashboardTeacher({ user, onLogout }) {
     my_absences: []
   });
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('schedule'); // 'schedule', 'absences', 'reminders'
+  const [view, setViewRaw] = useState('schedule');
+  const { badges, markSeen } = useNotificationBadges();
+
+  const setView = (newView) => {
+    setViewRaw(newView);
+    if (badges[newView] && badges[newView] > 0) {
+      markSeen(newView);
+    }
+  };
   const [absenceReason, setAbsenceReason] = useState('');
   const [absenceDate, setAbsenceDate] = useState('');
   const [expandedReasons, setExpandedReasons] = useState({});
@@ -93,6 +108,41 @@ function DashboardTeacher({ user, onLogout }) {
   useEffect(() => {
     fetchDashboardData();
   }, [user.id]);
+
+  // 🔔 Afficher une notification à l'entrée si il y a des messages non lus
+  useEffect(() => {
+    if (loading) return; // Attendre que les données soient chargées
+    
+    const unreadR = data.reminders ? data.reminders.filter(r => !r.is_read).length : 0;
+    const unreadA = data.my_absences ? data.my_absences.filter(a => !a.is_read_by_teacher).length : 0;
+    const total = unreadR + unreadA;
+
+    if (total > 0) {
+      toast(
+        () => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '20px' }}>🔔</span>
+            <div>
+              <strong>Vous avez {total} notification{total > 1 ? 's' : ''} non lue{total > 1 ? 's' : ''}</strong>
+              {unreadR > 0 && <div style={{ fontSize: '12px', color: '#64748b' }}>📢 {unreadR} message{unreadR > 1 ? 's' : ''} de l'administration</div>}
+              {unreadA > 0 && <div style={{ fontSize: '12px', color: '#64748b' }}>🏖️ {unreadA} mise{unreadA > 1 ? 's' : ''} à jour d'absence</div>}
+            </div>
+          </div>
+        ),
+        {
+          duration: 5000,
+          style: {
+            background: '#eff6ff',
+            border: '1px solid #3b82f6',
+            color: '#1e3a8a',
+            borderRadius: '12px',
+            padding: '14px 18px',
+          },
+          icon: null,
+        }
+      );
+    }
+  }, [loading]); // Se déclenche une seule fois quand loading passe à false
 
   const handleReportAbsence = async (e) => {
     e.preventDefault();
@@ -185,34 +235,14 @@ function DashboardTeacher({ user, onLogout }) {
         </div>
 
         <nav className="sidebar-nav">
-          <button 
-            className={`nav-item ${view === 'schedule' ? 'active' : ''}`}
-            onClick={() => setView('schedule')}
-          >
-            📅 My Schedule
-          </button>
-          <button 
-            className={`nav-item ${view === 'absences' ? 'active' : ''}`}
-            onClick={() => setView('absences')}
-          >
-            🏖️ Absences
-            {unreadAbsencesCount > 0 && (
-               <span style={{background: '#ef4444', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '10px', marginLeft: 'auto'}}>
-                 {unreadAbsencesCount}
-               </span>
-            )}
-          </button>
-          <button 
-            className={`nav-item ${view === 'reminders' ? 'active' : ''}`}
-            onClick={() => setView('reminders')}
-          >
-            🔔 Reminders
-            {unreadRemindersCount > 0 && (
-               <span style={{background: '#ef4444', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '10px', marginLeft: 'auto'}}>
-                 {unreadRemindersCount}
-               </span>
-            )}
-          </button>
+          <button className={`nav-item ${view === 'schedule' ? 'active' : ''}`} onClick={() => setView('schedule')}>📅 My Schedule</button>
+          <button className={`nav-item ${view === 'absences' ? 'active' : ''}`} onClick={() => setView('absences')}>🏖️ Absences <NotifBadge count={unreadAbsencesCount || badges.absences} /></button>
+          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>🔔 Reminders <NotifBadge count={unreadRemindersCount} /></button>
+          <button className={`nav-item ${view === 'promotions' ? 'active' : ''}`} onClick={() => setView('promotions')}>📈 Promotions <NotifBadge count={badges.promotions} /></button>
+          <button className={`nav-item ${view === 'documents' ? 'active' : ''}`} onClick={() => setView('documents')}>📄 Documents <NotifBadge count={badges.documents} /></button>
+          <button className={`nav-item ${view === 'research' ? 'active' : ''}`} onClick={() => setView('research')}>🔬 Research <NotifBadge count={badges.research} /></button>
+          <button className={`nav-item ${view === 'evaluations' ? 'active' : ''}`} onClick={() => setView('evaluations')}>⭐ Evaluations <NotifBadge count={badges.evaluations} /></button>
+          <button className={`nav-item ${view === 'feed' ? 'active' : ''}`} onClick={() => setView('feed')}>📰 Activity Feed</button>
         </nav>
 
         <button className="btn-logout" onClick={onLogout}>
@@ -226,6 +256,10 @@ function DashboardTeacher({ user, onLogout }) {
           <h1>
             {view === 'schedule' ? 'My Schedule' : 
              view === 'absences' ? 'Absences Management' : 
+             view === 'promotions' ? 'Career Advancements' :
+             view === 'documents' ? 'Administrative Documents' :
+             view === 'research' ? 'Research Activities' :
+             view === 'evaluations' ? 'My Evaluations' :
              'Reminders & Communications'}
           </h1>
           <div className="date-display">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
@@ -353,7 +387,7 @@ function DashboardTeacher({ user, onLogout }) {
                                 {new Date(a.date).toLocaleDateString('en-US')}
                               </div>
                             </td>
-                            <td>
+                            <td style={{ maxWidth: '300px', wordBreak: 'break-word' }}>
                               {expandedReasons[a.id] || a.reason.length <= 50 
                                 ? a.reason 
                                 : `${a.reason.substring(0, 50)}... `}
@@ -368,8 +402,8 @@ function DashboardTeacher({ user, onLogout }) {
                             </td>
                             <td>
                               <span className="role-tag" style={{
-                                background: a.status === 'Approved' ? '#d1fae5' : a.status === 'Rejected' ? '#fee2e2' : '#fef3c7',
-                                color: a.status === 'Approved' ? '#065f46' : a.status === 'Rejected' ? '#991b1b' : '#92400e'
+                                background: a.status === 'Approved' ? '#d1fae5' : a.status === 'Rejected' ? '#fee2e2' : a.status === 'Recommended' ? '#dbeafe' : '#fef3c7',
+                                color: a.status === 'Approved' ? '#065f46' : a.status === 'Rejected' ? '#991b1b' : a.status === 'Recommended' ? '#1e40af' : '#92400e'
                               }}>
                                 {a.status}
                               </span>
@@ -383,6 +417,26 @@ function DashboardTeacher({ user, onLogout }) {
                     </table>
                   </div>
                 </>
+              )}
+
+              {view === 'promotions' && (
+                <ManagePromotions user={user} />
+              )}
+
+              {view === 'documents' && (
+                <ManageDocuments user={user} />
+              )}
+
+              {view === 'research' && (
+                <ManageResearch user={user} />
+              )}
+
+              {view === 'evaluations' && (
+                <ManageEvaluations user={user} />
+              )}
+
+              {view === 'feed' && (
+                <NotificationFeed />
               )}
 
               {view === 'reminders' && (

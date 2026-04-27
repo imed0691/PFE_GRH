@@ -3,13 +3,29 @@ import toast from 'react-hot-toast';
 import ManageSessions from './ManageSessions';
 import ManageAbsences from './ManageAbsences';
 import ManageReminders from './ManageReminders';
+import ManagePromotions from './ManagePromotions';
+import ManageDocuments from './ManageDocuments';
+import ManageEvaluations from './ManageEvaluations';
+import ManageResearch from './ManageResearch';
+import ManageRecruitments from './ManageRecruitments';
+import NotificationFeed from './NotificationFeed';
+import useNotificationBadges from '../hooks/useNotificationBadges';
+import NotifBadge from '../components/NotifBadge';
 import './DashboardDeptHead.css';
 
 function DashboardDeptHead({ user, onLogout }) {
   const [users, setUsers] = useState([]);
-  const [view, setView] = useState('list'); // 'list', 'sessions', 'absences', 'reminders'
+  const [view, setViewRaw] = useState('list');
   const [loading, setLoading] = useState(true);
   const [unreadAbsences, setUnreadAbsences] = useState(0);
+  const { badges, markSeen } = useNotificationBadges();
+
+  const setView = (newView) => {
+    setViewRaw(newView);
+    if (badges[newView] && badges[newView] > 0) {
+      markSeen(newView);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -97,35 +113,16 @@ function DashboardDeptHead({ user, onLogout }) {
         </div>
 
         <nav className="sidebar-nav">
-          <button 
-            className={`nav-item ${view === 'list' ? 'active' : ''}`}
-            onClick={() => setView('list')}
-          >
-            👨‍🏫 Department Teachers
-          </button>
-          <button 
-            className={`nav-item ${view === 'sessions' ? 'active' : ''}`}
-            onClick={() => setView('sessions')}
-          >
-            📅 Academic Schedules
-          </button>
-          <button 
-            className={`nav-item ${view === 'absences' ? 'active' : ''}`}
-            onClick={() => setView('absences')}
-          >
-            ✔️ Validate Absences
-            {unreadAbsences > 0 && (
-               <span style={{background: '#ef4444', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '10px', marginLeft: 'auto'}}>
-                 {unreadAbsences}
-               </span>
-            )}
-          </button>
-          <button 
-            className={`nav-item ${view === 'reminders' ? 'active' : ''}`}
-            onClick={() => setView('reminders')}
-          >
-            📢 Send Notifications
-          </button>
+          <button className={`nav-item ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}>👨‍🏫 Teachers</button>
+          <button className={`nav-item ${view === 'sessions' ? 'active' : ''}`} onClick={() => setView('sessions')}>📅 Schedules</button>
+          <button className={`nav-item ${view === 'absences' ? 'active' : ''}`} onClick={() => setView('absences')}>✔️ Absences <NotifBadge count={unreadAbsences || badges.absences} /></button>
+          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>📢 Notifications</button>
+          <button className={`nav-item ${view === 'promotions' ? 'active' : ''}`} onClick={() => setView('promotions')}>📈 Promotions <NotifBadge count={badges.promotions} /></button>
+          <button className={`nav-item ${view === 'documents' ? 'active' : ''}`} onClick={() => setView('documents')}>📄 Documents <NotifBadge count={badges.documents} /></button>
+          <button className={`nav-item ${view === 'evaluations' ? 'active' : ''}`} onClick={() => setView('evaluations')}>⭐ Evaluations <NotifBadge count={badges.evaluations} /></button>
+          <button className={`nav-item ${view === 'research' ? 'active' : ''}`} onClick={() => setView('research')}>🔬 Research <NotifBadge count={badges.research} /></button>
+          <button className={`nav-item ${view === 'recruitments' ? 'active' : ''}`} onClick={() => setView('recruitments')}>🤝 Recruitment <NotifBadge count={badges.recruitments} /></button>
+          <button className={`nav-item ${view === 'feed' ? 'active' : ''}`} onClick={() => setView('feed')}>📰 Activity Feed</button>
         </nav>
 
         <button className="btn-logout" onClick={onLogout}>
@@ -140,6 +137,11 @@ function DashboardDeptHead({ user, onLogout }) {
             {view === 'list' ? 'Teachers Directory' : 
              view === 'sessions' ? 'Department Schedules' :
              view === 'absences' ? 'Absence Validations' :
+             view === 'promotions' ? 'Teacher Promotions' :
+             view === 'documents' ? 'Documents Management' :
+             view === 'evaluations' ? 'Teacher Evaluations' :
+             view === 'research' ? 'Research Activities' :
+             view === 'recruitments' ? 'Staff Recruitment' :
              'Department Notifications'}
           </h1>
           <div className="date-display">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
@@ -150,6 +152,18 @@ function DashboardDeptHead({ user, onLogout }) {
             <ManageSessions />
           ) : view === 'absences' ? (
             <ManageAbsences />
+          ) : view === 'promotions' ? (
+            <ManagePromotions user={user} />
+          ) : view === 'documents' ? (
+            <ManageDocuments user={user} />
+          ) : view === 'evaluations' ? (
+            <ManageEvaluations user={user} />
+          ) : view === 'research' ? (
+            <ManageResearch user={user} />
+          ) : view === 'recruitments' ? (
+            <ManageRecruitments user={user} />
+          ) : view === 'feed' ? (
+            <NotificationFeed />
           ) : view === 'reminders' ? (
             <ManageReminders />
           ) : (

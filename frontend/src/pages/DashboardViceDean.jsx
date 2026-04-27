@@ -3,6 +3,9 @@ import toast from 'react-hot-toast';
 import ManageSessions from './ManageSessions';
 import ManageAbsences from './ManageAbsences';
 import ManageReminders from './ManageReminders';
+import NotificationFeed from './NotificationFeed';
+import useNotificationBadges from '../hooks/useNotificationBadges';
+import NotifBadge from '../components/NotifBadge';
 import './DashboardViceDean.css';
 
 function DashboardViceDean({ user, onLogout }) {
@@ -10,8 +13,16 @@ function DashboardViceDean({ user, onLogout }) {
   const [unreadAbsences, setUnreadAbsences] = useState(0);
   const [teachersCount, setTeachersCount] = useState(0);
 
-  const [view, setView] = useState('overview'); // 'overview', 'sessions', 'absences', 'reminders'
+  const [view, setViewRaw] = useState('overview');
   const [loading, setLoading] = useState(true);
+  const { badges, markSeen } = useNotificationBadges();
+
+  const setView = (newView) => {
+    setViewRaw(newView);
+    if (badges[newView] && badges[newView] > 0) {
+      markSeen(newView);
+    }
+  };
 
   const fetchOverviewData = async () => {
     setLoading(true);
@@ -91,35 +102,11 @@ function DashboardViceDean({ user, onLogout }) {
         </div>
 
         <nav className="sidebar-nav">
-          <button
-            className={`nav-item ${view === 'overview' ? 'active' : ''}`}
-            onClick={() => setView('overview')}
-          >
-            📊 Overview
-          </button>
-          <button
-            className={`nav-item ${view === 'sessions' ? 'active' : ''}`}
-            onClick={() => setView('sessions')}
-          >
-            📚 Academic Affairs
-          </button>
-          <button
-            className={`nav-item ${view === 'absences' ? 'active' : ''}`}
-            onClick={() => setView('absences')}
-          >
-            🏖️ Absences Management
-            {unreadAbsences > 0 && (
-              <span style={{ background: '#ef4444', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '10px', marginLeft: 'auto' }}>
-                {unreadAbsences}
-              </span>
-            )}
-          </button>
-          <button
-            className={`nav-item ${view === 'reminders' ? 'active' : ''}`}
-            onClick={() => setView('reminders')}
-          >
-            📢 Communications
-          </button>
+          <button className={`nav-item ${view === 'overview' ? 'active' : ''}`} onClick={() => setView('overview')}>📊 Overview</button>
+          <button className={`nav-item ${view === 'sessions' ? 'active' : ''}`} onClick={() => setView('sessions')}>📚 Academic Affairs</button>
+          <button className={`nav-item ${view === 'absences' ? 'active' : ''}`} onClick={() => setView('absences')}>🏖️ Absences <NotifBadge count={unreadAbsences || badges.absences} /></button>
+          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>📢 Communications</button>
+          <button className={`nav-item ${view === 'feed' ? 'active' : ''}`} onClick={() => setView('feed')}>📰 Activity Feed</button>
         </nav>
 
         <button className="btn-logout" onClick={onLogout}>
@@ -163,6 +150,8 @@ function DashboardViceDean({ user, onLogout }) {
             <ManageSessions />
           ) : view === 'absences' ? (
             <ManageAbsences />
+          ) : view === 'feed' ? (
+            <NotificationFeed />
           ) : view === 'reminders' ? (
             <ManageReminders />
           ) : null}

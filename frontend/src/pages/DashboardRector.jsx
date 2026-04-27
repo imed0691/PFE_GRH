@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import ManageDepartments from './ManageDepartments';
 import ManageReminders from './ManageReminders';
+import ManagePromotions from './ManagePromotions';
+import ManageRecruitments from './ManageRecruitments';
+import ManageEvaluations from './ManageEvaluations';
+import ManageResearch from './ManageResearch';
+import NotificationFeed from './NotificationFeed';
+import useNotificationBadges from '../hooks/useNotificationBadges';
+import NotifBadge from '../components/NotifBadge';
 import './DashboardRector.css';
 
 function DashboardRector({ user, onLogout }) {
@@ -13,8 +20,16 @@ function DashboardRector({ user, onLogout }) {
   const [deansCount, setDeansCount] = useState(0);
   const [sessionsCount, setSessionsCount] = useState(0);
 
-  const [view, setView] = useState('overview'); // 'overview', 'directory', 'departments', 'reminders'
+  const [view, setViewRaw] = useState('overview');
   const [loading, setLoading] = useState(true);
+  const { badges, markSeen } = useNotificationBadges();
+
+  const setView = (newView) => {
+    setViewRaw(newView);
+    if (badges[newView] && badges[newView] > 0) {
+      markSeen(newView);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -78,30 +93,15 @@ function DashboardRector({ user, onLogout }) {
         </div>
 
         <nav className="sidebar-nav">
-          <button
-            className={`nav-item ${view === 'overview' ? 'active' : ''}`}
-            onClick={() => setView('overview')}
-          >
-            📊 University Overview
-          </button>
-          <button
-            className={`nav-item ${view === 'directory' ? 'active' : ''}`}
-            onClick={() => setView('directory')}
-          >
-            👥 Staff Directory
-          </button>
-          <button
-            className={`nav-item ${view === 'departments' ? 'active' : ''}`}
-            onClick={() => setView('departments')}
-          >
-            🏢 Faculties & Depts
-          </button>
-          <button
-            className={`nav-item ${view === 'reminders' ? 'active' : ''}`}
-            onClick={() => setView('reminders')}
-          >
-            📢 Official Communications
-          </button>
+          <button className={`nav-item ${view === 'overview' ? 'active' : ''}`} onClick={() => setView('overview')}>📊 Overview</button>
+          <button className={`nav-item ${view === 'directory' ? 'active' : ''}`} onClick={() => setView('directory')}>👥 Staff Directory</button>
+          <button className={`nav-item ${view === 'departments' ? 'active' : ''}`} onClick={() => setView('departments')}>🏢 Faculties & Depts</button>
+          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>📢 Communications</button>
+          <button className={`nav-item ${view === 'promotions' ? 'active' : ''}`} onClick={() => setView('promotions')}>📈 Promotions <NotifBadge count={badges.promotions} /></button>
+          <button className={`nav-item ${view === 'recruitments' ? 'active' : ''}`} onClick={() => setView('recruitments')}>🤝 Recruitment <NotifBadge count={badges.recruitments} /></button>
+          <button className={`nav-item ${view === 'evaluations' ? 'active' : ''}`} onClick={() => setView('evaluations')}>⭐ Evaluations <NotifBadge count={badges.evaluations} /></button>
+          <button className={`nav-item ${view === 'research' ? 'active' : ''}`} onClick={() => setView('research')}>🔬 Research <NotifBadge count={badges.research} /></button>
+          <button className={`nav-item ${view === 'feed' ? 'active' : ''}`} onClick={() => setView('feed')}>📰 Activity Feed</button>
         </nav>
 
         <button className="btn-logout" onClick={onLogout}>
@@ -116,6 +116,10 @@ function DashboardRector({ user, onLogout }) {
             {view === 'overview' ? 'University Overview' :
               view === 'directory' ? 'Global Staff Directory' :
                 view === 'departments' ? 'University Structure' :
+                  view === 'promotions' ? 'Career Advancements' :
+                  view === 'recruitments' ? 'Staff Recruitment' :
+                  view === 'evaluations' ? 'Evaluation Statistics' :
+                  view === 'research' ? 'Research Initiatives' :
                   'Official Communications'}
           </h1>
           <div className="date-display">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
@@ -183,6 +187,16 @@ function DashboardRector({ user, onLogout }) {
             </div>
           ) : view === 'departments' ? (
             <ManageDepartments />
+          ) : view === 'promotions' ? (
+            <ManagePromotions user={user} />
+          ) : view === 'recruitments' ? (
+            <ManageRecruitments user={user} />
+          ) : view === 'evaluations' ? (
+            <ManageEvaluations user={user} />
+          ) : view === 'research' ? (
+            <ManageResearch user={user} />
+          ) : view === 'feed' ? (
+            <NotificationFeed />
           ) : view === 'reminders' ? (
             <ManageReminders />
           ) : null}

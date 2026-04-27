@@ -6,13 +6,29 @@ import ManageSessions from './ManageSessions';
 import ManageAbsences from './ManageAbsences';
 import ManageSalaries from './ManageSalaries';
 import ManageReminders from './ManageReminders';
+import ManageDocuments from './ManageDocuments';
+import ManagePromotions from './ManagePromotions';
+import ManageRecruitments from './ManageRecruitments';
+import ManageEvaluations from './ManageEvaluations';
+import ManageResearch from './ManageResearch';
+import NotificationFeed from './NotificationFeed';
+import useNotificationBadges from '../hooks/useNotificationBadges';
+import NotifBadge from '../components/NotifBadge';
 import './DashboardHR.css';
 
 function DashboardHR({ user, onLogout }) {
   const [users, setUsers] = useState([]);
-  const [view, setView] = useState('list'); // 'list', 'add', or 'departments'
+  const [view, setViewRaw] = useState('list');
   const [loading, setLoading] = useState(true);
   const [unreadAbsences, setUnreadAbsences] = useState(0);
+  const { badges, markSeen } = useNotificationBadges();
+
+  const setView = (newView) => {
+    setViewRaw(newView);
+    if (badges[newView] && badges[newView] > 0) {
+      markSeen(newView);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -114,53 +130,19 @@ function DashboardHR({ user, onLogout }) {
         </div>
 
         <nav className="sidebar-nav">
-          <button 
-            className={`nav-item ${view === 'list' ? 'active' : ''}`}
-            onClick={() => setView('list')}
-          >
-            📋 Staff List
-          </button>
-          <button 
-            className={`nav-item ${view === 'add' ? 'active' : ''}`}
-            onClick={() => setView('add')}
-          >
-            ➕ Add Employee
-          </button>
-          <button 
-            className={`nav-item ${view === 'departments' ? 'active' : ''}`}
-            onClick={() => setView('departments')}
-          >
-            🏢 Departments
-          </button>
-          <button 
-            className={`nav-item ${view === 'sessions' ? 'active' : ''}`}
-            onClick={() => setView('sessions')}
-          >
-            📚 Academic Sessions
-          </button>
-          <button 
-            className={`nav-item ${view === 'absences' ? 'active' : ''}`}
-            onClick={() => setView('absences')}
-          >
-            🏖️ Manage Absences
-            {unreadAbsences > 0 && (
-               <span style={{background: '#ef4444', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '10px', marginLeft: 'auto'}}>
-                 {unreadAbsences}
-               </span>
-            )}
-          </button>
-          <button 
-            className={`nav-item ${view === 'salaries' ? 'active' : ''}`}
-            onClick={() => setView('salaries')}
-          >
-            💰 Salaries
-          </button>
-          <button 
-            className={`nav-item ${view === 'reminders' ? 'active' : ''}`}
-            onClick={() => setView('reminders')}
-          >
-            📢 Reminders
-          </button>
+          <button className={`nav-item ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}>📋 Staff List</button>
+          <button className={`nav-item ${view === 'add' ? 'active' : ''}`} onClick={() => setView('add')}>➕ Add Employee</button>
+          <button className={`nav-item ${view === 'departments' ? 'active' : ''}`} onClick={() => setView('departments')}>🏢 Departments</button>
+          <button className={`nav-item ${view === 'sessions' ? 'active' : ''}`} onClick={() => setView('sessions')}>📚 Sessions</button>
+          <button className={`nav-item ${view === 'absences' ? 'active' : ''}`} onClick={() => setView('absences')}>🏖️ Absences <NotifBadge count={unreadAbsences || badges.absences} /></button>
+          <button className={`nav-item ${view === 'salaries' ? 'active' : ''}`} onClick={() => setView('salaries')}>💰 Salaries</button>
+          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>📢 Reminders</button>
+          <button className={`nav-item ${view === 'documents' ? 'active' : ''}`} onClick={() => setView('documents')}>📄 Documents <NotifBadge count={badges.documents} /></button>
+          <button className={`nav-item ${view === 'promotions' ? 'active' : ''}`} onClick={() => setView('promotions')}>📈 Promotions <NotifBadge count={badges.promotions} /></button>
+          <button className={`nav-item ${view === 'recruitment' ? 'active' : ''}`} onClick={() => setView('recruitment')}>🤝 Recruitment <NotifBadge count={badges.recruitments} /></button>
+          <button className={`nav-item ${view === 'evaluations' ? 'active' : ''}`} onClick={() => setView('evaluations')}>⭐ Evaluations <NotifBadge count={badges.evaluations} /></button>
+          <button className={`nav-item ${view === 'research' ? 'active' : ''}`} onClick={() => setView('research')}>🔬 Research <NotifBadge count={badges.research} /></button>
+          <button className={`nav-item ${view === 'feed' ? 'active' : ''}`} onClick={() => setView('feed')}>📰 Activity Feed</button>
         </nav>
 
         <button className="btn-logout" onClick={onLogout}>
@@ -178,6 +160,11 @@ function DashboardHR({ user, onLogout }) {
              view === 'sessions' ? 'Academic Sessions' :
              view === 'absences' ? 'Absences Management' :
              view === 'salaries' ? 'Salary Calculation' :
+             view === 'documents' ? 'Document Requests' :
+             view === 'promotions' ? 'Career Advancements' :
+             view === 'recruitment' ? 'Recruitment Management' :
+             view === 'evaluations' ? 'Performance Evaluations' :
+             view === 'research' ? 'Research Activities' :
              'Send Reminders'}
           </h1>
           <div className="date-display">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
@@ -197,6 +184,18 @@ function DashboardHR({ user, onLogout }) {
             <ManageAbsences />
           ) : view === 'salaries' ? (
             <ManageSalaries />
+          ) : view === 'documents' ? (
+            <ManageDocuments user={user} />
+          ) : view === 'promotions' ? (
+            <ManagePromotions user={user} />
+          ) : view === 'recruitment' ? (
+            <ManageRecruitments user={user} />
+          ) : view === 'evaluations' ? (
+            <ManageEvaluations user={user} />
+          ) : view === 'research' ? (
+            <ManageResearch user={user} />
+          ) : view === 'feed' ? (
+            <NotificationFeed />
           ) : view === 'reminders' ? (
             <ManageReminders />
           ) : (
