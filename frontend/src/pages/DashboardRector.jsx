@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
-import LanguageSwitcher from '../components/LanguageSwitcher';
+
 import ManageDepartments from './ManageDepartments';
 import ManageReminders from './ManageReminders';
 import ManagePromotions from './ManagePromotions';

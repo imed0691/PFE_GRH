@@ -40,11 +40,13 @@ function ChangePasswordModal({ onPasswordChanged }) {
         body: JSON.stringify({ newPassword })
       });
 
+      const data = await res.json();
       if (res.ok) {
         toast.success(t('changePassword.success'));
         onPasswordChanged();
       } else {
-        toast.error(t('changePassword.error'));
+        // Afficher le message d'erreur réel du serveur
+        toast.error(data.message || t('changePassword.error'));
       }
     } catch (err) {
       toast.error(t('common.serverError'));
@@ -71,7 +73,7 @@ function ChangePasswordModal({ onPasswordChanged }) {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
-              minLength="6"
+              minLength="8"
             />
           </div>
           <div className="form-group">
@@ -81,7 +83,7 @@ function ChangePasswordModal({ onPasswordChanged }) {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              minLength="6"
+              minLength="8"
             />
           </div>
           <button type="submit" className="btn-submit" disabled={loading}>

@@ -43,10 +43,10 @@ function ManageDepartments() {
       </form>
       {loading ? <div className="loading-spinner">{t('departments.loadingDepts')}</div> : (
         <table className="modern-table">
-          <thead><tr><th>{t('common.id')}</th><th>{t('departments.deptName')}</th><th>{t('common.actions')}</th></tr></thead>
+          <thead><tr><th>#</th><th>{t('common.id')}</th><th>{t('departments.deptName')}</th><th>{t('common.actions')}</th></tr></thead>
           <tbody>
-            {departments.map(d => (<tr key={d.id}><td>#{d.id}</td><td><strong>{d.name}</strong></td><td><button className="btn-delete" onClick={() => handleDelete(d.id, d.name)}>{t('common.delete')}</button></td></tr>))}
-            {departments.length === 0 && <tr><td colSpan="3" className="empty-state">{t('departments.noDepts')}</td></tr>}
+            {departments.map((d, index) => (<tr key={d.id}><td>{index + 1}</td><td>#{d.id}</td><td><strong>{d.name}</strong></td><td><button className="btn-delete" onClick={() => handleDelete(d.id, d.name)}>{t('common.delete')}</button></td></tr>))}
+            {departments.length === 0 && <tr><td colSpan="4" className="empty-state">{t('departments.noDepts')}</td></tr>}
           </tbody>
         </table>
       )}

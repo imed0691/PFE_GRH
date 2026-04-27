@@ -2,7 +2,9 @@ const db = require('../config/db');
 
 // RH / Chef Dept: Créer un rappel
 exports.createReminder = (req, res) => {
-  const { teacher_id, message, type } = req.body;
+  const { recipient_id, text, type } = req.body;
+  const message = text; // Match frontend 'text' to backend 'message'
+  const teacher_id = recipient_id; // Match frontend 'recipient_id' to backend 'teacher_id'
   const sender_id = req.user ? req.user.id : null;
 
   if (!message) {
@@ -13,7 +15,7 @@ exports.createReminder = (req, res) => {
   db.query(query, [teacher_id || null, sender_id, message, type || 'info'], (err, result) => {
     if (err) {
       console.error("Reminder DB Error:", err);
-      return res.status(500).json({ message: "Database error: " + err.message, error: err.message });
+      return res.status(500).json({ message: "Database error: " + err.message });
     }
     res.status(201).json({ message: "Rappel envoyé." });
   });

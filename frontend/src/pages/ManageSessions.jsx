@@ -9,7 +9,7 @@ function ManageSessions() {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [moduleName, setModuleName] = useState('');
-  const [studyLevel, setStudyLevel] = useState('');
+  const [studyLevel, setStudyLevel] = useState('L1');
   const [section, setSection] = useState('');
   const [groupe, setGroupe] = useState('');
   const [filterDeptId, setFilterDeptId] = useState('');
@@ -69,7 +69,7 @@ function ManageSessions() {
       <form onSubmit={handleCreateSession} style={{ background: '#f8fafc', padding: '25px', borderRadius: '12px', marginBottom: '30px', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px', marginBottom: '15px' }}>
           <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.moduleSubject')}</label><input type="text" value={moduleName} onChange={e => setModuleName(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
-          <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.studyLevel')}</label><input type="text" value={studyLevel} onChange={e => setStudyLevel(e.target.value)} placeholder="e.g. L2, M1" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
+          <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.studyLevel')}</label><select value={studyLevel} onChange={e => setStudyLevel(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}><option value="L1">L1</option><option value="L2">L2</option><option value="L3">L3</option><option value="M1">M1</option><option value="M2">M2</option></select></div>
           <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.section')}</label><input type="text" value={section} onChange={e => setSection(e.target.value)} placeholder="e.g. A, B" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
           <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.group')}</label><input type="text" value={groupe} onChange={e => setGroupe(e.target.value)} placeholder="e.g. 1, 2" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
         </div>
@@ -90,10 +90,11 @@ function ManageSessions() {
       {loading ? <div className="loading-spinner">{t('sessions.loadingSchedule')}</div> : (
         <div className="table-card">
           <table className="modern-table">
-            <thead><tr><th>{t('sessions.day')}</th><th>{t('teacher.time')}</th><th>{t('sessions.moduleSubjectCol')}</th><th>{t('teacher.level')}</th><th>{t('teacher.type')}</th><th>{t('sessions.secGrp')}</th><th>{t('common.teacher')}</th><th>{t('common.department')}</th><th>{t('common.actions')}</th></tr></thead>
+            <thead><tr><th>#</th><th>{t('sessions.day')}</th><th>{t('teacher.time')}</th><th>{t('sessions.moduleSubjectCol')}</th><th>{t('teacher.level')}</th><th>{t('teacher.type')}</th><th>{t('sessions.secGrp')}</th><th>{t('common.teacher')}</th><th>{t('common.department')}</th><th>{t('common.actions')}</th></tr></thead>
             <tbody>
-              {sessions.map(s => (
+              {sessions.map((s, index) => (
                 <tr key={s.id}>
+                  <td>{index + 1}</td>
                   <td><strong>{s.day_of_week}</strong></td>
                   <td>{s.start_time?.substring(0,5)} - {s.end_time?.substring(0,5)}</td>
                   <td>{s.module_name}</td>
@@ -105,7 +106,7 @@ function ManageSessions() {
                   <td><button onClick={() => handleCancelSession(s.id)} className="btn-delete">{t('common.cancel')}</button></td>
                 </tr>
               ))}
-              {sessions.length === 0 && <tr><td colSpan="9" className="empty-state">{t('sessions.noSessions')}</td></tr>}
+              {sessions.length === 0 && <tr><td colSpan="10" className="empty-state">{t('sessions.noSessions')}</td></tr>}
             </tbody>
           </table>
         </div>

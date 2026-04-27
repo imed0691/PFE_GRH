@@ -2,12 +2,28 @@ const db = require('../config/db');
 
 exports.requestPromotion = (req, res) => {
     const teacherId = req.user.id;
-    const { current_grade, requested_grade } = req.body;
+    const { requested_grade } = req.body;
 
-    const query = 'INSERT INTO promotions (teacher_id, current_grade, requested_grade, status) VALUES (?, ?, ?, "Pending")';
-    db.query(query, [teacherId, current_grade, requested_grade], (err, results) => {
-        if (err) return res.status(500).json({ message: 'Error submitting promotion request' });
-        res.status(201).json({ message: 'Promotion requested successfully', id: results.insertId });
+    if (!requested_grade) {
+        return res.status(400).json({ message: 'Requested grade is required' });
+    }
+
+    // Fetch the teacher's current grade from the database
+    db.query('SELECT grade FROM users WHERE id = ?', [teacherId], (err, userResults) => {
+        if (err || userResults.length === 0) {
+            return res.status(500).json({ message: 'Error fetching current grade' });
+        }
+
+        const current_grade = userResults[0].grade || 'Teacher';
+
+        const query = 'INSERT INTO promotions (teacher_id, current_grade, requested_grade, status) VALUES (?, ?, ?, "Pending")';
+        db.query(query, [teacherId, current_grade, requested_grade], (err, results) => {
+            if (err) {
+                console.error("Promotion INSERT error:", err);
+                return res.status(500).json({ message: 'Error submitting promotion request' });
+            }
+            res.status(201).json({ message: 'Promotion requested successfully', id: results.insertId });
+        });
     });
 };
 

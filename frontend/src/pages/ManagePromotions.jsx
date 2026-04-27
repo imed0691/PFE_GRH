@@ -28,13 +28,13 @@ function ManagePromotions({ user }) {
 
   const handleRecommendation = async (id) => {
     if (!recommendation) return toast.error(t('promotions.enterRecommendation'));
-    try { const token = localStorage.getItem('token'); const res = await fetch(`http://localhost:5000/api/promotions/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ dept_recommendation: recommendation }) });
+    try { const token = localStorage.getItem('token'); const res = await fetch(`http://localhost:5000/api/promotions/${id}/recommend`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ recommendation }) });
       if (res.ok) { toast.success(t('promotions.recommendationSubmitted')); setRecommendation(''); setActivePromoId(null); fetchPromotions(); } else { toast.error(t('promotions.errorRecommendation')); }
     } catch (error) { toast.error(t('common.serverError')); }
   };
 
   const handleStatusUpdate = async (id, status) => {
-    try { const token = localStorage.getItem('token'); const res = await fetch(`http://localhost:5000/api/promotions/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status }) });
+    try { const token = localStorage.getItem('token'); const res = await fetch(`http://localhost:5000/api/promotions/${id}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status }) });
       if (res.ok) { toast.success(`${t('promotions.promotionApproved')} ${status}`); fetchPromotions(); } else { toast.error(t('promotions.errorStatus')); }
     } catch (error) { toast.error(t('common.serverError')); }
   };
@@ -61,16 +61,17 @@ function ManagePromotions({ user }) {
       )}
       {loading ? <div className="loading-spinner">{t('promotions.loadingPromos')}</div> : (
         <table className="modern-table">
-          <thead><tr><th>{t('promotions.candidate')}</th><th>{t('promotions.transition')}</th><th>{t('common.status')}</th><th>{t('promotions.deptRecommendation')}</th><th>{t('common.actions')}</th></tr></thead>
+          <thead><tr><th>#</th><th>{t('promotions.candidate')}</th><th>{t('promotions.transition')}</th><th>{t('common.status')}</th><th>{t('promotions.deptRecommendation')}</th><th>{t('common.actions')}</th></tr></thead>
           <tbody>
-            {promotions.map(p => (
+            {promotions.map((p, index) => (
               <tr key={p.id}>
+                <td>{index + 1}</td>
                 <td><strong>{p.nom} {p.prenom}</strong><br/><small style={{ color: '#64748b' }}>{p.department_name || '-'}</small></td>
                 <td><span className="role-tag" style={{ background: '#e2e8f0', color: '#475569' }}>{p.current_grade}</span> → <span className="role-tag" style={{ background: '#ede9fe', color: '#5b21b6' }}>{p.requested_grade}</span></td>
-                <td><span className="role-tag" style={{ background: p.status === 'Approved' ? '#d1fae5' : p.status === 'Rejected' ? '#fee2e2' : '#fef3c7', color: p.status === 'Approved' ? '#065f46' : p.status === 'Rejected' ? '#991b1b' : '#92400e' }}>{p.status}</span></td>
-                <td style={{ maxWidth: '200px', wordBreak: 'break-word', fontStyle: 'italic', fontSize: '13px' }}>{p.dept_recommendation || <span style={{ color: '#94a3b8' }}>{t('promotions.pendingEvaluation')}</span>}</td>
+                <td><span className="role-tag" style={{ background: p.status === 'Approved' ? '#d1fae5' : p.status === 'Rejected' ? '#fee2e2' : p.status === 'Recommended' ? '#dbeafe' : '#fef3c7', color: p.status === 'Approved' ? '#065f46' : p.status === 'Rejected' ? '#991b1b' : p.status === 'Recommended' ? '#1e40af' : '#92400e' }}>{p.status}</span></td>
+                <td style={{ maxWidth: '200px', wordBreak: 'break-word', fontStyle: 'italic', fontSize: '13px' }}>{p.dept_head_recommendation || <span style={{ color: '#94a3b8' }}>{t('promotions.pendingEvaluation')}</span>}</td>
                 <td>
-                  {isDeptHead && p.status === 'Pending' && !p.dept_recommendation && (activePromoId === p.id ? (
+                  {isDeptHead && p.status === 'Pending' && !p.dept_head_recommendation && (activePromoId === p.id ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                       <textarea value={recommendation} onChange={e => setRecommendation(e.target.value)} placeholder={t('promotions.writeRecommendation')} rows="2" style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }} />
                       <div style={{ display: 'flex', gap: '5px' }}>
@@ -88,7 +89,7 @@ function ManagePromotions({ user }) {
                 </td>
               </tr>
             ))}
-            {promotions.length === 0 && <tr><td colSpan="5" className="empty-state">{t('promotions.noRecords')}</td></tr>}
+            {promotions.length === 0 && <tr><td colSpan="6" className="empty-state">{t('promotions.noRecords')}</td></tr>}
           </tbody>
         </table>
       )}

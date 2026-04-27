@@ -26,10 +26,11 @@ function ManageSalaries() {
       {loading ? <div className="loading-spinner">{t('salaries.calculating')}</div> : (
         <div style={{ overflowX: 'auto' }}>
           <table className="modern-table">
-            <thead><tr><th>{t('common.fullName')}</th><th>{t('salaries.grade')}</th><th>{t('salaries.baseSalary')}</th><th>{t('salaries.extraHours')}</th><th>{t('salaries.ratePenalty')}</th><th>{t('salaries.netSalary')}</th><th>{t('common.actions')}</th></tr></thead>
+            <thead><tr><th>#</th><th>{t('common.fullName')}</th><th>{t('salaries.grade')}</th><th>{t('salaries.baseSalary')}</th><th>{t('salaries.extraHours')}</th><th>{t('salaries.ratePenalty')}</th><th>{t('salaries.netSalary')}</th><th>{t('common.actions')}</th></tr></thead>
             <tbody>
-              {salaries.map(s => (
+              {salaries.map((s, index) => (
                 <tr key={s.teacher_id}>
+                  <td>{index + 1}</td>
                   <td><strong>{s.nom}</strong> {s.prenom}</td>
                   <td><span className="role-tag" style={{ background: '#e2e8f0', color: '#475569' }}>{s.grade}</span></td>
                   <td>{Number(s.base_salary).toLocaleString()} DA</td>
@@ -39,7 +40,7 @@ function ManageSalaries() {
                   <td><button onClick={() => handleAdjust(s.teacher_id)} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}>{t('salaries.adjust')}</button></td>
                 </tr>
               ))}
-              {salaries.length === 0 && <tr><td colSpan="7" className="empty-state">{t('salaries.noTeachers')}</td></tr>}
+              {salaries.length === 0 && <tr><td colSpan="8" className="empty-state">{t('salaries.noTeachers')}</td></tr>}
             </tbody>
           </table>
         </div>

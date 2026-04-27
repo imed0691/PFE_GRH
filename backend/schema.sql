@@ -77,3 +77,45 @@ CREATE TABLE IF NOT EXISTS reminder_status (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (reminder_id) REFERENCES reminders(id) ON DELETE CASCADE
 );
+
+-- 7. Création de la table des promotions
+CREATE TABLE IF NOT EXISTS promotions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    teacher_id INT NOT NULL,
+    current_grade VARCHAR(100) NOT NULL,
+    requested_grade VARCHAR(100) NOT NULL,
+    submission_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    dept_head_recommendation TEXT,
+    status ENUM('Pending', 'Recommended', 'Approved', 'Rejected') DEFAULT 'Pending',
+    handled_by INT,
+    handling_date DATETIME,
+    FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (handled_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- 8. Création de la table des documents
+CREATE TABLE IF NOT EXISTS documents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    teacher_id INT NOT NULL,
+    type VARCHAR(100) NOT NULL,
+    status ENUM('Pending', 'Processing', 'Delivered', 'Rejected') DEFAULT 'Pending',
+    request_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    response_note TEXT,
+    handled_by INT,
+    FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (handled_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- 9. Création de la table des activités de recherche
+CREATE TABLE IF NOT EXISTS research_activities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    teacher_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    type VARCHAR(100) NOT NULL,
+    date DATE NOT NULL,
+    description TEXT,
+    link VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
+);
+

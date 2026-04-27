@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
-import LanguageSwitcher from '../components/LanguageSwitcher';
 import './Auth.css';
 
 function Login({ onLoginSuccess }) {
@@ -52,9 +51,6 @@ function Login({ onLoginSuccess }) {
 
   return (
     <div className="auth-card">
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
-        <LanguageSwitcher style={{ padding: '4px 0', color: '#334155' }} />
-      </div>
       <div className="auth-header">
         <h2>{t('login.title')}</h2>
         <p>{t('login.welcome')}</p>

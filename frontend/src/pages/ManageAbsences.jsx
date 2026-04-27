@@ -38,10 +38,11 @@ function ManageAbsences() {
     <div className="table-card" style={{ padding: '20px' }}>
       <h3 style={{ marginBottom: '20px' }}>{t('absences.title')}</h3>
       <table className="modern-table">
-        <thead><tr><th>{t('common.date')}</th><th>{t('common.teacher')}</th><th>{t('teacher.reason')}</th><th>{t('common.status')}</th><th>{t('common.actions')}</th></tr></thead>
+        <thead><tr><th>#</th><th>{t('common.date')}</th><th>{t('common.teacher')}</th><th>{t('teacher.reason')}</th><th>{t('common.status')}</th><th>{t('common.actions')}</th></tr></thead>
         <tbody>
-          {absences.map(a => (
+          {absences.map((a, index) => (
             <tr key={a.id}>
+              <td>{index + 1}</td>
               <td>{new Date(a.date).toLocaleDateString('fr-FR')}</td>
               <td><strong>{a.nom}</strong> {a.prenom}</td>
               <td style={{ maxWidth: '300px', wordBreak: 'break-word' }}>
@@ -50,7 +51,12 @@ function ManageAbsences() {
               </td>
               <td><span className="role-tag" style={{ background: a.status === 'Approved' ? '#d1fae5' : a.status === 'Rejected' ? '#fee2e2' : a.status === 'Recommended' ? '#dbeafe' : '#fef3c7', color: a.status === 'Approved' ? '#065f46' : a.status === 'Rejected' ? '#991b1b' : a.status === 'Recommended' ? '#1e40af' : '#92400e' }}>{a.status}</span></td>
               <td>
-                {a.status === 'Pending' && isDeptHead && <button onClick={() => handleUpdateStatus(a.id, 'Recommended')} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>{t('absences.recommendApproval')}</button>}
+                {a.status === 'Pending' && isDeptHead && (
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button onClick={() => handleUpdateStatus(a.id, 'Recommended')} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>{t('absences.recommendApproval')}</button>
+                    <button onClick={() => handleUpdateStatus(a.id, 'Rejected')} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>{t('common.reject')}</button>
+                  </div>
+                )}
                 {a.status === 'Recommended' && isHigherAdmin && (
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button onClick={() => handleUpdateStatus(a.id, 'Approved')} style={{ background: '#10b981', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>{t('absences.finalApprove')}</button>
@@ -61,7 +67,7 @@ function ManageAbsences() {
               </td>
             </tr>
           ))}
-          {absences.length === 0 && <tr><td colSpan="5" className="empty-state">{t('absences.noRequests')}</td></tr>}
+          {absences.length === 0 && <tr><td colSpan="6" className="empty-state">{t('absences.noRequests')}</td></tr>}
         </tbody>
       </table>
     </div>

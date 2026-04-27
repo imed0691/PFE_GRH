@@ -44,10 +44,11 @@ function ManageResearch({ user }) {
       )}
       {loading ? <div className="loading-spinner">{t('research.loadingActivities')}</div> : (
         <table className="modern-table">
-          <thead><tr><th>{t('research.activityTitle')}</th><th>{t('research.type')}</th>{!isTeacher && <th>{t('common.teacher')}</th>}<th>{t('research.details')}</th><th>{t('common.date')}</th></tr></thead>
+          <thead><tr><th>#</th><th>{t('research.activityTitle')}</th><th>{t('research.type')}</th>{!isTeacher && <th>{t('common.teacher')}</th>}<th>{t('research.details')}</th><th>{t('common.date')}</th></tr></thead>
           <tbody>
-            {activities.map(a => (
+            {activities.map((a, index) => (
               <tr key={a.id}>
+                <td>{index + 1}</td>
                 <td><strong>{a.title}</strong></td>
                 <td><span className="role-tag" style={{ background: a.type === 'Publication' ? '#dbeafe' : a.type === 'Conference' ? '#fef3c7' : a.type === 'Award' ? '#fce7f3' : '#d1fae5', color: a.type === 'Publication' ? '#1e40af' : a.type === 'Conference' ? '#92400e' : a.type === 'Award' ? '#9d174d' : '#065f46' }}>{a.type}</span></td>
                 {!isTeacher && <td>{a.nom} {a.prenom}</td>}
@@ -55,7 +56,7 @@ function ManageResearch({ user }) {
                 <td>{new Date(a.created_at).toLocaleDateString()}</td>
               </tr>
             ))}
-            {activities.length === 0 && <tr><td colSpan={isTeacher ? 4 : 5} className="empty-state">{t('research.noActivities')}</td></tr>}
+            {activities.length === 0 && <tr><td colSpan={isTeacher ? 5 : 6} className="empty-state">{t('research.noActivities')}</td></tr>}
           </tbody>
         </table>
       )}

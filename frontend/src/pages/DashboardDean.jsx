@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
-import LanguageSwitcher from '../components/LanguageSwitcher';
+
 import ManageDepartments from './ManageDepartments';
 import ManageSessions from './ManageSessions';
 import ManageReminders from './ManageReminders';
@@ -81,7 +81,7 @@ function DashboardDean({ user, onLogout }) {
               <div className="stat-card"><h3>{t('dean.totalStaff')}</h3><p className="stat-value">{users.length || 0}</p></div>
               <div className="stat-card"><h3>{t('dean.teachers')}</h3><p className="stat-value">{users.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT').length || 0}</p></div>
             </div>
-          ) : view === 'departments' ? <ManageDepartments /> : view === 'sessions' ? <ManageSessions /> : view === 'promotions' ? <ManagePromotions user={user} /> : view === 'documents' ? <ManageDocuments user={user} /> : view === 'evaluations' ? <ManageEvaluations user={user} /> : view === 'research' ? <ManageResearch user={user} /> : view === 'recruitments' ? <ManageRecruitments user={user} /> : view === 'feed' ? <NotificationFeed /> : view === 'reminders' ? <ManageReminders /> : (
+          ) : view === 'departments' ? <ManageDepartments /> : view === 'sessions' ? <ManageSessions /> : view === 'promotions' ? <ManagePromotions user={user} /> : view === 'documents' ? <ManageDocuments user={user} /> : view === 'evaluations' ? <ManageEvaluations user={user} /> : view === 'research' ? <ManageResearch user={user} /> : view === 'recruitments' ? <ManageRecruitments user={user} /> : view === 'feed' ? <NotificationFeed /> : view === 'reminders' ? <ManageReminders /> : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : (
             <div className="table-card">
               {loading ? <div className="loading-spinner">{t('common.loading')}</div> : (
                 <table className="modern-table">

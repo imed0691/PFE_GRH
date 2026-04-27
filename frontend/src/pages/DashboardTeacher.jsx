@@ -210,14 +210,14 @@ function DashboardTeacher({ user, onLogout }) {
       <main className="main-content">
         <header className="topbar">
           <h1>
-            {view === 'schedule' ? t('topbar.mySchedule') : 
-             view === 'absences' ? t('topbar.absencesManagement') : 
-             view === 'promotions' ? t('topbar.careerAdvancements') :
-             view === 'documents' ? t('topbar.administrativeDocuments') :
-             view === 'research' ? t('topbar.researchActivities') :
-             view === 'evaluations' ? t('topbar.myEvaluations') :
-             view === 'settings' ? t('settings.title') :
-             t('topbar.remindersCommunications')}
+            {view === 'schedule' ? t('topbar.mySchedule') :
+              view === 'absences' ? t('topbar.absencesManagement') :
+                view === 'promotions' ? t('topbar.careerAdvancements') :
+                  view === 'documents' ? t('topbar.administrativeDocuments') :
+                    view === 'research' ? t('topbar.researchActivities') :
+                      view === 'evaluations' ? t('topbar.myEvaluations') :
+                        view === 'settings' ? t('settings.title') :
+                          t('topbar.remindersCommunications')}
           </h1>
           <div className="date-display">{new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </header>
@@ -233,7 +233,7 @@ function DashboardTeacher({ user, onLogout }) {
                     <div className="widget">
                       <div className="widget-info">
                         <h4>{t('teacher.remainingHours')}</h4>
-                        <p>{volumeRestant}h <span style={{fontSize: '1rem', color: '#64748b', fontWeight: 'normal'}}>/ {data.stats.volume_horaire}h</span></p>
+                        <p>{volumeRestant}h <span style={{ fontSize: '1rem', color: '#64748b', fontWeight: 'normal' }}>/ {data.stats.volume_horaire}h</span></p>
                       </div>
                     </div>
                     <div className="widget">
@@ -263,7 +263,7 @@ function DashboardTeacher({ user, onLogout }) {
                             {data.all_sessions.map(s => (
                               <tr key={s.id}>
                                 <td><strong>{s.day_of_week}</strong></td>
-                                <td>{s.start_time.substring(0,5)} - {s.end_time.substring(0,5)}</td>
+                                <td>{s.start_time.substring(0, 5)} - {s.end_time.substring(0, 5)}</td>
                                 <td>{s.module_name}</td>
                                 <td><span className="role-tag" style={{ background: '#dbeafe', color: '#1e40af' }}>{s.study_level}</span></td>
                                 <td><span className="role-tag" style={{ background: '#e2e8f0', color: '#475569' }}>{s.session_type === 'Lecture' ? t('teacher.lecture') : s.session_type === 'Tutorial' ? t('teacher.tutorial') : t('teacher.practical')}</span></td>

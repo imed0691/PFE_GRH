@@ -56,10 +56,11 @@ function ManageDocuments({ user }) {
       )}
       {loading ? <div className="loading-spinner">{t('documents.loadingRequests')}</div> : (
         <table className="modern-table">
-          <thead><tr><th>{t('common.date')}</th>{!isTeacher && <th>{t('common.teacher')}</th>}<th>{t('documents.docType')}</th><th>{t('common.status')}</th><th>{t('documents.adminNote')}</th>{!isTeacher && <th>{t('common.actions')}</th>}</tr></thead>
+          <thead><tr><th>#</th><th>{t('common.date')}</th>{!isTeacher && <th>{t('common.teacher')}</th>}<th>{t('documents.docType')}</th><th>{t('common.status')}</th><th>{t('documents.adminNote')}</th>{!isTeacher && <th>{t('common.actions')}</th>}</tr></thead>
           <tbody>
-            {documents.map(d => (
+            {documents.map((d, index) => (
               <tr key={d.id}>
+                <td>{index + 1}</td>
                 <td>{new Date(d.request_date).toLocaleDateString('en-GB')}</td>
                 {!isTeacher && <td><strong>{d.nom}</strong> {d.prenom}<br/><small style={{color: '#64748b'}}>{d.department_name || '-'}</small></td>}
                 <td><strong>{d.type}</strong></td>
@@ -83,7 +84,7 @@ function ManageDocuments({ user }) {
                 )}
               </tr>
             ))}
-            {documents.length === 0 && <tr><td colSpan={isTeacher ? 4 : 6} className="empty-state">{t('documents.noRequests')}</td></tr>}
+            {documents.length === 0 && <tr><td colSpan={isTeacher ? 5 : 7} className="empty-state">{t('documents.noRequests')}</td></tr>}
           </tbody>
         </table>
       )}

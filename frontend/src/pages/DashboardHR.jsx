@@ -30,7 +30,7 @@ function DashboardHR({ user, onLogout }) {
   const handleProfileUpdate = (newData) => {
     const updatedUser = { ...user, ...newData };
     localStorage.setItem('user', JSON.stringify(updatedUser));
-    window.location.reload(); 
+    window.location.reload();
   };
 
   const setView = (newView) => {
@@ -129,7 +129,7 @@ function DashboardHR({ user, onLogout }) {
         <div className="sidebar-header">
           <h2>PFE_GRH</h2>
         </div>
-        
+
         <div className="user-profile">
           <div className="avatar">{user.prenom[0]}{user.nom[0]}</div>
           <div className="user-info">
@@ -164,28 +164,28 @@ function DashboardHR({ user, onLogout }) {
       <main className="main-content">
         <header className="topbar">
           <h1>
-            {view === 'list' ? t('topbar.personnelManagement') : 
-             view === 'add' ? t('topbar.newHire') : 
-             view === 'departments' ? t('topbar.manageDepartments') : 
-             view === 'sessions' ? t('topbar.academicSessions') :
-             view === 'absences' ? t('topbar.absencesManagement') :
-             view === 'salaries' ? t('topbar.salaryCalculation') :
-             view === 'documents' ? t('topbar.documentRequests') :
-             view === 'promotions' ? t('topbar.careerAdvancements') :
-             view === 'recruitment' ? t('topbar.recruitmentManagement') :
-             view === 'evaluations' ? t('topbar.performanceEvaluations') :
-             view === 'research' ? t('topbar.researchActivities') :
-             view === 'settings' ? t('settings.title') :
-             t('topbar.sendReminders')}
+            {view === 'list' ? t('topbar.personnelManagement') :
+              view === 'add' ? t('topbar.newHire') :
+                view === 'departments' ? t('topbar.manageDepartments') :
+                  view === 'sessions' ? t('topbar.academicSessions') :
+                    view === 'absences' ? t('topbar.absencesManagement') :
+                      view === 'salaries' ? t('topbar.salaryCalculation') :
+                        view === 'documents' ? t('topbar.documentRequests') :
+                          view === 'promotions' ? t('topbar.careerAdvancements') :
+                            view === 'recruitment' ? t('topbar.recruitmentManagement') :
+                              view === 'evaluations' ? t('topbar.performanceEvaluations') :
+                                view === 'research' ? t('topbar.researchActivities') :
+                                  view === 'settings' ? t('settings.title') :
+                                    t('topbar.sendReminders')}
           </h1>
           <div className="date-display">{new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </header>
 
         <div className="content-area">
           {view === 'add' ? (
-            <AddEmployee 
-              onCancel={() => setView('list')} 
-              onSuccess={() => setView('list')} 
+            <AddEmployee
+              onCancel={() => setView('list')}
+              onSuccess={() => setView('list')}
             />
           ) : view === 'departments' ? (
             <ManageDepartments />
@@ -219,6 +219,7 @@ function DashboardHR({ user, onLogout }) {
                 <table className="modern-table">
                   <thead>
                     <tr>
+                      <th>#</th>
                       <th>{t('common.id')}</th>
                       <th>{t('common.fullName')}</th>
                       <th>{t('common.email')}</th>
@@ -228,8 +229,9 @@ function DashboardHR({ user, onLogout }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map(u => (
+                    {users.map((u, index) => (
                       <tr key={u.id}>
+                        <td>{index + 1}</td>
                         <td>#{u.id}</td>
                         <td><strong>{u.nom}</strong> {u.prenom}</td>
                         <td>{u.email}</td>
@@ -245,7 +247,7 @@ function DashboardHR({ user, onLogout }) {
                       </tr>
                     ))}
                     {users.length === 0 && (
-                      <tr><td colSpan="5" className="empty-state">{t('hr.noEmployeesFound')}</td></tr>
+                      <tr><td colSpan="7" className="empty-state">{t('hr.noEmployeesFound')}</td></tr>
                     )}
                   </tbody>
                 </table>

@@ -51,10 +51,11 @@ function ManageRecruitments({ user }) {
       )}
       {loading ? <div className="loading-spinner">{t('recruitments.loadingRecruitments')}</div> : (
         <table className="modern-table">
-          <thead><tr><th>{t('recruitments.positionVacancies')}</th><th>{t('common.department')}</th><th>{t('common.status')}</th><th>{t('common.actions')}</th></tr></thead>
+          <thead><tr><th>#</th><th>{t('recruitments.positionVacancies')}</th><th>{t('common.department')}</th><th>{t('common.status')}</th><th>{t('common.actions')}</th></tr></thead>
           <tbody>
-            {recruitments.map(r => (
+            {recruitments.map((r, index) => (
               <tr key={r.id}>
+                <td>{index + 1}</td>
                 <td><strong>{r.position_title}</strong><br/><small style={{ color: '#64748b' }}>{t('recruitments.reqBy')} {r.requester_nom} {r.requester_prenom}</small><br/><small style={{ color: '#0ea5e9' }}>{r.number_needed} {t('recruitments.vacancies')}</small></td>
                 <td>{r.department_name || '-'}</td>
                 <td><span className="role-tag" style={{ background: r.status === 'Published' ? '#d1fae5' : r.status === 'Rejected' ? '#fee2e2' : r.status === 'Completed' ? '#e0e7ff' : '#fef3c7', color: r.status === 'Published' ? '#065f46' : r.status === 'Rejected' ? '#991b1b' : r.status === 'Completed' ? '#3730a3' : '#92400e' }}>{r.status}</span></td>
@@ -66,7 +67,7 @@ function ManageRecruitments({ user }) {
                 </td>
               </tr>
             ))}
-            {recruitments.length === 0 && <tr><td colSpan="4" className="empty-state">{t('recruitments.noRecords')}</td></tr>}
+            {recruitments.length === 0 && <tr><td colSpan="5" className="empty-state">{t('recruitments.noRecords')}</td></tr>}
           </tbody>
         </table>
       )}

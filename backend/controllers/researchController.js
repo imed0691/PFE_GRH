@@ -3,15 +3,23 @@ const db = require('../config/db');
 // Enseignant: Ajouter une activité de recherche
 exports.addResearchActivity = (req, res) => {
   const teacher_id = req.user.id;
-  const { title, type, date, description, link } = req.body;
+  const { title, type, description, link } = req.body;
+  let { date } = req.body;
 
-  if (!title || !type || !date) {
-    return res.status(400).json({ message: "Champs obligatoires manquants." });
+  if (!title || !type) {
+    return res.status(400).json({ message: "Champs obligatoires manquants (Title, Type)." });
+  }
+
+  if (!date) {
+    date = new Date().toISOString().split('T')[0]; // Default to current date YYYY-MM-DD
   }
 
   const query = "INSERT INTO research_activities (teacher_id, title, type, date, description, link) VALUES (?, ?, ?, ?, ?, ?)";
   db.query(query, [teacher_id, title, type, date, description, link], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error("Research Activity Error:", err);
+      return res.status(500).json({ error: err.message });
+    }
     res.status(201).json({ message: "Activité de recherche ajoutée." });
   });
 };

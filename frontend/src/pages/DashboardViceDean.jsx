@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
-import LanguageSwitcher from '../components/LanguageSwitcher';
+
 import ManageSessions from './ManageSessions';
 import ManageAbsences from './ManageAbsences';
 import ManageReminders from './ManageReminders';
@@ -65,8 +65,8 @@ function DashboardViceDean({ user, onLogout }) {
           <button className={`nav-item ${view === 'absences' ? 'active' : ''}`} onClick={() => setView('absences')}>{t('sidebar.absences')} <NotifBadge count={unreadAbsences || badges.absences} /></button>
           <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.communications')}</button>
           <button className={`nav-item ${view === 'feed' ? 'active' : ''}`} onClick={() => setView('feed')}>{t('sidebar.activityFeed')}</button>
+          <button className={`nav-item ${view === 'settings' ? 'active' : ''}`} onClick={() => setView('settings')}>{t('settings.title')}</button>
         </nav>
-        <LanguageSwitcher />
         <button className="btn-logout" onClick={onLogout}>{t('common.logout')}</button>
       </aside>
       <main className="main-content">
@@ -81,7 +81,7 @@ function DashboardViceDean({ user, onLogout }) {
               <div className="stat-card"><h3>{t('viceDean.activeSessions')}</h3><p className="stat-value">{sessionsCount}</p></div>
               <div className="stat-card" style={{ borderBottomColor: unreadAbsences > 0 ? '#ef4444' : 'var(--vice-primary)' }}><h3>{t('viceDean.newAbsences')}</h3><p className="stat-value" style={{ color: unreadAbsences > 0 ? '#ef4444' : 'var(--text-main)' }}>{unreadAbsences}</p></div>
             </div>
-          )) : view === 'sessions' ? <ManageSessions /> : view === 'absences' ? <ManageAbsences /> : view === 'feed' ? <NotificationFeed /> : view === 'reminders' ? <ManageReminders /> : null}
+          )) : view === 'sessions' ? <ManageSessions /> : view === 'absences' ? <ManageAbsences /> : view === 'feed' ? <NotificationFeed /> : view === 'reminders' ? <ManageReminders /> : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : null}
         </div>
       </main>
     </div>
