@@ -299,7 +299,7 @@ function DashboardTeacher({ user, onLogout }) {
                       </div>
                     </div>
                   </div>
-                  <div className="table-card" style={{ maxWidth: '600px', margin: '0 auto 30px auto' }}>
+                  <div className="table-card" style={{ margin: '0 auto 30px auto' }}>
                     <h3 style={{ marginTop: 0, marginBottom: '20px' }}>{t('teacher.reportAbsence')}</h3>
                     <form onSubmit={handleReportAbsence} className="add-form">
                       <div className="form-group">
