@@ -5,7 +5,7 @@ import './DashboardHR.css';
 
 function AddEmployee({ onCancel, onSuccess }) {
   const { t } = useLanguage();
-  const [formData, setFormData] = useState({ nom: '', prenom: '', email: '', password: '', role: 'TEACHER', department_id: '', grade: 'Teacher', hourly_rate: '', absence_penalty: '' });
+  const [formData, setFormData] = useState({ nom: '', prenom: '', email: '', password: '', role: 'TEACHER', department_id: '', grade: 'Teacher', hourly_rate: '', absence_penalty: '', volume_horaire: '192' });
   const [departments, setDepartments] = useState([]);
 
   useEffect(() => {
@@ -63,7 +63,7 @@ function AddEmployee({ onCancel, onSuccess }) {
           {showDepartment && (
             <div className="form-group">
               <label>{t('addEmployee.department')}</label>
-              <select name="department_id" value={formData.department_id} onChange={handleChange}>
+              <select name="department_id" value={formData.department_id} onChange={handleChange} required>
                 <option value="">{t('addEmployee.noDepartment')}</option>
                 {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
@@ -98,6 +98,7 @@ function AddEmployee({ onCancel, onSuccess }) {
             </div>
             <div className="form-group"><label>{t('addEmployee.extraHourlyRate')}</label><input type="number" name="hourly_rate" value={formData.hourly_rate} onChange={handleChange} placeholder="e.g. 600" /></div>
             <div className="form-group"><label>{t('addEmployee.absencePenalty')}</label><input type="number" name="absence_penalty" value={formData.absence_penalty} onChange={handleChange} placeholder="e.g. 2000" /></div>
+            <div className="form-group"><label>{t('addEmployee.volumeHoraire')}</label><input type="number" name="volume_horaire" value={formData.volume_horaire} onChange={handleChange} required placeholder="192" /></div>
           </div>
         )}
         <div className="form-actions">

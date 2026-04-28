@@ -8,9 +8,6 @@ import ManageReminders from './ManageReminders';
 import ManagePromotions from './ManagePromotions';
 import ManageDocuments from './ManageDocuments';
 import ManageEvaluations from './ManageEvaluations';
-import ManageResearch from './ManageResearch';
-import ManageRecruitments from './ManageRecruitments';
-import NotificationFeed from './NotificationFeed';
 import useNotificationBadges from '../hooks/useNotificationBadges';
 import NotifBadge from '../components/NotifBadge';
 import Settings from './Settings';
@@ -61,9 +58,6 @@ function DashboardDean({ user, onLogout }) {
           <button className={`nav-item ${view === 'promotions' ? 'active' : ''}`} onClick={() => handleViewChange('promotions')}>{t('sidebar.promotions')} <NotifBadge count={badges.promotions} /></button>
           <button className={`nav-item ${view === 'documents' ? 'active' : ''}`} onClick={() => handleViewChange('documents')}>{t('sidebar.documents')} <NotifBadge count={badges.documents} /></button>
           <button className={`nav-item ${view === 'evaluations' ? 'active' : ''}`} onClick={() => handleViewChange('evaluations')}>{t('sidebar.evaluations')} <NotifBadge count={badges.evaluations} /></button>
-          <button className={`nav-item ${view === 'research' ? 'active' : ''}`} onClick={() => handleViewChange('research')}>{t('sidebar.research')} <NotifBadge count={badges.research} /></button>
-          <button className={`nav-item ${view === 'recruitments' ? 'active' : ''}`} onClick={() => handleViewChange('recruitments')}>{t('sidebar.recruitment')} <NotifBadge count={badges.recruitments} /></button>
-          <button className={`nav-item ${view === 'feed' ? 'active' : ''}`} onClick={() => handleViewChange('feed')}>{t('sidebar.activityFeed')}</button>
           <button className={`nav-item ${view === 'settings' ? 'active' : ''}`} onClick={() => handleViewChange('settings')}>{t('settings.title')}</button>
         </nav>
         <button className="btn-logout" onClick={onLogout}>{t('common.logout')}</button>
@@ -71,7 +65,7 @@ function DashboardDean({ user, onLogout }) {
 
       <main className="main-content">
         <header className="topbar">
-          <h1>{view === 'overview' ? t('topbar.facultyDashboard') : view === 'departments' ? t('topbar.manageDepartments') : view === 'sessions' ? t('topbar.schedulesAndSessions') : view === 'staff' ? t('topbar.facultyStaff') : view === 'promotions' ? t('topbar.careerAdvancements') : view === 'documents' ? t('topbar.documentRequests') : view === 'evaluations' ? t('topbar.teacherEvaluations') : view === 'research' ? t('topbar.researchOverview') : view === 'recruitments' ? t('topbar.staffRecruitment') : view === 'feed' ? t('topbar.activityFeed') : view === 'settings' ? t('settings.title') : t('topbar.communicationsReminders')}</h1>
+          <h1>{view === 'overview' ? t('topbar.facultyDashboard') : view === 'departments' ? t('topbar.manageDepartments') : view === 'sessions' ? t('topbar.schedulesAndSessions') : view === 'staff' ? t('topbar.facultyStaff') : view === 'promotions' ? t('topbar.careerAdvancements') : view === 'documents' ? t('topbar.documentRequests') : view === 'evaluations' ? t('topbar.teacherEvaluations') : view === 'settings' ? t('settings.title') : t('topbar.communicationsReminders')}</h1>
           <div className="date-display">{new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </header>
         <div className="content-area">
@@ -81,7 +75,7 @@ function DashboardDean({ user, onLogout }) {
               <div className="stat-card"><h3>{t('dean.totalStaff')}</h3><p className="stat-value">{users.length || 0}</p></div>
               <div className="stat-card"><h3>{t('dean.teachers')}</h3><p className="stat-value">{users.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT').length || 0}</p></div>
             </div>
-          ) : view === 'departments' ? <ManageDepartments /> : view === 'sessions' ? <ManageSessions /> : view === 'promotions' ? <ManagePromotions user={user} /> : view === 'documents' ? <ManageDocuments user={user} /> : view === 'evaluations' ? <ManageEvaluations user={user} /> : view === 'research' ? <ManageResearch user={user} /> : view === 'recruitments' ? <ManageRecruitments user={user} /> : view === 'feed' ? <NotificationFeed /> : view === 'reminders' ? <ManageReminders /> : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : (
+          ) : view === 'departments' ? <ManageDepartments /> : view === 'sessions' ? <ManageSessions /> : view === 'promotions' ? <ManagePromotions user={user} /> : view === 'documents' ? <ManageDocuments user={user} /> : view === 'evaluations' ? <ManageEvaluations user={user} /> : view === 'reminders' ? <ManageReminders /> : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : (
             <div className="table-card">
               {loading ? <div className="loading-spinner">{t('common.loading')}</div> : (
                 <table className="modern-table">

@@ -63,8 +63,13 @@ exports.getTeacherDashboardData = (req, res) => {
     ORDER BY FIELD(s.day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'), s.start_time ASC
   `;
 
-  // 2. Get teacher stats
-  const statsQuery = "SELECT volume_horaire, absences FROM users WHERE id = ?";
+  // 2. Get teacher stats (with dynamic unjustified count)
+  const statsQuery = `
+    SELECT u.volume_horaire, 
+           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND has_justification = FALSE AND is_caught_up = FALSE) as unjustified_count,
+           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND is_caught_up = FALSE) as not_caught_up_count
+    FROM users u WHERE u.id = ?
+  `;
 
   // 3. Get reminders
   const remindersQuery = `
@@ -79,7 +84,7 @@ exports.getTeacherDashboardData = (req, res) => {
   `;
 
   // 4. Get absences
-  const absencesQuery = "SELECT id, date, reason, status, is_read_by_teacher FROM absence_requests WHERE teacher_id = ? ORDER BY created_at DESC";
+  const absencesQuery = "SELECT id, date, reason, status, has_justification, is_caught_up, is_read_by_teacher, justification_text, catchup_date, catchup_start_time, catchup_end_time FROM absences WHERE teacher_id = ? ORDER BY created_at DESC";
 
   db.query(sessionsQuery, [teacherId], (err, sessions) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -93,10 +98,10 @@ exports.getTeacherDashboardData = (req, res) => {
         db.query(absencesQuery, [teacherId], (err, absencesResult) => {
           if (err) return res.status(500).json({ error: err.message });
 
-          const stats = statsResult[0] || { volume_horaire: 192, absences: 0 };
+          const stats = statsResult[0] || { volume_horaire: 192, unjustified_count: 0, not_caught_up_count: 0 };
           
           // Calcul dynamique des heures assurées
-          let completedHours = 120; // Base fictive pour les semaines précédentes
+          let completedHours = 0;
           const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
           const today = new Date();
           const todayIndex = today.getDay();
@@ -108,7 +113,6 @@ exports.getTeacherDashboardData = (req, res) => {
             const [eh, em] = s.end_time.split(':').map(Number);
             const duration = (eh + em/60) - (sh + sm/60);
 
-            // Si le jour de la session est passé, ou si c'est aujourd'hui et l'heure est passée
             if (sessionDayIndex < todayIndex) {
               completedHours += duration;
             } else if (sessionDayIndex === todayIndex && (eh + em/60) <= currentHour) {
@@ -116,16 +120,16 @@ exports.getTeacherDashboardData = (req, res) => {
             }
           });
 
-          // Soustraire les absences (moyenne de 1.5h par absence, ou exact si on croise les dates)
-          completedHours -= (stats.absences * 1.5);
+          // Soustraire les absences non rattrapées (moyenne de 1.5h par absence)
+          completedHours -= (stats.not_caught_up_count * 1.5);
           if (completedHours < 0) completedHours = 0;
 
           res.json({
             all_sessions: sessions,
             stats: {
               volume_horaire: stats.volume_horaire,
-              heures_assurees: Math.round(completedHours * 10) / 10, // Arrondi à 1 décimale
-              absences: stats.absences
+              heures_assurees: Math.round(completedHours * 10) / 10,
+              absences: stats.unjustified_count // On affiche les absences qui impactent le salaire
             },
             reminders: remindersResult,
             my_absences: absencesResult
@@ -133,5 +137,26 @@ exports.getTeacherDashboardData = (req, res) => {
         });
       });
     });
+  });
+};
+
+// Get modules by department and optionally study level
+exports.getModules = (req, res) => {
+  const { department_id, study_level } = req.query;
+  let query = "SELECT * FROM modules WHERE 1=1";
+  const params = [];
+
+  if (department_id) {
+    query += " AND department_id = ?";
+    params.push(department_id);
+  }
+  if (study_level) {
+    query += " AND study_level = ?";
+    params.push(study_level);
+  }
+
+  db.query(query, params, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
   });
 };

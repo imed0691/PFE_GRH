@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 // Signup logic
 exports.signup = async (req, res) => {
-  const { nom, prenom, role, email, password, department_id, grade, hourly_rate, absence_penalty } = req.body;
+  const { nom, prenom, role, email, password, department_id, grade, hourly_rate, absence_penalty, volume_horaire } = req.body;
   
   // Unique role validation (Dean, Rector, Vice-Dean, Vice-Rector), case-insensitive
   const roleLower = role ? role.toLowerCase() : '';
@@ -56,13 +56,13 @@ exports.signup = async (req, res) => {
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const query = "INSERT INTO users (nom, prenom, role, email, password, department_id, grade, hourly_rate, absence_penalty) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    const query = "INSERT INTO users (nom, prenom, role, email, password, department_id, grade, hourly_rate, absence_penalty, volume_horaire) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
     const gradeVal = roleLower === 'teacher' ? (grade || 'Teacher') : 'Teacher';
     const hrVal = roleLower === 'teacher' ? (hourly_rate || 0) : 0;
     const apVal = roleLower === 'teacher' ? (absence_penalty || 0) : 0;
 
-    db.query(query, [nom, prenom, role, email, hashedPassword, department_id || null, gradeVal, hrVal, apVal], (err, result) => {
+    db.query(query, [nom, prenom, role, email, hashedPassword, department_id || null, gradeVal, hrVal, apVal, volume_horaire || 192], (err, result) => {
       if (err) {
         console.error("Signup DB Error:", err);
         if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: "This email already exists" });
@@ -196,4 +196,32 @@ exports.updateProfile = (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: "Profile updated successfully", user: { nom, prenom } });
   });
+};
+
+// Get teachers for marking absences (Dept Head or HR)
+exports.getTeachers = (req, res) => {
+  const userId = req.user.id;
+  const userRole = req.user.role ? req.user.role.toUpperCase().replace(/\s/g, '_') : '';
+
+  let query = "SELECT id, nom, prenom, department_id FROM users WHERE role IN ('TEACHER', 'ENSEIGNANT')";
+  
+  if (userRole === 'DEPARTMENT_HEAD' || userRole === 'CHEF_DEPARTEMENT') {
+    db.query('SELECT department_id FROM users WHERE id = ?', [userId], (err, deptRes) => {
+      if (err || deptRes.length === 0 || !deptRes[0].department_id) {
+        // Fallback or empty if no department assigned to head
+        return res.json([]);
+      }
+      const headDeptId = deptRes[0].department_id;
+      db.query(query + " AND department_id = ?", [headDeptId], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+      });
+    });
+  } else {
+    // For HR or others, return all teachers
+    db.query(query, (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
+    });
+  }
 };

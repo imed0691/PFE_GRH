@@ -6,6 +6,7 @@ const sessionController = require('../controllers/sessionController');
 router.get('/sessions', sessionController.getAllSessions);
 router.post('/sessions', sessionController.createSession);
 router.delete('/sessions/:id', sessionController.deleteSession);
+router.get('/modules', sessionController.getModules);
 
 // Teacher dashboard route
 router.get('/teacher/dashboard/:id', sessionController.getTeacherDashboardData);

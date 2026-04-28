@@ -15,4 +15,7 @@ router.delete('/users/:id', verifyToken, checkRole(['RH_MANAGER']), authControll
 router.put('/change-password', verifyToken, authController.changePassword);
 router.put('/profile', verifyToken, authController.updateProfile);
 
+// Route pour récupérer la liste des enseignants (Chef de département / RH)
+router.get('/teachers', verifyToken, checkRole(['RH_MANAGER', 'DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT']), authController.getTeachers);
+
 module.exports = router;

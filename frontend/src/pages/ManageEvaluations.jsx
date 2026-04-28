@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import Select from 'react-select';
 import { useLanguage } from '../i18n/LanguageContext';
 
 function ManageEvaluations({ user }) {
@@ -7,7 +8,14 @@ function ManageEvaluations({ user }) {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [teacherId, setTeacherId] = useState('');
-  const [academicYear, setAcademicYear] = useState('2025-2026');
+  const calculateAcademicYear = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    return currentMonth >= 9 ? `${currentYear}-${currentYear + 1}` : `${currentYear - 1}-${currentYear}`;
+  };
+
+  const [academicYear] = useState(calculateAcademicYear());
   const [rating, setRating] = useState(5);
   const [comments, setComments] = useState('');
   const { t } = useLanguage();
@@ -25,23 +33,48 @@ function ManageEvaluations({ user }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!teacherId) return toast.error(t('evaluations.selectTeacher'));
     try { const token = localStorage.getItem('token'); const res = await fetch('http://localhost:5000/api/evaluations', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ teacher_id: teacherId, academic_year: academicYear, rating, comments }) });
-      if (res.ok) { toast.success(t('evaluations.submitted')); setTeacherId(''); setComments(''); fetchEvaluations(); } else { toast.error(t('evaluations.errorSubmitting')); }
+      if (res.ok) { 
+        toast.success(t('evaluations.submitted')); 
+        setTeacherId(''); 
+        setComments(''); 
+        fetchEvaluations(); 
+      } else { 
+        const data = await res.json();
+        toast.error(data.message || t('evaluations.errorSubmitting')); 
+      }
     } catch (error) { toast.error(t('common.serverError')); }
   };
 
   const isDeptHead = user.role === 'DEPARTMENT_HEAD' || user.role === 'CHEF_DEPARTEMENT';
   const isTeacher = user.role === 'TEACHER' || user.role === 'ENSEIGNANT';
 
+  const teacherOptions = teachers.map(tt => ({ value: tt.id, label: `${tt.nom} ${tt.prenom}` }));
+
   return (
     <div className="table-card" style={{ padding: '20px' }}>
       <h3 style={{ marginBottom: '20px' }}>{t('evaluations.title')}</h3>
       {isDeptHead && (
         <form onSubmit={handleSubmit} style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', marginBottom: '30px', border: '1px solid #e2e8f0' }}>
-          <h4 style={{ margin: '0 0 15px 0', color: '#1e293b' }}>{t('evaluations.evaluateTeacher')}</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-            <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('common.teacher')}</label><select value={teacherId} onChange={e => setTeacherId(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}><option value="">{t('evaluations.selectTeacher')}</option>{teachers.map(tt => <option key={tt.id} value={tt.id}>{tt.nom} {tt.prenom}</option>)}</select></div>
-            <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('evaluations.academicYear')}</label><input type="text" value={academicYear} onChange={e => setAcademicYear(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <h4 style={{ margin: 0, color: '#1e293b' }}>{t('evaluations.evaluateTeacher')}</h4>
+            <span style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', background: '#e2e8f0', padding: '4px 12px', borderRadius: '20px' }}>
+              {t('evaluations.academicYear')}: {academicYear}
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('common.teacher')}</label>
+              <Select 
+                options={teacherOptions} 
+                value={teacherOptions.find(o => o.value === teacherId)} 
+                onChange={o => setTeacherId(o?.value || '')} 
+                placeholder={t('evaluations.selectTeacher')} 
+                isClearable 
+                isSearchable 
+              />
+            </div>
             <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('evaluations.rating')}</label><input type="number" min="1" max="10" value={rating} onChange={e => setRating(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
           </div>
           <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('evaluations.comments')}</label><textarea value={comments} onChange={e => setComments(e.target.value)} rows="3" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} placeholder={t('evaluations.provideFeedback')}></textarea></div>

@@ -8,9 +8,6 @@ import ManageReminders from './ManageReminders';
 import ManagePromotions from './ManagePromotions';
 import ManageDocuments from './ManageDocuments';
 import ManageEvaluations from './ManageEvaluations';
-import ManageResearch from './ManageResearch';
-import ManageRecruitments from './ManageRecruitments';
-import NotificationFeed from './NotificationFeed';
 import useNotificationBadges from '../hooks/useNotificationBadges';
 import NotifBadge from '../components/NotifBadge';
 import Settings from './Settings';
@@ -74,9 +71,6 @@ function DashboardDeptHead({ user, onLogout }) {
           <button className={`nav-item ${view === 'promotions' ? 'active' : ''}`} onClick={() => setView('promotions')}>{t('sidebar.promotions')} <NotifBadge count={badges.promotions} /></button>
           <button className={`nav-item ${view === 'documents' ? 'active' : ''}`} onClick={() => setView('documents')}>{t('sidebar.documents')} <NotifBadge count={badges.documents} /></button>
           <button className={`nav-item ${view === 'evaluations' ? 'active' : ''}`} onClick={() => setView('evaluations')}>{t('sidebar.evaluations')} <NotifBadge count={badges.evaluations} /></button>
-          <button className={`nav-item ${view === 'research' ? 'active' : ''}`} onClick={() => setView('research')}>{t('sidebar.research')} <NotifBadge count={badges.research} /></button>
-          <button className={`nav-item ${view === 'recruitments' ? 'active' : ''}`} onClick={() => setView('recruitments')}>{t('sidebar.recruitment')} <NotifBadge count={badges.recruitments} /></button>
-          <button className={`nav-item ${view === 'feed' ? 'active' : ''}`} onClick={() => setView('feed')}>{t('sidebar.activityFeed')}</button>
           <button className={`nav-item ${view === 'settings' ? 'active' : ''}`} onClick={() => setView('settings')}>{t('settings.title')}</button>
         </nav>
         <button className="btn-logout" onClick={onLogout}>{t('common.logout')}</button>
@@ -84,11 +78,11 @@ function DashboardDeptHead({ user, onLogout }) {
 
       <main className="main-content">
         <header className="topbar">
-          <h1>{view === 'list' ? t('topbar.teachersDirectory') : view === 'sessions' ? t('topbar.departmentSchedules') : view === 'absences' ? t('topbar.absenceValidations') : view === 'promotions' ? t('topbar.teacherPromotions') : view === 'documents' ? t('topbar.documentsManagement') : view === 'evaluations' ? t('topbar.teacherEvaluations') : view === 'research' ? t('topbar.researchActivities') : view === 'recruitments' ? t('topbar.staffRecruitment') : view === 'settings' ? t('settings.title') : t('topbar.departmentNotifications')}</h1>
+          <h1>{view === 'list' ? t('topbar.teachersDirectory') : view === 'sessions' ? t('topbar.departmentSchedules') : view === 'absences' ? t('topbar.absenceValidations') : view === 'promotions' ? t('topbar.teacherPromotions') : view === 'documents' ? t('topbar.documentsManagement') : view === 'evaluations' ? t('topbar.teacherEvaluations') : view === 'settings' ? t('settings.title') : t('topbar.departmentNotifications')}</h1>
           <div className="date-display">{new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </header>
         <div className="content-area">
-          {view === 'sessions' ? <ManageSessions /> : view === 'absences' ? <ManageAbsences /> : view === 'promotions' ? <ManagePromotions user={user} /> : view === 'documents' ? <ManageDocuments user={user} /> : view === 'evaluations' ? <ManageEvaluations user={user} /> : view === 'research' ? <ManageResearch user={user} /> : view === 'recruitments' ? <ManageRecruitments user={user} /> : view === 'feed' ? <NotificationFeed /> : view === 'reminders' ? <ManageReminders /> : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : (
+          {view === 'sessions' ? <ManageSessions user={user} /> : view === 'absences' ? <ManageAbsences user={user} /> : view === 'promotions' ? <ManagePromotions user={user} /> : view === 'documents' ? <ManageDocuments user={user} /> : view === 'evaluations' ? <ManageEvaluations user={user} /> : view === 'reminders' ? <ManageReminders /> : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : (
             <div className="table-card">
               <div className="card-header"><h3>{t('deptHead.teachersInDept')}</h3><p>{t('deptHead.viewActiveStaff')}</p></div>
               {loading ? <div className="loading-spinner">{t('common.loadingData')}</div> : (

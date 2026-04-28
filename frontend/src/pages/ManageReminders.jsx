@@ -39,8 +39,8 @@ function ManageReminders() {
   const filteredTeachers = filterDeptId ? teachers.filter(t2 => String(t2.department_id) === String(filterDeptId)) : teachers;
   const filteredHeads = filterDeptId ? deptHeads.filter(h => String(h.department_id) === String(filterDeptId)) : deptHeads;
 
-  const teacherOptions = filteredTeachers.map(t2 => ({ value: t2.id, label: `${t2.nom} ${t2.prenom} — ${t2.department_name || 'N/A'}` }));
-  const headOptions = filteredHeads.map(h => ({ value: h.id, label: `${h.nom} ${h.prenom} — ${h.department_name || 'N/A'}` }));
+  const teacherOptions = filteredTeachers.map(t2 => ({ value: t2.id, label: `${t2.nom} ${t2.prenom}` }));
+  const headOptions = filteredHeads.map(h => ({ value: h.id, label: `${h.nom} ${h.prenom}` }));
 
   return (
     <div className="table-card" style={{ padding: '25px', maxWidth: '700px', margin: '0 auto' }}>

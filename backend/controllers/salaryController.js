@@ -2,13 +2,19 @@ const db = require('../config/db');
 
 // RH: Calculer les salaires
 exports.calculateSalaries = (req, res) => {
-  const query = "SELECT id, nom, prenom, role, volume_horaire, absences, grade, hourly_rate, absence_penalty, base_salary, extra_hours FROM users WHERE role IN ('TEACHER', 'ENSEIGNANT')";
+  const query = `
+    SELECT 
+      u.id, u.nom, u.prenom, u.role, u.volume_horaire, u.grade, u.hourly_rate, u.absence_penalty, u.base_salary, u.extra_hours,
+      (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND has_justification = FALSE AND is_caught_up = FALSE) as unjustified_absences
+    FROM users u 
+    WHERE u.role IN ('TEACHER', 'ENSEIGNANT')
+  `;
   
   db.query(query, (err, teachers) => {
     if (err) return res.status(500).json({ error: err.message });
 
     const salaries = teachers.map(t => {
-      const penaltyAmount = t.absences * (t.absence_penalty || 0);
+      const penaltyAmount = t.unjustified_absences * (t.absence_penalty || 0);
       const extraPay = (t.extra_hours || 0) * (t.hourly_rate || 0);
       const calculatedSalary = (t.base_salary || 0) + extraPay - penaltyAmount;
 
@@ -18,7 +24,7 @@ exports.calculateSalaries = (req, res) => {
         prenom: t.prenom,
         grade: t.grade || 'Teacher',
         volume_horaire: t.volume_horaire,
-        absences: t.absences,
+        absences: t.unjustified_absences,
         base_salary: t.base_salary || 0,
         extra_hours: t.extra_hours || 0,
         hourly_rate: t.hourly_rate || 0,

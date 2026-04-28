@@ -5,9 +5,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher';
 import './DashboardTeacher.css';
 import ManagePromotions from './ManagePromotions';
 import ManageDocuments from './ManageDocuments';
-import ManageResearch from './ManageResearch';
 import ManageEvaluations from './ManageEvaluations';
-import NotificationFeed from './NotificationFeed';
 import useNotificationBadges from '../hooks/useNotificationBadges';
 import NotifBadge from '../components/NotifBadge';
 import Settings from './Settings';
@@ -42,6 +40,55 @@ function DashboardTeacher({ user, onLogout }) {
 
   const toggleReason = (id) => {
     setExpandedReasons(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const [activeJustify, setActiveJustify] = useState(null);
+  const [activeCatchup, setActiveCatchup] = useState(null);
+  const [justificationText, setJustificationText] = useState('');
+  const [catchupData, setCatchupData] = useState({ date: '', startTime: '', endTime: '' });
+
+  const handleJustify = async (id) => {
+    if (!justificationText) return toast.error(t('teacher.allFieldsRequired'));
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/absences/${id}/justify`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ justification_text: justificationText })
+      });
+      if (res.ok) {
+        toast.success(t('absences.justificationSubmitted'));
+        setActiveJustify(null);
+        setJustificationText('');
+        fetchDashboardData();
+      } else {
+        toast.error(t('absences.errorUpdating'));
+      }
+    } catch (e) { toast.error(t('common.serverError')); }
+  };
+
+  const handleCatchup = async (id) => {
+    if (!catchupData.date || !catchupData.startTime || !catchupData.endTime) return toast.error(t('teacher.allFieldsRequired'));
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/absences/${id}/catchup`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          catchup_date: catchupData.date,
+          catchup_start_time: catchupData.startTime,
+          catchup_end_time: catchupData.endTime
+        })
+      });
+      if (res.ok) {
+        toast.success(t('absences.catchupSubmitted'));
+        setActiveCatchup(null);
+        setCatchupData({ date: '', startTime: '', endTime: '' });
+        fetchDashboardData();
+      } else {
+        toast.error(t('absences.errorUpdating'));
+      }
+    } catch (e) { toast.error(t('common.serverError')); }
   };
 
   const unreadRemindersCount = data.reminders ? data.reminders.filter(r => !r.is_read).length : 0;
@@ -199,9 +246,7 @@ function DashboardTeacher({ user, onLogout }) {
           <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.reminders')} <NotifBadge count={unreadRemindersCount} /></button>
           <button className={`nav-item ${view === 'promotions' ? 'active' : ''}`} onClick={() => setView('promotions')}>{t('sidebar.promotions')} <NotifBadge count={badges.promotions} /></button>
           <button className={`nav-item ${view === 'documents' ? 'active' : ''}`} onClick={() => setView('documents')}>{t('sidebar.documents')} <NotifBadge count={badges.documents} /></button>
-          <button className={`nav-item ${view === 'research' ? 'active' : ''}`} onClick={() => setView('research')}>{t('sidebar.research')} <NotifBadge count={badges.research} /></button>
           <button className={`nav-item ${view === 'evaluations' ? 'active' : ''}`} onClick={() => setView('evaluations')}>{t('sidebar.evaluations')} <NotifBadge count={badges.evaluations} /></button>
-          <button className={`nav-item ${view === 'feed' ? 'active' : ''}`} onClick={() => setView('feed')}>{t('sidebar.activityFeed')}</button>
           <button className={`nav-item ${view === 'settings' ? 'active' : ''}`} onClick={() => setView('settings')}>{t('settings.title')}</button>
         </nav>
         <button className="btn-logout" onClick={onLogout}>{t('common.logout')}</button>
@@ -214,9 +259,8 @@ function DashboardTeacher({ user, onLogout }) {
               view === 'absences' ? t('topbar.absencesManagement') :
                 view === 'promotions' ? t('topbar.careerAdvancements') :
                   view === 'documents' ? t('topbar.administrativeDocuments') :
-                    view === 'research' ? t('topbar.researchActivities') :
-                      view === 'evaluations' ? t('topbar.myEvaluations') :
-                        view === 'settings' ? t('settings.title') :
+                    view === 'evaluations' ? t('topbar.myEvaluations') :
+                      view === 'settings' ? t('settings.title') :
                           t('topbar.remindersCommunications')}
           </h1>
           <div className="date-display">{new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
@@ -299,51 +343,53 @@ function DashboardTeacher({ user, onLogout }) {
                       </div>
                     </div>
                   </div>
-                  <div className="table-card" style={{ margin: '0 auto 30px auto' }}>
-                    <h3 style={{ marginTop: 0, marginBottom: '20px' }}>{t('teacher.reportAbsence')}</h3>
-                    <form onSubmit={handleReportAbsence} className="add-form">
-                      <div className="form-group">
-                        <label>{t('common.date')}</label>
-                        <input type="date" value={absenceDate} onChange={e => setAbsenceDate(e.target.value)} required />
-                      </div>
-                      <div className="form-group">
-                        <label>{t('teacher.reason')}</label>
-                        <textarea value={absenceReason} onChange={e => setAbsenceReason(e.target.value)} required rows="3"></textarea>
-                      </div>
-                      <button type="submit" style={{ width: '100%' }}>{t('teacher.submitRequest')}</button>
-                    </form>
-                  </div>
                   <div className="table-card">
                     <h3 style={{ marginTop: 0, marginBottom: '20px' }}>{t('teacher.myAbsenceHistory')}</h3>
                     <table className="modern-table">
-                      <thead><tr><th>{t('common.date')}</th><th>{t('teacher.reason')}</th><th>{t('common.status')}</th></tr></thead>
+                      <thead>
+                        <tr>
+                          <th>{t('common.date')}</th>
+                          <th>{t('teacher.reason')}</th>
+                          <th>{t('absences.justified')}</th>
+                          <th>{t('absences.caughtUp')}</th>
+                          <th>{t('absences.penaltySalary')}</th>
+                          <th>{t('common.actions')}</th>
+                        </tr>
+                      </thead>
                       <tbody>
-                        {data.my_absences && data.my_absences.map(a => (
-                          <tr key={a.id}>
-                            <td>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                {!a.is_read_by_teacher && <span style={{ width: '8px', height: '8px', background: '#3b82f6', borderRadius: '50%', display: 'inline-block' }}></span>}
-                                {new Date(a.date).toLocaleDateString(locale)}
-                              </div>
-                            </td>
-                            <td style={{ maxWidth: '300px', wordBreak: 'break-word' }}>
-                              {expandedReasons[a.id] || a.reason.length <= 50 ? a.reason : `${a.reason.substring(0, 50)}... `}
-                              {a.reason.length > 50 && (
-                                <button onClick={() => toggleReason(a.id)} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.85em', textDecoration: 'underline', padding: 0, marginLeft: '5px' }}>
-                                  {expandedReasons[a.id] ? t('common.seeLess') : t('common.seeMore')}
-                                </button>
-                              )}
-                            </td>
-                            <td>
-                              <span className="role-tag" style={{
-                                background: a.status === 'Approved' ? '#d1fae5' : a.status === 'Rejected' ? '#fee2e2' : a.status === 'Recommended' ? '#dbeafe' : '#fef3c7',
-                                color: a.status === 'Approved' ? '#065f46' : a.status === 'Rejected' ? '#991b1b' : a.status === 'Recommended' ? '#1e40af' : '#92400e'
-                              }}>{a.status}</span>
-                            </td>
-                          </tr>
-                        ))}
+                        {data.my_absences && data.my_absences.map(a => {
+                          const hasPenalty = !a.has_justification && !a.is_caught_up;
+                          return (
+                            <tr key={a.id}>
+                              <td>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  {!a.is_read_by_teacher && <span style={{ width: '8px', height: '8px', background: '#3b82f6', borderRadius: '50%', display: 'inline-block' }}></span>}
+                                  {new Date(a.date).toLocaleDateString(locale)}
+                                </div>
+                              </td>
+                              <td>{a.reason}</td>
+                              <td><span className="role-tag" style={{ background: a.has_justification ? '#d1fae5' : '#fee2e2', color: a.has_justification ? '#065f46' : '#991b1b' }}>{a.has_justification ? t('common.yes') : t('common.no')}</span></td>
+                              <td><span className="role-tag" style={{ background: a.is_caught_up ? '#dbeafe' : '#fef3c7', color: a.is_caught_up ? '#1e40af' : '#92400e' }}>{a.is_caught_up ? t('common.yes') : t('common.no')}</span></td>
+                              <td><span style={{ color: hasPenalty ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>{hasPenalty ? t('common.yes') : t('common.no')}</span></td>
+                              <td>
+                                <div style={{ display: 'flex', gap: '5px' }}>
+                                  {!a.has_justification && (
+                                    <button onClick={() => setActiveJustify(a.id)} className="btn-small" style={{ background: '#10b981', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>
+                                      {t('absences.justify')}
+                                    </button>
+                                  )}
+                                  {!a.is_caught_up && (
+                                    <button onClick={() => setActiveCatchup(a.id)} className="btn-small" style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>
+                                      {t('absences.catchUp')}
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                         {(!data.my_absences || data.my_absences.length === 0) && (
-                          <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px' }}>{t('teacher.noAbsenceRecords')}</td></tr>
+                          <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>{t('teacher.noAbsenceRecords')}</td></tr>
                         )}
                       </tbody>
                     </table>
@@ -353,9 +399,7 @@ function DashboardTeacher({ user, onLogout }) {
 
               {view === 'promotions' && <ManagePromotions user={user} />}
               {view === 'documents' && <ManageDocuments user={user} />}
-              {view === 'research' && <ManageResearch user={user} />}
               {view === 'evaluations' && <ManageEvaluations user={user} />}
-              {view === 'feed' && <NotificationFeed />}
               {view === 'settings' && <Settings user={user} onProfileUpdate={handleProfileUpdate} />}
 
               {view === 'reminders' && (
@@ -399,6 +443,55 @@ function DashboardTeacher({ user, onLogout }) {
           )}
         </div>
       </main>
+
+      {/* Justification Modal */}
+      {activeJustify && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div className="modal-content" style={{ background: 'white', padding: '25px', borderRadius: '12px', width: '400px', maxWidth: '90%' }}>
+            <h3>{t('absences.justify')}</h3>
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label>{t('absences.justificationText')}</label>
+              <textarea 
+                value={justificationText} 
+                onChange={(e) => setJustificationText(e.target.value)}
+                placeholder={t('absences.enterJustification')}
+                style={{ width: '100%', minHeight: '100px', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', marginTop: '5px' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setActiveJustify(null)} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>{t('common.cancel')}</button>
+              <button onClick={() => handleJustify(activeJustify)} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: 'white', cursor: 'pointer' }}>{t('common.submit')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Catch-up Modal */}
+      {activeCatchup && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div className="modal-content" style={{ background: 'white', padding: '25px', borderRadius: '12px', width: '400px', maxWidth: '90%' }}>
+            <h3>{t('absences.catchUp')}</h3>
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label>{t('absences.selectDate')}</label>
+              <input type="date" value={catchupData.date} onChange={(e) => setCatchupData({...catchupData, date: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', marginTop: '5px' }} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
+              <div className="form-group">
+                <label>{t('absences.startTime')}</label>
+                <input type="time" value={catchupData.startTime} onChange={(e) => setCatchupData({...catchupData, startTime: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', marginTop: '5px' }} />
+              </div>
+              <div className="form-group">
+                <label>{t('absences.endTime')}</label>
+                <input type="time" value={catchupData.endTime} onChange={(e) => setCatchupData({...catchupData, endTime: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', marginTop: '5px' }} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setActiveCatchup(null)} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>{t('common.cancel')}</button>
+              <button onClick={() => handleCatchup(activeCatchup)} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: 'white', cursor: 'pointer' }}>{t('common.submit')}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

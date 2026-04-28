@@ -43,15 +43,26 @@ CREATE TABLE IF NOT EXISTS academic_sessions (
     groupe VARCHAR(50) NULL
 );
 
--- 4. Création de la table des demandes d'absence
-CREATE TABLE IF NOT EXISTS absence_requests (
+-- 4. Création de la table des modules
+CREATE TABLE IF NOT EXISTS modules (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(191) NOT NULL,
+    study_level VARCHAR(50) NOT NULL,
+    department_id INT NOT NULL,
+    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE
+);
+
+-- 4. Création de la table des absences
+CREATE TABLE IF NOT EXISTS absences (
     id INT AUTO_INCREMENT PRIMARY KEY,
     teacher_id INT NOT NULL,
     date DATE NOT NULL,
     reason TEXT NOT NULL,
-    status VARCHAR(50) DEFAULT 'Pending', -- 'Pending', 'Approved', 'Rejected'
+    status VARCHAR(50) DEFAULT 'Approved', -- 'Pending', 'Approved', 'Rejected'
+    has_justification BOOLEAN DEFAULT FALSE,
+    is_caught_up BOOLEAN DEFAULT FALSE,
     is_read_by_admin BOOLEAN DEFAULT FALSE,
-    is_read_by_teacher BOOLEAN DEFAULT TRUE,
+    is_read_by_teacher BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -117,5 +128,18 @@ CREATE TABLE IF NOT EXISTS research_activities (
     link VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 10. Création de la table des évaluations
+CREATE TABLE IF NOT EXISTS evaluations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    teacher_id INT NOT NULL,
+    evaluator_id INT NOT NULL,
+    academic_year VARCHAR(50) NOT NULL,
+    rating INT NOT NULL,
+    comments TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (evaluator_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

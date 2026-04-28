@@ -5,7 +5,6 @@ import { useLanguage } from '../i18n/LanguageContext';
 import ManageSessions from './ManageSessions';
 import ManageAbsences from './ManageAbsences';
 import ManageReminders from './ManageReminders';
-import NotificationFeed from './NotificationFeed';
 import useNotificationBadges from '../hooks/useNotificationBadges';
 import NotifBadge from '../components/NotifBadge';
 import Settings from './Settings';
@@ -64,7 +63,6 @@ function DashboardViceRector({ user, onLogout }) {
           <button className={`nav-item ${view === 'sessions' ? 'active' : ''}`} onClick={() => setView('sessions')}>{t('sidebar.academicAffairs')}</button>
           <button className={`nav-item ${view === 'absences' ? 'active' : ''}`} onClick={() => setView('absences')}>{t('sidebar.absences')} <NotifBadge count={unreadAbsences || badges.absences} /></button>
           <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.communications')}</button>
-          <button className={`nav-item ${view === 'feed' ? 'active' : ''}`} onClick={() => setView('feed')}>{t('sidebar.activityFeed')}</button>
           <button className={`nav-item ${view === 'settings' ? 'active' : ''}`} onClick={() => setView('settings')}>{t('settings.title')}</button>
         </nav>
         <button className="btn-logout" onClick={onLogout}>{t('common.logout')}</button>
@@ -81,7 +79,7 @@ function DashboardViceRector({ user, onLogout }) {
               <div className="stat-card"><h3>{t('viceRector.activeSessionsUni')}</h3><p className="stat-value">{sessionsCount}</p></div>
               <div className="stat-card" style={{ borderBottomColor: unreadAbsences > 0 ? '#ef4444' : 'var(--vicerec-primary)' }}><h3>{t('viceRector.newAbsences')}</h3><p className="stat-value" style={{ color: unreadAbsences > 0 ? '#ef4444' : 'var(--text-main)' }}>{unreadAbsences}</p></div>
             </div>
-          )) : view === 'sessions' ? <ManageSessions /> : view === 'absences' ? <ManageAbsences /> : view === 'feed' ? <NotificationFeed /> : view === 'reminders' ? <ManageReminders /> : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : null}
+          )) : view === 'sessions' ? <ManageSessions /> : view === 'absences' ? <ManageAbsences /> : view === 'reminders' ? <ManageReminders /> : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : null}
         </div>
       </main>
     </div>

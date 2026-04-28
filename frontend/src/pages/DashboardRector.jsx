@@ -5,10 +5,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import ManageDepartments from './ManageDepartments';
 import ManageReminders from './ManageReminders';
 import ManagePromotions from './ManagePromotions';
-import ManageRecruitments from './ManageRecruitments';
 import ManageEvaluations from './ManageEvaluations';
-import ManageResearch from './ManageResearch';
-import NotificationFeed from './NotificationFeed';
 import useNotificationBadges from '../hooks/useNotificationBadges';
 import NotifBadge from '../components/NotifBadge';
 import Settings from './Settings';
@@ -65,17 +62,14 @@ function DashboardRector({ user, onLogout }) {
           <button className={`nav-item ${view === 'departments' ? 'active' : ''}`} onClick={() => setView('departments')}>{t('sidebar.facultiesDepts')}</button>
           <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.communications')}</button>
           <button className={`nav-item ${view === 'promotions' ? 'active' : ''}`} onClick={() => setView('promotions')}>{t('sidebar.promotions')} <NotifBadge count={badges.promotions} /></button>
-          <button className={`nav-item ${view === 'recruitments' ? 'active' : ''}`} onClick={() => setView('recruitments')}>{t('sidebar.recruitment')} <NotifBadge count={badges.recruitments} /></button>
           <button className={`nav-item ${view === 'evaluations' ? 'active' : ''}`} onClick={() => setView('evaluations')}>{t('sidebar.evaluations')} <NotifBadge count={badges.evaluations} /></button>
-          <button className={`nav-item ${view === 'research' ? 'active' : ''}`} onClick={() => setView('research')}>{t('sidebar.research')} <NotifBadge count={badges.research} /></button>
-          <button className={`nav-item ${view === 'feed' ? 'active' : ''}`} onClick={() => setView('feed')}>{t('sidebar.activityFeed')}</button>
           <button className={`nav-item ${view === 'settings' ? 'active' : ''}`} onClick={() => setView('settings')}>{t('settings.title')}</button>
         </nav>
         <button className="btn-logout" onClick={onLogout}>{t('common.logout')}</button>
       </aside>
       <main className="main-content">
         <header className="topbar">
-          <h1>{view === 'overview' ? t('topbar.universityOverview') : view === 'directory' ? t('topbar.globalStaffDirectory') : view === 'departments' ? t('topbar.universityStructure') : view === 'promotions' ? t('topbar.careerAdvancements') : view === 'recruitments' ? t('topbar.staffRecruitment') : view === 'evaluations' ? t('topbar.evaluationStatistics') : view === 'research' ? t('topbar.researchInitiatives') : view === 'settings' ? t('settings.title') : t('topbar.officialCommunications')}</h1>
+          <h1>{view === 'overview' ? t('topbar.universityOverview') : view === 'directory' ? t('topbar.globalStaffDirectory') : view === 'departments' ? t('topbar.universityStructure') : view === 'promotions' ? t('topbar.careerAdvancements') : view === 'evaluations' ? t('topbar.evaluationStatistics') : view === 'settings' ? t('settings.title') : t('topbar.officialCommunications')}</h1>
           <div className="date-display">{new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </header>
         <div className="content-area">
@@ -101,7 +95,7 @@ function DashboardRector({ user, onLogout }) {
                 </table>
               )}
             </div>
-          ) : view === 'departments' ? <ManageDepartments /> : view === 'promotions' ? <ManagePromotions user={user} /> : view === 'recruitments' ? <ManageRecruitments user={user} /> : view === 'evaluations' ? <ManageEvaluations user={user} /> : view === 'research' ? <ManageResearch user={user} /> : view === 'feed' ? <NotificationFeed /> : view === 'reminders' ? <ManageReminders /> : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : null}
+          ) : view === 'departments' ? <ManageDepartments /> : view === 'promotions' ? <ManagePromotions user={user} /> : view === 'evaluations' ? <ManageEvaluations user={user} /> : view === 'reminders' ? <ManageReminders /> : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : null}
         </div>
       </main>
     </div>
