@@ -62,16 +62,32 @@ exports.getCounts = (req, res) => {
     });
   }
 
-  // Promotions
-  sections.push({
-    name: 'promotions',
-    query: `SELECT COUNT(*) as count FROM promotions p 
-            WHERE p.created_at > COALESCE(
-              (SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'promotions'),
-              '2000-01-01'
-            )`,
-    params: [userId]
-  });
+  // Promotions - Count pending requests based on role
+  let promoStatus = '';
+  if (['DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT'].includes(userRole)) promoStatus = 'Pending_Dept';
+  else if (['DEAN', 'DOYEN'].includes(userRole)) promoStatus = 'Pending_Dean';
+  else if (['RECTOR', 'RECTEUR'].includes(userRole)) promoStatus = 'Pending_Rector';
+  else if (['HR', 'RH', 'HR_MANAGER', 'RH_MANAGER'].includes(userRole)) promoStatus = 'Pending_HR';
+
+  if (promoStatus) {
+    let promoQuery = `SELECT COUNT(*) as count FROM promotions p WHERE p.status = ?`;
+    let promoParams = [promoStatus];
+
+    if (promoStatus === 'Pending_Dept') {
+      promoQuery = `
+        SELECT COUNT(*) as count FROM promotions p 
+        JOIN users u ON p.teacher_id = u.id 
+        WHERE p.status = ? AND u.department_id = (SELECT department_id FROM users WHERE id = ?)
+      `;
+      promoParams.push(userId);
+    }
+
+    sections.push({
+      name: 'promotions',
+      query: promoQuery,
+      params: promoParams
+    });
+  }
 
   // Recruitments
   if (['DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT', 'DEAN', 'DOYEN', 'RECTOR', 'RECTEUR',
@@ -88,14 +104,33 @@ exports.getCounts = (req, res) => {
   }
 
   // Documents
+  let docFilter = '';
+  let docQuery = '';
+  let docParams = [userId];
+
+  if (['DEAN', 'DOYEN'].includes(userRole)) {
+    docFilter = `AND (d.type = 'Work Certificate (Attestation de travail)' OR d.type = 'Mission Order (Ordre de mission)')`;
+    docQuery = `SELECT COUNT(*) as count FROM documents d WHERE d.request_date > COALESCE((SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'documents'), '2000-01-01') ${docFilter}`;
+  } else if (['DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT'].includes(userRole)) {
+    docFilter = `AND d.type = 'Teaching Load Certificate' AND u.department_id = (SELECT department_id FROM users WHERE id = ?)`;
+    docQuery = `SELECT COUNT(*) as count FROM documents d JOIN users u ON d.teacher_id = u.id WHERE d.request_date > COALESCE((SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'documents'), '2000-01-01') ${docFilter}`;
+    docParams.push(userId);
+  } else if (['HR', 'RH', 'HR_MANAGER', 'RH_MANAGER'].includes(userRole)) {
+    docFilter = `AND d.type = 'Salary Slip (Fiche de paie)'`;
+    docQuery = `SELECT COUNT(*) as count FROM documents d WHERE d.request_date > COALESCE((SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'documents'), '2000-01-01') ${docFilter}`;
+  } else if (['TEACHER', 'ENSEIGNANT'].includes(userRole)) {
+    docFilter = `AND d.teacher_id = ?`;
+    docQuery = `SELECT COUNT(*) as count FROM documents d WHERE d.request_date > COALESCE((SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'documents'), '2000-01-01') ${docFilter}`;
+    docParams.push(userId);
+  } else {
+    // Rectors / Admins
+    docQuery = `SELECT COUNT(*) as count FROM documents d WHERE d.request_date > COALESCE((SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'documents'), '2000-01-01')`;
+  }
+
   sections.push({
     name: 'documents',
-    query: `SELECT COUNT(*) as count FROM document_requests d 
-            WHERE d.created_at > COALESCE(
-              (SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'documents'),
-              '2000-01-01'
-            )`,
-    params: [userId]
+    query: docQuery,
+    params: docParams
   });
 
   // Execute all queries

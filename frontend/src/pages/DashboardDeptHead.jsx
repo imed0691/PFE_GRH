@@ -18,7 +18,10 @@ function DashboardDeptHead({ user, onLogout }) {
   const [view, setViewRaw] = useState('list');
   const [loading, setLoading] = useState(true);
   const [unreadAbsences, setUnreadAbsences] = useState(0);
+  const [teacherSchedule, setTeacherSchedule] = useState([]);
+  const [selectedTeacherName, setSelectedTeacherName] = useState('');
   const { badges, markSeen } = useNotificationBadges();
+  const [searchTerm, setSearchTerm] = useState('');
   const { t, locale } = useLanguage();
 
   const handleProfileUpdate = (newData) => {
@@ -45,6 +48,26 @@ function DashboardDeptHead({ user, onLogout }) {
       const res = await fetch('http://localhost:5000/api/absences', { headers: { 'Authorization': `Bearer ${token}` } });
       if (res.ok) { const absences = await res.json(); setUnreadAbsences(absences.filter(a => !a.is_read_by_admin).length); }
     } catch (error) { console.error(error); }
+  };
+
+  const fetchTeacherSchedule = async (teacher) => {
+    setSelectedTeacherName(`${teacher.nom} ${teacher.prenom}`);
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/teacher/dashboard/${teacher.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTeacherSchedule(data.all_sessions || []);
+        setView('teacher-schedule');
+      }
+    } catch (e) {
+      toast.error(t('teacher.failedLoadDashboard'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const markAbsencesAsRead = async () => {
@@ -82,20 +105,106 @@ function DashboardDeptHead({ user, onLogout }) {
           <div className="date-display">{new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </header>
         <div className="content-area">
-          {view === 'sessions' ? <ManageSessions user={user} /> : view === 'absences' ? <ManageAbsences user={user} /> : view === 'promotions' ? <ManagePromotions user={user} /> : view === 'documents' ? <ManageDocuments user={user} /> : view === 'evaluations' ? <ManageEvaluations user={user} /> : view === 'reminders' ? <ManageReminders /> : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : (
-            <div className="table-card">
-              <div className="card-header"><h3>{t('deptHead.teachersInDept')}</h3><p>{t('deptHead.viewActiveStaff')}</p></div>
-              {loading ? <div className="loading-spinner">{t('common.loadingData')}</div> : (
-                <table className="modern-table">
-                  <thead><tr><th>{t('common.id')}</th><th>{t('common.fullName')}</th><th>{t('common.email')}</th><th>{t('common.department')}</th><th>{t('common.role')}</th></tr></thead>
-                  <tbody>
-                    {users.map(u => (<tr key={u.id}><td>#{u.id}</td><td><strong>{u.nom}</strong> {u.prenom}</td><td>{u.email}</td><td>{u.department_name || '-'}</td><td><span className={`role-tag role-${u.role.toLowerCase()}`}>{t('roles.' + u.role) || u.role}</span></td></tr>))}
-                    {users.length === 0 && <tr><td colSpan="5" className="empty-state">{t('deptHead.noTeachersFound')}</td></tr>}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
+          {view === 'sessions' ? <ManageSessions user={user} /> : 
+           view === 'absences' ? <ManageAbsences user={user} /> : 
+           view === 'promotions' ? <ManagePromotions user={user} /> : 
+           view === 'documents' ? <ManageDocuments user={user} /> : 
+           view === 'evaluations' ? <ManageEvaluations user={user} /> : 
+           view === 'reminders' ? <ManageReminders /> : 
+           view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : 
+           view === 'teacher-schedule' ? (
+             <div className="table-card">
+               <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                 <div>
+                   <h3>{t('teacher.weeklySchedule')}</h3>
+                   <p>{selectedTeacherName}</p>
+                 </div>
+                 <button onClick={() => setView('list')} className="btn-small" style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>
+                   ← {t('common.cancel')}
+                 </button>
+               </div>
+               
+               {teacherSchedule.length > 0 ? (
+                 <table className="modern-table">
+                   <thead>
+                     <tr>
+                       <th>{t('teacher.day')}</th>
+                       <th>{t('teacher.time')}</th>
+                       <th>{t('teacher.module')}</th>
+                       <th>{t('teacher.level')}</th>
+                       <th>{t('teacher.type')}</th>
+                       <th>{t('teacher.sectionGroup')}</th>
+                     </tr>
+                   </thead>
+                   <tbody>
+                     {teacherSchedule.map(s => (
+                       <tr key={s.id}>
+                         <td><strong>{t('sessions.' + s.day_of_week.toLowerCase()) || s.day_of_week}</strong></td>
+                         <td>{s.start_time.substring(0, 5)} - {s.end_time.substring(0, 5)}</td>
+                         <td>{s.module_name}</td>
+                         <td><span className="role-tag" style={{ background: '#dbeafe', color: '#1e40af' }}>{s.study_level}</span></td>
+                         <td><span className="role-tag" style={{ background: '#e2e8f0', color: '#475569' }}>{s.session_type === 'Lecture' ? t('teacher.lecture') : s.session_type === 'Tutorial' ? t('teacher.tutorial') : t('teacher.practical')}</span></td>
+                         <td>
+                           {(s.section || s.groupe) ? (
+                             <span style={{ fontSize: '0.9em', color: '#64748b' }}>
+                               {s.section && `Sec: ${s.section}`} {s.groupe && `Grp: ${s.groupe}`}
+                             </span>
+                           ) : '-'}
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               ) : (
+                 <div style={{ padding: '60px', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', color: '#64748b' }}>
+                   <p style={{ margin: 0, fontSize: '1.1rem' }}>{t('teacher.noSessions')}</p>
+                 </div>
+               )}
+             </div>
+           ) : (
+             <div className="table-card">
+               <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                 <div>
+                   <h3>{t('deptHead.teachersInDept')}</h3>
+                   <p>{t('deptHead.viewActiveStaff')}</p>
+                 </div>
+                 <div className="search-box">
+                   <input
+                     type="text"
+                     placeholder={t('common.search') || 'Search...'}
+                     value={searchTerm}
+                     onChange={(e) => setSearchTerm(e.target.value)}
+                     className="search-input"
+                     style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #e2e8f0', width: '250px' }}
+                   />
+                 </div>
+               </div>
+               {loading ? <div className="loading-spinner">{t('common.loadingData')}</div> : (
+                 <table className="modern-table">
+                   <thead><tr><th>{t('addEmployee.lastName')}</th><th>{t('addEmployee.firstName')}</th><th>{t('common.email')}</th><th>{t('salaries.grade')}</th></tr></thead>
+                   <tbody>
+                     {users
+                       .filter(u => {
+                         const fullName = `${u.nom} ${u.prenom}`.toLowerCase();
+                         return fullName.includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase());
+                       })
+                       .map(u => (
+                         <tr key={u.id} onClick={() => fetchTeacherSchedule(u)} style={{ cursor: 'pointer' }} className="clickable-row">
+                           <td><strong>{u.nom}</strong></td>
+                           <td>{u.prenom}</td>
+                           <td>{u.email}</td>
+                           <td><span className="grade-tag" style={{ background: '#f1f5f9', color: '#475569', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}>{u.grade || 'Teacher'}</span></td>
+                         </tr>
+                       ))}
+                     {users.filter(u => {
+                       const fullName = `${u.nom} ${u.prenom}`.toLowerCase();
+                       return fullName.includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase());
+                     }).length === 0 && <tr><td colSpan="4" className="empty-state">{t('deptHead.noTeachersFound')}</td></tr>}
+                   </tbody>
+                 </table>
+               )}
+             </div>
+           )}
         </div>
       </main>
     </div>

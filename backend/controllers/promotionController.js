@@ -8,21 +8,14 @@ exports.requestPromotion = (req, res) => {
         return res.status(400).json({ message: 'Requested grade is required' });
     }
 
-    // Fetch the teacher's current grade from the database
     db.query('SELECT grade FROM users WHERE id = ?', [teacherId], (err, userResults) => {
-        if (err || userResults.length === 0) {
-            return res.status(500).json({ message: 'Error fetching current grade' });
-        }
+        if (err || userResults.length === 0) return res.status(500).json({ message: 'Error fetching current grade' });
 
         const current_grade = userResults[0].grade || 'Teacher';
-
-        const query = 'INSERT INTO promotions (teacher_id, current_grade, requested_grade, status) VALUES (?, ?, ?, "Pending")';
+        const query = 'INSERT INTO promotions (teacher_id, current_grade, requested_grade, status) VALUES (?, ?, ?, "Pending_Dept")';
         db.query(query, [teacherId, current_grade, requested_grade], (err, results) => {
-            if (err) {
-                console.error("Promotion INSERT error:", err);
-                return res.status(500).json({ message: 'Error submitting promotion request' });
-            }
-            res.status(201).json({ message: 'Promotion requested successfully', id: results.insertId });
+            if (err) return res.status(500).json({ message: 'Error submitting promotion request' });
+            res.status(201).json({ message: 'Promotion requested successfully' });
         });
     });
 };
@@ -47,16 +40,27 @@ exports.getAllPromotions = (req, res) => {
         }
 
         if (userRole === 'DEPARTMENT_HEAD' || userRole === 'CHEF_DEPARTEMENT') {
-            // Need to get department_id of the Head
             db.query('SELECT department_id FROM users WHERE id = ?', [userId], (err, deptRes) => {
                 if (err || deptRes.length === 0) return res.json([]);
                 const headDeptId = deptRes[0].department_id;
-                return res.json(results.filter(p => p.department_id === headDeptId));
+                return res.json(results.filter(p => p.department_id === headDeptId && p.status === 'Pending_Dept'));
             });
             return;
         }
 
-        // Deans, Vice Deans, Rectors, HR can see all
+        if (userRole === 'DEAN' || userRole === 'DOYEN') {
+            return res.json(results.filter(p => p.status === 'Pending_Dean'));
+        }
+
+        if (userRole === 'RECTOR' || userRole === 'RECTEUR') {
+            return res.json(results.filter(p => p.status === 'Pending_Rector'));
+        }
+
+        if (userRole === 'HR' || userRole === 'RH' || userRole === 'HR_MANAGER' || userRole === 'RH_MANAGER') {
+            // HR can see those pending for them and approved/rejected history
+            return res.json(results.filter(p => ['Pending_HR', 'Approved', 'Rejected'].includes(p.status)));
+        }
+
         res.json(results);
     });
 };
@@ -64,11 +68,38 @@ exports.getAllPromotions = (req, res) => {
 exports.recommendPromotion = (req, res) => {
     const { id } = req.params;
     const { recommendation } = req.body;
+    const userRole = req.user.role;
 
-    const query = 'UPDATE promotions SET dept_head_recommendation = ?, status = "Recommended" WHERE id = ?';
-    db.query(query, [recommendation, id], (err, results) => {
+    let nextStatus = '';
+    let rolePrefix = '';
+    if (userRole === 'DEPARTMENT_HEAD' || userRole === 'CHEF_DEPARTEMENT') {
+        nextStatus = 'Pending_Dean';
+        rolePrefix = 'Chef de Dépt';
+    }
+    else if (userRole === 'DEAN' || userRole === 'DOYEN') {
+        nextStatus = 'Pending_Rector';
+        rolePrefix = 'Doyen';
+    }
+    else if (userRole === 'RECTOR' || userRole === 'RECTEUR') {
+        nextStatus = 'Pending_HR';
+        rolePrefix = 'Recteur';
+    }
+    else return res.status(403).json({ message: 'Unauthorized to recommend' });
+
+    const newRecText = `${rolePrefix}: ${recommendation}`;
+
+    const query = `
+        UPDATE promotions 
+        SET dept_head_recommendation = CASE 
+            WHEN dept_head_recommendation IS NULL OR dept_head_recommendation = '' THEN ? 
+            ELSE CONCAT(dept_head_recommendation, '\n', ?) 
+        END, 
+        status = ? 
+        WHERE id = ?`;
+        
+    db.query(query, [newRecText, newRecText, nextStatus, id], (err, results) => {
         if (err) return res.status(500).json({ message: 'Error recommending promotion' });
-        res.json({ message: 'Promotion recommended' });
+        res.json({ message: `Promotion sent to next level: ${nextStatus}` });
     });
 };
 
@@ -81,7 +112,6 @@ exports.approveRejectPromotion = (req, res) => {
     db.query(query, [status, handledBy, id], (err, results) => {
         if (err) return res.status(500).json({ message: 'Error updating promotion status' });
         
-        // If approved, update the user's grade
         if (status === 'Approved') {
             db.query('SELECT requested_grade, teacher_id FROM promotions WHERE id = ?', [id], (err, promoRes) => {
                 if (promoRes && promoRes.length > 0) {

@@ -114,7 +114,7 @@ exports.login = (req, res) => {
 // Get all users
 exports.getAllUsers = (req, res) => {
   const query = `
-    SELECT u.id, u.nom, u.prenom, u.email, u.role, u.department_id, d.name as department_name 
+    SELECT u.id, u.nom, u.prenom, u.email, u.role, u.department_id, u.grade, d.name as department_name 
     FROM users u 
     LEFT JOIN departments d ON u.department_id = d.id 
     ORDER BY u.id DESC

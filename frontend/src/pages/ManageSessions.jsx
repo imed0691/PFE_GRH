@@ -5,7 +5,6 @@ import CreatableSelect from 'react-select/creatable';
 import { useLanguage } from '../i18n/LanguageContext';
 
 function ManageSessions({ user }) {
-  const [sessions, setSessions] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,17 +20,15 @@ function ManageSessions({ user }) {
   const [sessionType, setSessionType] = useState('Lecture');
   const { t } = useLanguage();
 
-  const fetchData = async () => {
+  const fetchTeachers = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const headers = { 'Authorization': `Bearer ${token}` };
-      const [resSessions, resUsers] = await Promise.all([
-        fetch('http://localhost:5000/api/sessions', { headers }),
-        fetch('http://localhost:5000/api/users', { headers })
-      ]);
-      if (resSessions.ok) setSessions(await resSessions.json());
-      if (resUsers.ok) { const users = await resUsers.json(); setTeachers(users.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT')); }
+      const res = await fetch('http://localhost:5000/api/users', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) { 
+        const users = await res.json(); 
+        setTeachers(users.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT')); 
+      }
     } catch (error) { toast.error(t('sessions.failedFetch')); } finally { setLoading(false); }
   };
 
@@ -47,7 +44,7 @@ function ManageSessions({ user }) {
     } catch (error) { console.error('Error fetching modules:', error); }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchTeachers(); }, []);
   useEffect(() => { fetchModules(); }, [studyLevel]);
 
   const handleCreateSession = async (e) => {
@@ -58,16 +55,9 @@ function ManageSessions({ user }) {
     const loadToast = toast.loading(t('sessions.scheduling'));
     try { const token = localStorage.getItem('token'); const res = await fetch('http://localhost:5000/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ teacher_id: selectedTeacherId, department_id: selectedDeptId, module_name: moduleName, day_of_week: dayOfWeek, start_time: startTime, end_time: endTime, session_type: sessionType, study_level: studyLevel, section, groupe }) });
       toast.dismiss(loadToast);
-      if (res.ok) { toast.success(`${moduleName} — ${dayOfWeek} ${startTime}-${endTime}`); setModuleName(''); fetchData(); }
+      if (res.ok) { toast.success(`${moduleName} — ${dayOfWeek} ${startTime}-${endTime}`); setModuleName(''); }
       else { const data = await res.json(); toast.error(data.message || t('sessions.errorCreation')); }
     } catch (error) { toast.dismiss(loadToast); toast.error(t('common.serverError')); }
-  };
-
-  const handleCancelSession = async (id) => {
-    if (!window.confirm(t('sessions.confirmCancel'))) return;
-    try { const token = localStorage.getItem('token'); const res = await fetch(`http://localhost:5000/api/sessions/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-      if (res.ok) { toast.success(t('sessions.cancelled')); fetchData(); } else { toast.error(t('sessions.errorCancel')); }
-    } catch (error) { toast.error(t('common.serverError')); }
   };
 
   const teacherOptions = teachers.map(t2 => ({ value: t2.id, label: `${t2.nom} ${t2.prenom}` }));
@@ -131,31 +121,6 @@ function ManageSessions({ user }) {
         </div>
         <button type="submit" className="btn-submit" style={{ background: '#3b82f6' }}>{t('sessions.scheduleSession')}</button>
       </form>
-
-      {loading ? <div className="loading-spinner">{t('sessions.loadingSchedule')}</div> : (
-        <div className="table-card">
-          <table className="modern-table">
-            <thead><tr><th>#</th><th>{t('sessions.day')}</th><th>{t('teacher.time')}</th><th>{t('sessions.moduleSubjectCol')}</th><th>{t('teacher.level')}</th><th>{t('teacher.type')}</th><th>{t('sessions.secGrp')}</th><th>{t('common.teacher')}</th><th>{t('common.department')}</th><th>{t('common.actions')}</th></tr></thead>
-            <tbody>
-              {sessions.map((s, index) => (
-                <tr key={s.id}>
-                  <td>{index + 1}</td>
-                  <td><strong>{s.day_of_week}</strong></td>
-                  <td>{s.start_time?.substring(0,5)} - {s.end_time?.substring(0,5)}</td>
-                  <td>{s.module_name}</td>
-                  <td><span className="role-tag" style={{ background: '#dbeafe', color: '#1e40af' }}>{s.study_level || '-'}</span></td>
-                  <td><span className="role-tag" style={{ background: '#e2e8f0', color: '#475569' }}>{s.session_type === 'Lecture' ? t('sessions.lecture') : s.session_type === 'Tutorial' ? t('sessions.tutorialTD') : t('sessions.practicalTP')}</span></td>
-                  <td>{(s.section || s.groupe) ? <span style={{ fontSize: '0.9em', color: '#666' }}>{s.section && `${s.section}`} {s.groupe && `/ ${s.groupe}`}</span> : '-'}</td>
-                  <td>{s.teacher_nom} {s.teacher_prenom}</td>
-                  <td>{s.department_name}</td>
-                  <td><button onClick={() => handleCancelSession(s.id)} className="btn-delete">{t('common.cancel')}</button></td>
-                </tr>
-              ))}
-              {sessions.length === 0 && <tr><td colSpan="10" className="empty-state">{t('sessions.noSessions')}</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 }
