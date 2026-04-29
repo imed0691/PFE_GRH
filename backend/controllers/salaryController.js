@@ -29,13 +29,20 @@ exports.calculateSalaries = (req, res) => {
         extra_hours: t.extra_hours || 0,
         hourly_rate: t.hourly_rate || 0,
         absence_penalty: t.absence_penalty || 0,
-        penalty_amount: penaltyAmount,
-        final_salary: calculatedSalary > 0 ? calculatedSalary : 0
+        total_penalty: penaltyAmount,
+        net_salary: calculatedSalary > 0 ? calculatedSalary : 0
       };
     });
 
     res.json(salaries);
   });
+};
+
+// RH: Recalculate (Just a placeholder if calculations are dynamic, or can be used to sync)
+exports.recalculateSalary = (req, res) => {
+  // Logic is already dynamic in calculateSalaries, 
+  // but we provide the endpoint to satisfy the frontend's 'Adjust' action.
+  res.json({ message: "Salary recalculated successfully" });
 };
 
 // RH: Update Base Salary and Extra Hours

@@ -78,7 +78,13 @@ exports.getTeacherDashboardData = (req, res) => {
     FROM reminders r 
     LEFT JOIN users u ON r.sender_id = u.id 
     LEFT JOIN reminder_status rs ON r.id = rs.reminder_id AND rs.user_id = ?
-    WHERE (r.teacher_id = ? OR r.teacher_id IS NULL) 
+    WHERE r.sender_id != ? AND (r.teacher_id = ? 
+       OR (r.teacher_id IS NULL AND r.department_id = (SELECT department_id FROM users WHERE id = ?))
+       OR (r.teacher_id IS NULL AND r.department_id IS NULL AND (
+            u.role IN ('RECTOR', 'RECTEUR', 'VICE_RECTOR', 'VICE_RECTEUR')
+            OR (SELECT role FROM users WHERE id = ?) NOT IN ('RECTOR', 'RECTEUR', 'VICE_RECTOR', 'VICE_RECTEUR')
+       ))
+    )
       AND (rs.is_deleted IS NULL OR rs.is_deleted = FALSE)
     ORDER BY r.created_at DESC LIMIT 5
   `;
@@ -92,7 +98,7 @@ exports.getTeacherDashboardData = (req, res) => {
     db.query(statsQuery, [teacherId], (err, statsResult) => {
       if (err) return res.status(500).json({ error: err.message });
 
-      db.query(remindersQuery, [teacherId, teacherId], (err, remindersResult) => {
+      db.query(remindersQuery, [teacherId, teacherId, teacherId, teacherId, teacherId], (err, remindersResult) => {
         if (err) return res.status(500).json({ error: err.message });
 
         db.query(absencesQuery, [teacherId], (err, absencesResult) => {

@@ -62,13 +62,22 @@ function ManagePromotions({ user }) {
     }
   };
 
-  const handleStatusUpdate = async (id, status) => {
-    console.log(`[ManagePromotions] --> PUT /api/promotions/${id}/status payload:`, { status });
+  const handleStatusUpdate = async (id, status, finalGrade = null) => {
+    console.log(`[ManagePromotions] --> PUT /api/promotions/${id}/status payload:`, { status, finalGrade });
     try {
       const token = localStorage.getItem('token'); 
-      const res = await fetch(`http://localhost:5000/api/promotions/${id}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status }) });
+      const res = await fetch(`http://localhost:5000/api/promotions/${id}/status`, { 
+        method: 'PUT', 
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+        body: JSON.stringify({ status, finalGrade }) 
+      });
       console.log(`[ManagePromotions] <-- PUT /api/promotions/${id}/status response status:`, res.status);
-      if (res.ok) { toast.success(`${t('promotions.promotionApproved')} ${status}`); fetchPromotions(); } else { toast.error(t('promotions.errorStatus')); }
+      if (res.ok) { 
+        toast.success(status === 'Approved' ? t('promotions.gradeUpdated') || 'Grade mis à jour avec succès' : t('promotions.promotionRejected')); 
+        fetchPromotions(); 
+      } else { 
+        toast.error(t('promotions.errorStatus')); 
+      }
     } catch (error) { 
       console.error("[ManagePromotions] Error updating status:", error);
       toast.error(t('common.serverError')); 
@@ -155,9 +164,26 @@ function ManagePromotions({ user }) {
                       </div>
                     ))}
                     {canApprove && (
-                      <div style={{ display: 'flex', gap: '5px' }}>
-                        <button onClick={() => handleStatusUpdate(p.id, 'Approved')} style={{ background: '#10b981', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}>{t('common.approve')}</button>
-                        <button onClick={() => handleStatusUpdate(p.id, 'Rejected')} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}>{t('common.reject')}</button>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#475569' }}>Confirmer le Grade Final :</div>
+                        <div style={{ display: 'flex', gap: '5px' }}>
+                          <select 
+                            id={`grade-select-${p.id}`}
+                            defaultValue={p.requested_grade}
+                            style={{ padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '12px', flex: 1 }}
+                          >
+                            {gradeHierarchy.map(g => <option key={g} value={g}>{g}</option>)}
+                          </select>
+                          <button 
+                            onClick={() => {
+                              const finalGrade = document.getElementById(`grade-select-${p.id}`).value;
+                              handleStatusUpdate(p.id, 'Approved', finalGrade);
+                            }} 
+                            style={{ background: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
+                          >
+                            {t('promotions.finalize') || 'Finaliser la Promotion'}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </td>

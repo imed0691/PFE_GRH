@@ -2,17 +2,26 @@ const db = require('../config/db');
 
 // RH / Chef Dept: Créer un rappel
 exports.createReminder = (req, res) => {
-  const { recipient_id, text, type } = req.body;
-  const message = text; // Match frontend 'text' to backend 'message'
-  const teacher_id = recipient_id; // Match frontend 'recipient_id' to backend 'teacher_id'
+  const { recipient_id, text, type, recipient_type } = req.body;
+  const message = text;
+  const teacher_id = recipient_id;
   const sender_id = req.user ? req.user.id : null;
+  const sender_dept_id = req.user ? req.user.department_id : null;
 
   if (!message) {
     return res.status(400).json({ message: "Le message est requis." });
   }
 
-  const query = "INSERT INTO reminders (teacher_id, sender_id, message, type) VALUES (?, ?, ?, ?)";
-  db.query(query, [teacher_id || null, sender_id, message, type || 'info'], (err, result) => {
+  let department_id = null;
+  let final_teacher_id = teacher_id || null;
+
+  if (recipient_type === 'dept') {
+    department_id = sender_dept_id;
+    final_teacher_id = null; // Broadcast to entire department
+  }
+
+  const query = "INSERT INTO reminders (teacher_id, sender_id, message, type, department_id) VALUES (?, ?, ?, ?, ?)";
+  db.query(query, [final_teacher_id, sender_id, message, type || 'info', department_id], (err, result) => {
     if (err) {
       console.error("Reminder DB Error:", err);
       return res.status(500).json({ message: "Database error: " + err.message });
@@ -24,16 +33,30 @@ exports.createReminder = (req, res) => {
 // Obtenir les rappels (utilisé par le Teacher Dashboard)
 exports.getRemindersForTeacher = (req, res) => {
   const { id } = req.params;
-  const query = `
-    SELECT r.*, u.nom as sender_nom, u.prenom as sender_prenom, u.role as sender_role 
-    FROM reminders r 
-    LEFT JOIN users u ON r.sender_id = u.id 
-    WHERE r.teacher_id = ? OR r.teacher_id IS NULL 
-    ORDER BY r.created_at DESC
-  `;
-  db.query(query, [id], (err, results) => {
+  
+  // First get user's department
+  db.query('SELECT department_id FROM users WHERE id = ?', [id], (err, userRes) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
+    const userDeptId = userRes.length > 0 ? userRes[0].department_id : null;
+
+    const query = `
+      SELECT r.*, u.nom as sender_nom, u.prenom as sender_prenom, u.role as sender_role 
+      FROM reminders r 
+      LEFT JOIN users u ON r.sender_id = u.id 
+      WHERE r.sender_id != ? AND (
+         (r.teacher_id = ?) 
+         OR (r.teacher_id IS NULL AND r.department_id = ?)
+         OR (r.teacher_id IS NULL AND r.department_id IS NULL AND (
+            u.role IN ('RECTOR', 'RECTEUR', 'VICE_RECTOR', 'VICE_RECTEUR')
+            OR (SELECT role FROM users WHERE id = ?) NOT IN ('RECTOR', 'RECTEUR', 'VICE_RECTOR', 'VICE_RECTEUR')
+         ))
+      )
+      ORDER BY r.created_at DESC
+    `;
+    db.query(query, [id, id, userDeptId, id], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
+    });
   });
 };
 

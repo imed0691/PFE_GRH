@@ -105,7 +105,7 @@ exports.recommendPromotion = (req, res) => {
 
 exports.approveRejectPromotion = (req, res) => {
     const { id } = req.params;
-    const { status } = req.body; // 'Approved' or 'Rejected'
+    const { status, finalGrade } = req.body; // 'Approved' or 'Rejected'
     const handledBy = req.user.id;
 
     const query = 'UPDATE promotions SET status = ?, handled_by = ?, handling_date = NOW() WHERE id = ?';
@@ -115,7 +115,8 @@ exports.approveRejectPromotion = (req, res) => {
         if (status === 'Approved') {
             db.query('SELECT requested_grade, teacher_id FROM promotions WHERE id = ?', [id], (err, promoRes) => {
                 if (promoRes && promoRes.length > 0) {
-                    db.query('UPDATE users SET grade = ? WHERE id = ?', [promoRes[0].requested_grade, promoRes[0].teacher_id]);
+                    const gradeToSet = finalGrade || promoRes[0].requested_grade;
+                    db.query('UPDATE users SET grade = ? WHERE id = ?', [gradeToSet, promoRes[0].teacher_id]);
                 }
             });
         }

@@ -6,6 +6,7 @@ import ManageDepartments from './ManageDepartments';
 import ManageReminders from './ManageReminders';
 import ManagePromotions from './ManagePromotions';
 import ManageEvaluations from './ManageEvaluations';
+import ReminderInbox from './ReminderInbox';
 import useNotificationBadges from '../hooks/useNotificationBadges';
 import NotifBadge from '../components/NotifBadge';
 import Settings from './Settings';
@@ -18,6 +19,8 @@ function DashboardRector({ user, onLogout }) {
   const [deansCount, setDeansCount] = useState(0);
   const [sessionsCount, setSessionsCount] = useState(0);
   const [view, setViewRaw] = useState('overview');
+  const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const { badges, markSeen } = useNotificationBadges();
   const { t, locale } = useLanguage();
@@ -58,9 +61,7 @@ function DashboardRector({ user, onLogout }) {
         </div>
         <nav className="sidebar-nav">
           <button className={`nav-item ${view === 'overview' ? 'active' : ''}`} onClick={() => setView('overview')}>{t('sidebar.overview')}</button>
-          <button className={`nav-item ${view === 'directory' ? 'active' : ''}`} onClick={() => setView('directory')}>{t('sidebar.staffDirectory')}</button>
-          <button className={`nav-item ${view === 'departments' ? 'active' : ''}`} onClick={() => setView('departments')}>{t('sidebar.facultiesDepts')}</button>
-          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.communications')}</button>
+          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.communications')} <NotifBadge count={badges.reminders} /></button>
           <button className={`nav-item ${view === 'promotions' ? 'active' : ''}`} onClick={() => setView('promotions')}>{t('sidebar.promotions')} <NotifBadge count={badges.promotions} /></button>
           <button className={`nav-item ${view === 'evaluations' ? 'active' : ''}`} onClick={() => setView('evaluations')}>{t('sidebar.evaluations')} <NotifBadge count={badges.evaluations} /></button>
           <button className={`nav-item ${view === 'settings' ? 'active' : ''}`} onClick={() => setView('settings')}>{t('settings.title')}</button>
@@ -76,26 +77,148 @@ function DashboardRector({ user, onLogout }) {
           {view === 'overview' ? (
             loading ? <div className="loading-spinner">{t('common.loading')}</div> : (
               <div className="overview-grid">
-                <div className="stat-card"><h3>{t('rector.totalStaff')}</h3><p className="stat-value">{users.length}</p></div>
-                <div className="stat-card"><h3>{t('rector.teachers')}</h3><p className="stat-value">{teachersCount}</p></div>
-                <div className="stat-card"><h3>{t('rector.deansViceDeans')}</h3><p className="stat-value">{deansCount}</p></div>
-                <div className="stat-card"><h3>{t('rector.departments')}</h3><p className="stat-value">{departments.length}</p></div>
-                <div className="stat-card"><h3>{t('rector.activeSessions')}</h3><p className="stat-value">{sessionsCount}</p></div>
+                <div className="stat-card" onClick={() => { setView('directory'); setFilter('all'); }} style={{ cursor: 'pointer' }}>
+                  <h3>{t('rector.totalStaff')}</h3><p className="stat-value">{users.length}</p>
+                </div>
+                <div className="stat-card" onClick={() => { setView('directory'); setFilter('TEACHER'); }} style={{ cursor: 'pointer' }}>
+                  <h3>{t('rector.teachers')}</h3><p className="stat-value">{teachersCount}</p>
+                </div>
+                <div className="stat-card" onClick={() => { setView('directory'); setFilter('management'); }} style={{ cursor: 'pointer' }}>
+                  <h3>{t('rector.deansViceDeans')}</h3><p className="stat-value">{deansCount}</p>
+                </div>
+                <div className="stat-card" onClick={() => setView('departments')} style={{ cursor: 'pointer' }}>
+                  <h3>{t('rector.departments')}</h3><p className="stat-value">{departments.length}</p>
+                </div>
               </div>
             )
           ) : view === 'directory' ? (
-            <div className="table-card">
-              {loading ? <div className="loading-spinner">{t('rector.loadingDirectory')}</div> : (
-                <table className="modern-table">
-                  <thead><tr><th>{t('common.id')}</th><th>{t('common.fullName')}</th><th>{t('common.email')}</th><th>{t('common.department')}</th><th>{t('common.role')}</th></tr></thead>
-                  <tbody>
-                    {users.map(u => (<tr key={u.id}><td>#{u.id}</td><td><strong>{u.nom}</strong> {u.prenom}</td><td>{u.email}</td><td>{u.department_name || '-'}</td><td><span className={`role-tag role-${u.role.toLowerCase()}`}>{t('roles.' + u.role) || u.role}</span></td></tr>))}
-                    {users.length === 0 && <tr><td colSpan="5" className="empty-state">{t('rector.noStaffFound')}</td></tr>}
-                  </tbody>
-                </table>
-              )}
+            <div style={{ padding: '0 2px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '15px' }}>
+                <button 
+                  onClick={() => { setView('overview'); setFilter('all'); }} 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px', 
+                    background: 'white', 
+                    border: '1px solid #e2e8f0', 
+                    color: '#64748b', 
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    cursor: 'pointer', 
+                    fontWeight: '500',
+                    fontSize: '14px',
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.color = '#334155'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}
+                >
+                  ← {t('common.back') || 'Back'}
+                </button>
+                
+                {(filter === 'TEACHER' || filter.startsWith('dept_')) && (
+                  <select
+                    value={filter.startsWith('dept_') ? filter : ''}
+                    onChange={(e) => setFilter(e.target.value || 'TEACHER')}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      fontSize: '14px',
+                      color: '#64748b',
+                      outline: 'none',
+                      cursor: 'pointer',
+                      minWidth: '180px'
+                    }}
+                  >
+                    <option value="">{t('sidebar.departments')} (Tous)</option>
+                    {departments.map(dept => (
+                      <option key={dept.id} value={`dept_${dept.id}`}>{dept.name}</option>
+                    ))}
+                  </select>
+                )}
+
+                <div className="search-box" style={{ margin: 0, flex: 1 }}>
+                  <input 
+                    type="text" 
+                    placeholder={t('common.search') || 'Search staff...'} 
+                    value={searchTerm} 
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="search-input"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              </div>
+              <div className="table-card">
+                {loading ? <div className="loading-spinner">{t('rector.loadingDirectory')}</div> : (
+                  <table className="modern-table">
+                    <thead><tr><th>#</th><th>{t('common.fullName')}</th><th>{t('common.email')}</th><th>{t('common.department')}</th><th>{t('common.role')}</th></tr></thead>
+                    <tbody>
+                      {users
+                        .filter(u => {
+                          const fullName = `${u.nom} ${u.prenom}`.toLowerCase();
+                          const matchesSearch = fullName.includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase());
+                          if (!matchesSearch) return false;
+
+                          if (filter === 'all') return true;
+                          if (filter === 'TEACHER') return u.role === 'TEACHER' || u.role === 'ENSEIGNANT';
+                          if (filter === 'management') return ['DEAN', 'DOYEN', 'VICE_DEAN', 'VICE_DOYEN'].includes(u.role);
+                          if (filter.startsWith('dept_')) {
+                            const deptId = parseInt(filter.split('_')[1]);
+                            return (u.role === 'TEACHER' || u.role === 'ENSEIGNANT') && u.department_id === deptId;
+                          }
+                          return true;
+                        })
+                        .map((u, index) => (
+                          <tr key={u.id}>
+                            <td>{index + 1}</td>
+                            <td><strong>{u.nom}</strong> {u.prenom}</td>
+                            <td>{u.email}</td>
+                            <td>{u.department_name || '-'}</td>
+                            <td><span className={`role-tag role-${u.role.toLowerCase()}`}>{t('roles.' + u.role) || u.role}</span></td>
+                          </tr>
+                        ))}
+                      {users.length === 0 && <tr><td colSpan="5" className="empty-state">{t('rector.noStaffFound')}</td></tr>}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </div>
-          ) : view === 'departments' ? <ManageDepartments /> : view === 'promotions' ? <ManagePromotions user={user} /> : view === 'evaluations' ? <ManageEvaluations user={user} /> : view === 'reminders' ? <ManageReminders /> : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : null}
+          ) : view === 'departments' ? (
+            <>
+              <button 
+                onClick={() => setView('overview')} 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  background: 'white', 
+                  border: '1px solid #e2e8f0', 
+                  color: '#64748b', 
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  cursor: 'pointer', 
+                  marginBottom: '20px',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.color = '#334155'; }}
+                onMouseOut={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}
+              >
+                ← {t('common.back') || 'Back to Overview'}
+              </button>
+              <ManageDepartments />
+            </>
+          ) : view === 'promotions' ? <ManagePromotions user={user} /> : view === 'evaluations' ? <ManageEvaluations user={user} /> : view === 'reminders' ? (
+            <>
+              <ManageReminders user={user} />
+              <ReminderInbox user={user} />
+            </>
+          ) : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : null}
         </div>
       </main>
     </div>

@@ -6,6 +6,7 @@ import AddEmployee from './AddEmployee';
 import ManageDepartments from './ManageDepartments';
 import ManageSalaries from './ManageSalaries';
 import ManageReminders from './ManageReminders';
+import ReminderInbox from './ReminderInbox';
 import ManageDocuments from './ManageDocuments';
 import ManagePromotions from './ManagePromotions';
 import Settings from './Settings';
@@ -140,7 +141,7 @@ function DashboardHR({ user, onLogout }) {
           <button className={`nav-item ${view === 'add' ? 'active' : ''}`} onClick={() => setView('add')}>{t('sidebar.addEmployee')}</button>
           <button className={`nav-item ${view === 'departments' ? 'active' : ''}`} onClick={() => setView('departments')}>{t('sidebar.departments')}</button>
           <button className={`nav-item ${view === 'salaries' ? 'active' : ''}`} onClick={() => setView('salaries')}>{t('sidebar.salaries')}</button>
-          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.reminders')}</button>
+          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.reminders')} <NotifBadge count={badges.reminders} /></button>
           <button className={`nav-item ${view === 'documents' ? 'active' : ''}`} onClick={() => setView('documents')}>{t('sidebar.documents')} <NotifBadge count={badges.documents} /></button>
           <button className={`nav-item ${view === 'promotions' ? 'active' : ''}`} onClick={() => setView('promotions')}>{t('sidebar.promotions')} <NotifBadge count={badges.promotions} /></button>
           <button className={`nav-item ${view === 'settings' ? 'active' : ''}`} onClick={() => setView('settings')}>{t('settings.title')}</button>
@@ -182,7 +183,10 @@ function DashboardHR({ user, onLogout }) {
           ) : view === 'promotions' ? (
             <ManagePromotions user={user} />
           ) : view === 'reminders' ? (
-            <ManageReminders />
+            <>
+              <ManageReminders user={user} />
+              <ReminderInbox user={user} />
+            </>
           ) : view === 'settings' ? (
             <Settings user={user} onProfileUpdate={handleProfileUpdate} />
           ) : (

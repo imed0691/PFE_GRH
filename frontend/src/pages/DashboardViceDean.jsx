@@ -2,19 +2,19 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
 
-import ManageSessions from './ManageSessions';
-import ManageAbsences from './ManageAbsences';
 import ManageReminders from './ManageReminders';
+import ReminderInbox from './ReminderInbox';
 import useNotificationBadges from '../hooks/useNotificationBadges';
 import NotifBadge from '../components/NotifBadge';
 import Settings from './Settings';
 import './DashboardViceDean.css';
 
 function DashboardViceDean({ user, onLogout }) {
-  const [sessionsCount, setSessionsCount] = useState(0);
-  const [unreadAbsences, setUnreadAbsences] = useState(0);
-  const [teachersCount, setTeachersCount] = useState(0);
-  const [view, setViewRaw] = useState('overview');
+  const [users, setUsers] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [view, setViewRaw] = useState('staff');
   const [loading, setLoading] = useState(true);
   const { badges, markSeen } = useNotificationBadges();
   const { t, locale } = useLanguage();
@@ -27,28 +27,31 @@ function DashboardViceDean({ user, onLogout }) {
 
   const setView = (newView) => { setViewRaw(newView); if (badges[newView] && badges[newView] > 0) markSeen(newView); };
 
-  const fetchOverviewData = async () => {
+
+
+  const fetchUsers = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const headers = { 'Authorization': `Bearer ${token}` };
-      const [resUsers, resSessions, resAbsences] = await Promise.all([
-        fetch('http://localhost:5000/api/users', { headers }),
-        fetch('http://localhost:5000/api/sessions', { headers }),
-        fetch('http://localhost:5000/api/absences', { headers })
-      ]);
-      if (resUsers.ok) { const users = await resUsers.json(); setTeachersCount(users.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT').length); }
-      if (resSessions.ok) { setSessionsCount((await resSessions.json()).length); }
-      if (resAbsences.ok) { const absences = await resAbsences.json(); setUnreadAbsences(absences.filter(a => !a.is_read_by_admin).length); }
-    } catch (error) { console.error(error); } finally { setLoading(false); }
+      const res = await fetch('http://localhost:5000/api/users', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) setUsers(await res.json());
+    } catch (error) { toast.error(t('dean.errorFetchUsers')); } finally { setLoading(false); }
   };
 
-  const markAbsencesAsRead = async () => {
-    if (unreadAbsences === 0) return;
-    try { const token = localStorage.getItem('token'); await fetch('http://localhost:5000/api/absences/read-admin', { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }); setUnreadAbsences(0); } catch (e) { console.error(e); }
+  const fetchDepartments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/departments', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) setDepartments(await res.json());
+    } catch (error) { console.error(error); }
   };
 
-  useEffect(() => { if (view === 'overview') fetchOverviewData(); if (view === 'absences') markAbsencesAsRead(); }, [view]);
+  useEffect(() => { 
+    if (view === 'staff') {
+      fetchUsers();
+      fetchDepartments();
+    }
+  }, [view]);
 
   return (
     <div className="dashboard-container">
@@ -59,27 +62,103 @@ function DashboardViceDean({ user, onLogout }) {
           <div className="user-info"><h4>{user.prenom} {user.nom}</h4><span className="badge-role" style={{ background: 'rgba(20, 184, 166, 0.2)', color: '#5eead4' }}>{t('roles.VICE_DEAN')}</span></div>
         </div>
         <nav className="sidebar-nav">
-          <button className={`nav-item ${view === 'overview' ? 'active' : ''}`} onClick={() => setView('overview')}>{t('sidebar.overview')}</button>
-          <button className={`nav-item ${view === 'sessions' ? 'active' : ''}`} onClick={() => setView('sessions')}>{t('sidebar.academicAffairs')}</button>
-          <button className={`nav-item ${view === 'absences' ? 'active' : ''}`} onClick={() => setView('absences')}>{t('sidebar.absences')} <NotifBadge count={unreadAbsences || badges.absences} /></button>
-          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.communications')}</button>
+
+          <button className={`nav-item ${view === 'staff' ? 'active' : ''}`} onClick={() => setView('staff')}>{t('sidebar.humanResources')}</button>
+          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.communications')} <NotifBadge count={badges.reminders} /></button>
           <button className={`nav-item ${view === 'settings' ? 'active' : ''}`} onClick={() => setView('settings')}>{t('settings.title')}</button>
         </nav>
         <button className="btn-logout" onClick={onLogout}>{t('common.logout')}</button>
       </aside>
       <main className="main-content">
         <header className="topbar">
-          <h1>{view === 'overview' ? t('topbar.pedagogyDashboard') : view === 'sessions' ? t('topbar.schedulesAndSessions') : view === 'absences' ? t('topbar.teacherAbsences') : view === 'settings' ? t('settings.title') : t('topbar.communicationsReminders')}</h1>
+          <h1>{view === 'staff' ? t('topbar.facultyStaff') : view === 'reminders' ? t('topbar.communicationsReminders') : t('settings.title')}</h1>
           <div className="date-display">{new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </header>
         <div className="content-area">
-          {view === 'overview' ? (loading ? <div className="loading-spinner">{t('common.loading')}</div> : (
-            <div className="overview-grid">
-              <div className="stat-card"><h3>{t('viceDean.totalTeachers')}</h3><p className="stat-value">{teachersCount}</p></div>
-              <div className="stat-card"><h3>{t('viceDean.activeSessions')}</h3><p className="stat-value">{sessionsCount}</p></div>
-              <div className="stat-card" style={{ borderBottomColor: unreadAbsences > 0 ? '#ef4444' : 'var(--vice-primary)' }}><h3>{t('viceDean.newAbsences')}</h3><p className="stat-value" style={{ color: unreadAbsences > 0 ? '#ef4444' : 'var(--text-main)' }}>{unreadAbsences}</p></div>
-            </div>
-          )) : view === 'sessions' ? <ManageSessions /> : view === 'absences' ? <ManageAbsences /> : view === 'reminders' ? <ManageReminders /> : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : null}
+          {view === 'staff' ? (
+            <>
+              <div className="list-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '20px', flexWrap: 'wrap' }}>
+                <div className="filter-nav" style={{ marginBottom: 0, flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button className={`filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>{t('common.all')}</button>
+                  <button className={`filter-btn ${filter === 'management' ? 'active' : ''}`} onClick={() => setFilter('management')}>{t('roles.VICE_DEAN')}</button>
+                  <button className={`filter-btn ${filter === 'DEPARTMENT_HEAD' ? 'active' : ''}`} onClick={() => setFilter('DEPARTMENT_HEAD')}>{t('roles.DEPARTMENT_HEAD')}</button>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <select
+                      className="dept-filter-select"
+                      value={filter.startsWith('dept_') ? filter : ''}
+                      onChange={(e) => setFilter(e.target.value)}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '20px',
+                        border: '1px solid var(--border)',
+                        fontSize: '13px',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        background: filter.startsWith('dept_') ? 'var(--primary)' : 'white',
+                        color: filter.startsWith('dept_') ? 'white' : 'var(--text-muted)',
+                        transition: 'var(--transition)'
+                      }}
+                    >
+                      <option value="" hidden>{t('sidebar.departments')}</option>
+                      {departments.map(dept => (
+                        <option key={dept.id} value={`dept_${dept.id}`}>{dept.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="search-box">
+                  <input
+                    type="text"
+                    placeholder={t('common.search') || 'Search...'}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="search-input"
+                  />
+                </div>
+              </div>
+
+              <div className="table-card">
+                {loading ? <div className="loading-spinner">{t('common.loading')}</div> : (
+                  <table className="modern-table">
+                    <thead><tr><th>#</th><th>{t('common.id')}</th><th>{t('common.fullName')}</th><th>{t('common.email')}</th><th>{t('common.department')}</th><th>{t('common.role')}</th></tr></thead>
+                    <tbody>
+                      {users
+                        .filter(u => {
+                          const fullName = `${u.nom} ${u.prenom}`.toLowerCase();
+                          const matchesSearch = fullName.includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase());
+                          if (!matchesSearch) return false;
+
+                          if (filter === 'all') return true;
+                          if (filter === 'management') return u.role === 'VICE_DEAN' || u.role === 'VICE_DOYEN';
+                          if (filter === 'DEPARTMENT_HEAD') return u.role === 'DEPARTMENT_HEAD' || u.role === 'CHEF_DEPARTEMENT';
+                          if (filter.startsWith('dept_')) {
+                            const deptId = parseInt(filter.split('_')[1]);
+                            return u.department_id === deptId;
+                          }
+                          return true;
+                        })
+                        .map((u, index) => (
+                          <tr key={u.id}>
+                            <td>{index + 1}</td>
+                            <td>#{u.id}</td>
+                            <td><strong>{u.nom}</strong> {u.prenom}</td>
+                            <td>{u.email}</td>
+                            <td>{u.department_name || '-'}</td>
+                            <td><span className={`role-tag role-${u.role.toLowerCase()}`}>{t('roles.' + u.role) || u.role}</span></td>
+                          </tr>
+                        ))}
+                      {users.length === 0 && <tr><td colSpan="6" className="empty-state">{t('dean.noEmployeesFound')}</td></tr>}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </>
+          ) : view === 'reminders' ? (
+            <>
+              <ManageReminders user={user} />
+              <ReminderInbox user={user} />
+            </>
+          ) : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : null}
         </div>
       </main>
     </div>

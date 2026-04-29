@@ -103,27 +103,31 @@ exports.getCounts = (req, res) => {
     });
   }
 
-  // Documents
+  // Documents - New Routing & Persistence Logic
   let docFilter = '';
   let docQuery = '';
   let docParams = [userId];
 
   if (['DEAN', 'DOYEN'].includes(userRole)) {
-    docFilter = `AND (d.type = 'Work Certificate (Attestation de travail)' OR d.type = 'Mission Order (Ordre de mission)')`;
-    docQuery = `SELECT COUNT(*) as count FROM documents d WHERE d.request_date > COALESCE((SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'documents'), '2000-01-01') ${docFilter}`;
+    // Persistent badge for items to process
+    docFilter = `AND (d.type = 'Work Certificate (Attestation de travail)' OR d.type = 'Mission Order (Ordre de mission)') AND d.status IN ('Pending', 'Processing')`;
+    docQuery = `SELECT COUNT(*) as count FROM documents d WHERE 1=1 ${docFilter}`;
   } else if (['DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT'].includes(userRole)) {
-    docFilter = `AND d.type = 'Teaching Load Certificate' AND u.department_id = (SELECT department_id FROM users WHERE id = ?)`;
-    docQuery = `SELECT COUNT(*) as count FROM documents d JOIN users u ON d.teacher_id = u.id WHERE d.request_date > COALESCE((SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'documents'), '2000-01-01') ${docFilter}`;
+    // Persistent badge for items to process in their department
+    docFilter = `AND d.type = 'Teaching Load Certificate' AND d.status IN ('Pending', 'Processing') AND u.department_id = (SELECT department_id FROM users WHERE id = ?)`;
+    docQuery = `SELECT COUNT(*) as count FROM documents d JOIN users u ON d.teacher_id = u.id WHERE 1=1 ${docFilter}`;
     docParams.push(userId);
   } else if (['HR', 'RH', 'HR_MANAGER', 'RH_MANAGER'].includes(userRole)) {
-    docFilter = `AND d.type = 'Salary Slip (Fiche de paie)'`;
-    docQuery = `SELECT COUNT(*) as count FROM documents d WHERE d.request_date > COALESCE((SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'documents'), '2000-01-01') ${docFilter}`;
+    // Persistent badge for items to process
+    docFilter = `AND d.type = 'Salary Slip (Fiche de paie)' AND d.status IN ('Pending', 'Processing')`;
+    docQuery = `SELECT COUNT(*) as count FROM documents d WHERE 1=1 ${docFilter}`;
   } else if (['TEACHER', 'ENSEIGNANT'].includes(userRole)) {
-    docFilter = `AND d.teacher_id = ?`;
-    docQuery = `SELECT COUNT(*) as count FROM documents d WHERE d.request_date > COALESCE((SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'documents'), '2000-01-01') ${docFilter}`;
+    // Feedback badge when a doc becomes "Ready"
+    docFilter = `AND d.teacher_id = ? AND d.status = 'Ready'`;
+    docQuery = `SELECT COUNT(*) as count FROM documents d WHERE d.updated_at > COALESCE((SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'documents'), '2000-01-01') ${docFilter}`;
     docParams.push(userId);
   } else {
-    // Rectors / Admins
+    // Rectors / Admins - Generic count of recent requests
     docQuery = `SELECT COUNT(*) as count FROM documents d WHERE d.request_date > COALESCE((SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'documents'), '2000-01-01')`;
   }
 
@@ -131,6 +135,25 @@ exports.getCounts = (req, res) => {
     name: 'documents',
     query: docQuery,
     params: docParams
+  });
+
+  sections.push({
+    name: 'reminders',
+    query: `SELECT COUNT(*) as count FROM reminders r 
+            LEFT JOIN users u ON r.sender_id = u.id
+            WHERE r.sender_id != ? AND (
+               (r.teacher_id = ? 
+               OR (r.teacher_id IS NULL AND r.department_id = (SELECT department_id FROM users WHERE id = ?))
+               OR (r.teacher_id IS NULL AND r.department_id IS NULL AND (
+                    u.role IN ('RECTOR', 'RECTEUR', 'VICE_RECTOR', 'VICE_RECTEUR')
+                    OR (SELECT role FROM users WHERE id = ?) NOT IN ('RECTOR', 'RECTEUR', 'VICE_RECTOR', 'VICE_RECTEUR')
+               )))
+            )
+            AND r.created_at > COALESCE(
+              (SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'reminders'),
+              '2000-01-01'
+            )`,
+    params: [userId, userId, userId, userId, userId]
   });
 
   // Execute all queries

@@ -5,6 +5,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher';
 import ManageSessions from './ManageSessions';
 import ManageAbsences from './ManageAbsences';
 import ManageReminders from './ManageReminders';
+import ReminderInbox from './ReminderInbox';
 import ManagePromotions from './ManagePromotions';
 import ManageDocuments from './ManageDocuments';
 import ManageEvaluations from './ManageEvaluations';
@@ -90,7 +91,7 @@ function DashboardDeptHead({ user, onLogout }) {
           <button className={`nav-item ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}>{t('sidebar.teachers')}</button>
           <button className={`nav-item ${view === 'sessions' ? 'active' : ''}`} onClick={() => setView('sessions')}>{t('sidebar.schedules')}</button>
           <button className={`nav-item ${view === 'absences' ? 'active' : ''}`} onClick={() => setView('absences')}>{t('sidebar.absences')} <NotifBadge count={unreadAbsences || badges.absences} /></button>
-          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.notifications')}</button>
+          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.notifications')} <NotifBadge count={badges.reminders} /></button>
           <button className={`nav-item ${view === 'promotions' ? 'active' : ''}`} onClick={() => setView('promotions')}>{t('sidebar.promotions')} <NotifBadge count={badges.promotions} /></button>
           <button className={`nav-item ${view === 'documents' ? 'active' : ''}`} onClick={() => setView('documents')}>{t('sidebar.documents')} <NotifBadge count={badges.documents} /></button>
           <button className={`nav-item ${view === 'evaluations' ? 'active' : ''}`} onClick={() => setView('evaluations')}>{t('sidebar.evaluations')} <NotifBadge count={badges.evaluations} /></button>
@@ -110,7 +111,12 @@ function DashboardDeptHead({ user, onLogout }) {
            view === 'promotions' ? <ManagePromotions user={user} /> : 
            view === 'documents' ? <ManageDocuments user={user} /> : 
            view === 'evaluations' ? <ManageEvaluations user={user} /> : 
-           view === 'reminders' ? <ManageReminders /> : 
+           view === 'reminders' ? (
+             <>
+               <ManageReminders user={user} />
+               <ReminderInbox user={user} />
+             </>
+           ) : 
            view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : 
            view === 'teacher-schedule' ? (
              <div className="table-card">
