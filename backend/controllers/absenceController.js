@@ -28,8 +28,8 @@ exports.getAllAbsences = (req, res) => {
   const userId = req.user.id;
 
   const query = `
-    SELECT a.id, a.date, a.reason, a.status, a.has_justification, a.is_caught_up, 
-           a.justification_text, a.catchup_date, a.catchup_start_time, a.catchup_end_time,
+    SELECT a.id, a.date, a.reason, a.status, a.has_justification, a.justification_status, a.is_caught_up, 
+           a.justification_text, a.justification_file, a.catchup_date, a.catchup_start_time, a.catchup_end_time,
            a.created_at, a.is_read_by_admin, a.is_read_by_teacher, 
            u.nom, u.prenom, u.department_id 
     FROM absences a
@@ -55,7 +55,8 @@ exports.getAllAbsences = (req, res) => {
 // Dept Head/RH: Mettre à jour Justification ou Rattrapage
 exports.updateAbsenceStatus = (req, res) => {
   const { id } = req.params;
-  const { status, has_justification, is_caught_up } = req.body;
+  const { status, has_justification, is_caught_up, justification_status } = req.body;
+  const adminId = req.user.id;
 
   let updateFields = [];
   let values = [];
@@ -63,6 +64,7 @@ exports.updateAbsenceStatus = (req, res) => {
   if (status !== undefined) { updateFields.push("status = ?"); values.push(status); }
   if (has_justification !== undefined) { updateFields.push("has_justification = ?"); values.push(has_justification); }
   if (is_caught_up !== undefined) { updateFields.push("is_caught_up = ?"); values.push(is_caught_up); }
+  if (justification_status !== undefined) { updateFields.push("justification_status = ?"); values.push(justification_status); }
 
   if (updateFields.length === 0) return res.status(400).json({ message: "No fields to update." });
 
@@ -71,6 +73,18 @@ exports.updateAbsenceStatus = (req, res) => {
 
   db.query(query, values, (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
+
+    // Si on a changé le statut de justification, on notifie le prof
+    if (justification_status) {
+      db.query('SELECT teacher_id, date FROM absences WHERE id = ?', [id], (err, row) => {
+        if (!err && row.length > 0) {
+          const msg = `Votre justification pour l'absence du ${new Date(row[0].date).toLocaleDateString()} a été ${justification_status === 'Accepted' ? 'ACCEPTÉE' : 'REFUSÉE'}.`;
+          db.query('INSERT INTO reminders (teacher_id, sender_id, message, type) VALUES (?, ?, ?, ?)', 
+            [row[0].teacher_id, adminId, msg, justification_status === 'Accepted' ? 'info' : 'warning']);
+        }
+      });
+    }
+
     res.json({ message: "Absence mise à jour avec succès." });
   });
 };
@@ -90,8 +104,9 @@ exports.submitJustification = (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     if (results.length === 0) return res.status(404).json({ message: "Absence non trouvée." });
 
-    const query = `UPDATE absences SET justification_text = ?, has_justification = TRUE, is_read_by_admin = FALSE WHERE id = ?`;
-    db.query(query, [justification_text.trim(), id], (err, result) => {
+    const justificationFile = req.file ? req.file.filename : null;
+    const query = `UPDATE absences SET justification_text = ?, justification_file = ?, has_justification = TRUE, justification_status = 'Pending', is_read_by_admin = FALSE WHERE id = ?`;
+    db.query(query, [justification_text.trim(), justificationFile, id], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ message: "Justification envoyée avec succès." });
     });

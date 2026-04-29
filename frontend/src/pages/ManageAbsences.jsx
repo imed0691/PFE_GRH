@@ -103,15 +103,16 @@ function ManageAbsences({ user: propUser }) {
     }
   };
 
-  const toggleField = async (id, field, currentValue) => {
+  const handleJustificationStatus = async (id, status) => {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:5000/api/absences/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ [field]: !currentValue })
+        body: JSON.stringify({ justification_status: status })
       });
       if (res.ok) {
+        toast.success(`Justification ${status === 'Accepted' ? 'acceptée' : 'refusée'}`);
         fetchAbsences();
       } else {
         toast.error(t('absences.errorUpdating'));
@@ -179,14 +180,13 @@ function ManageAbsences({ user: propUser }) {
               <th>{t('common.date')}</th>
               <th>{t('common.teacher')}</th>
               <th>{t('teacher.reason')}</th>
-              <th>{t('absences.justified')}</th>
-              <th>{t('absences.caughtUp')}</th>
+              <th>Justification / Status</th>
               <th>{t('absences.penaltySalary')}</th>
             </tr>
           </thead>
           <tbody>
             {absences.map((a, index) => {
-              const hasPenalty = !a.has_justification && !a.is_caught_up;
+              const hasPenalty = a.justification_status !== 'Accepted';
               return (
                 <tr key={a.id}>
                   <td>{index + 1}</td>
@@ -194,45 +194,30 @@ function ManageAbsences({ user: propUser }) {
                   <td><strong>{a.nom}</strong> {a.prenom}</td>
                   <td>{a.reason}</td>
                   <td>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <button 
-                        onClick={() => (isDeptHead || isHR) && toggleField(a.id, 'has_justification', a.has_justification)}
-                        className={`role-tag ${a.has_justification ? 'active' : ''}`}
-                        style={{ 
-                          background: a.has_justification ? '#d1fae5' : '#fee2e2', 
-                          color: a.has_justification ? '#065f46' : '#991b1b',
-                          border: 'none',
-                          cursor: (isDeptHead || isHR) ? 'pointer' : 'default',
-                          padding: '4px 10px'
-                        }}
-                      >
-                        {a.has_justification ? t('common.yes') : t('common.no')}
-                      </button>
-                      {a.justification_text && (
-                        <div style={{ fontSize: '0.75rem', color: '#64748b', maxWidth: '150px', fontStyle: 'italic' }}>
-                          "{a.justification_text}"
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {a.justification_status === 'Pending' ? (
+                        <div style={{ display: 'flex', gap: '5px' }}>
+                          <button onClick={() => handleJustificationStatus(a.id, 'Accepted')} style={{ background: '#10b981', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Accepter</button>
+                          <button onClick={() => handleJustificationStatus(a.id, 'Rejected')} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Refuser</button>
                         </div>
+                      ) : (
+                        <span className="role-tag" style={{ 
+                          background: a.justification_status === 'Accepted' ? '#d1fae5' : a.justification_status === 'Rejected' ? '#fee2e2' : '#e2e8f0', 
+                          color: a.justification_status === 'Accepted' ? '#065f46' : a.justification_status === 'Rejected' ? '#991b1b' : '#475569',
+                          textAlign: 'center'
+                        }}>
+                          {a.justification_status === 'Accepted' ? 'Acceptée' : a.justification_status === 'Rejected' ? 'Refusée' : 'Aucune'}
+                        </span>
                       )}
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <button 
-                        onClick={() => (isDeptHead || isHR) && toggleField(a.id, 'is_caught_up', a.is_caught_up)}
-                        className={`role-tag ${a.is_caught_up ? 'active' : ''}`}
-                        style={{ 
-                          background: a.is_caught_up ? '#dbeafe' : '#fef3c7', 
-                          color: a.is_caught_up ? '#1e40af' : '#92400e',
-                          border: 'none',
-                          cursor: (isDeptHead || isHR) ? 'pointer' : 'default',
-                          padding: '4px 10px'
-                        }}
-                      >
-                        {a.is_caught_up ? t('common.yes') : t('common.no')}
-                      </button>
-                      {a.catchup_date && (
-                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                          {new Date(a.catchup_date).toLocaleDateString()} {a.catchup_start_time?.substring(0, 5)}-{a.catchup_end_time?.substring(0, 5)}
+                      
+                      {(a.justification_text || a.justification_file) && (
+                        <div style={{ padding: '8px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.8rem' }}>
+                          {a.justification_text && <div style={{ fontStyle: 'italic', marginBottom: '5px' }}>"{a.justification_text}"</div>}
+                          {a.justification_file && (
+                            <a href={`http://localhost:5000/uploads/justifications/${a.justification_file}`} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'underline' }}>
+                              📎 Voir justificatif
+                            </a>
+                          )}
                         </div>
                       )}
                     </div>

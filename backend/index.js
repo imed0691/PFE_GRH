@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
@@ -11,12 +12,14 @@ const promotionRoutes = require('./routes/promotionRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const evaluationRoutes = require('./routes/evaluationRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const classRoutes = require('./routes/classRoutes');
 
 const app = express();
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Utilisation des routes
 app.use('/api', authRoutes);
@@ -29,6 +32,7 @@ app.use('/api', promotionRoutes);
 app.use('/api', documentRoutes);
 app.use('/api', evaluationRoutes);
 app.use('/api', notificationRoutes);
+app.use('/api', classRoutes);
 
 // Route de test pour vérifier la liaison avec le frontend
 app.get('/api/hello', (req, res) => {

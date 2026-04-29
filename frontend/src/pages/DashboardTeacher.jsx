@@ -43,23 +43,30 @@ function DashboardTeacher({ user, onLogout }) {
   };
 
   const [activeJustify, setActiveJustify] = useState(null);
-  const [activeCatchup, setActiveCatchup] = useState(null);
   const [justificationText, setJustificationText] = useState('');
+  const [justificationFile, setJustificationFile] = useState(null);
   const [catchupData, setCatchupData] = useState({ date: '', startTime: '', endTime: '' });
 
   const handleJustify = async (id) => {
     if (!justificationText) return toast.error(t('teacher.allFieldsRequired'));
     try {
       const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('justification_text', justificationText);
+      if (justificationFile) {
+        formData.append('justification_file', justificationFile);
+      }
+
       const res = await fetch(`http://localhost:5000/api/absences/${id}/justify`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ justification_text: justificationText })
+        headers: { 'Authorization': `Bearer ${token}` }, // Do NOT set Content-Type, browser does it for FormData
+        body: formData
       });
       if (res.ok) {
         toast.success(t('absences.justificationSubmitted'));
         setActiveJustify(null);
         setJustificationText('');
+        setJustificationFile(null);
         fetchDashboardData();
       } else {
         toast.error(t('absences.errorUpdating'));
@@ -227,6 +234,15 @@ function DashboardTeacher({ user, onLogout }) {
 
   const volumeRestant = data.stats.volume_horaire - data.stats.heures_assurees;
 
+  const getStatusStyle = (status) => {
+    switch(status) {
+      case 'Accepted': return { bg: '#d1fae5', color: '#065f46', text: 'Acceptée' };
+      case 'Rejected': return { bg: '#fee2e2', color: '#991b1b', text: 'Refusée' };
+      case 'Pending': return { bg: '#fef3c7', color: '#92400e', text: 'En attente' };
+      default: return { bg: '#e2e8f0', color: '#475569', text: 'Non justifiée' };
+    }
+  };
+
   return (
     <div className="dashboard-container">
       <aside className="sidebar">
@@ -350,15 +366,15 @@ function DashboardTeacher({ user, onLogout }) {
                         <tr>
                           <th>{t('common.date')}</th>
                           <th>{t('teacher.reason')}</th>
-                          <th>{t('absences.justified')}</th>
-                          <th>{t('absences.caughtUp')}</th>
+                          <th>Justification / Status</th>
                           <th>{t('absences.penaltySalary')}</th>
                           <th>{t('common.actions')}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {data.my_absences && data.my_absences.map(a => {
-                          const hasPenalty = !a.has_justification && !a.is_caught_up;
+                          const hasPenalty = a.justification_status !== 'Accepted';
+                          const statusInfo = getStatusStyle(a.justification_status);
                           return (
                             <tr key={a.id}>
                               <td>
@@ -368,19 +384,13 @@ function DashboardTeacher({ user, onLogout }) {
                                 </div>
                               </td>
                               <td>{a.reason}</td>
-                              <td><span className="role-tag" style={{ background: a.has_justification ? '#d1fae5' : '#fee2e2', color: a.has_justification ? '#065f46' : '#991b1b' }}>{a.has_justification ? t('common.yes') : t('common.no')}</span></td>
-                              <td><span className="role-tag" style={{ background: a.is_caught_up ? '#dbeafe' : '#fef3c7', color: a.is_caught_up ? '#1e40af' : '#92400e' }}>{a.is_caught_up ? t('common.yes') : t('common.no')}</span></td>
+                              <td><span className="role-tag" style={{ background: statusInfo.bg, color: statusInfo.color }}>{statusInfo.text}</span></td>
                               <td><span style={{ color: hasPenalty ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>{hasPenalty ? t('common.yes') : t('common.no')}</span></td>
                               <td>
                                 <div style={{ display: 'flex', gap: '5px' }}>
-                                  {!a.has_justification && (
+                                  {(a.justification_status === 'None' || a.justification_status === 'Rejected') && (
                                     <button onClick={() => setActiveJustify(a.id)} className="btn-small" style={{ background: '#10b981', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>
-                                      {t('absences.justify')}
-                                    </button>
-                                  )}
-                                  {!a.is_caught_up && (
-                                    <button onClick={() => setActiveCatchup(a.id)} className="btn-small" style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>
-                                      {t('absences.catchUp')}
+                                      {a.justification_status === 'Rejected' ? 'Ré-envoyer' : t('absences.justify')}
                                     </button>
                                   )}
                                 </div>
@@ -389,7 +399,7 @@ function DashboardTeacher({ user, onLogout }) {
                           );
                         })}
                         {(!data.my_absences || data.my_absences.length === 0) && (
-                          <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>{t('teacher.noAbsenceRecords')}</td></tr>
+                          <tr><td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>{t('teacher.noAbsenceRecords')}</td></tr>
                         )}
                       </tbody>
                     </table>
@@ -458,6 +468,14 @@ function DashboardTeacher({ user, onLogout }) {
                 style={{ width: '100%', minHeight: '100px', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', marginTop: '5px' }}
               />
             </div>
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label>Joindre un fichier (Certificat médical, etc.)</label>
+              <input 
+                type="file" 
+                onChange={(e) => setJustificationFile(e.target.files[0])}
+                style={{ width: '100%', marginTop: '5px' }}
+              />
+            </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setActiveJustify(null)} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>{t('common.cancel')}</button>
               <button onClick={() => handleJustify(activeJustify)} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: 'white', cursor: 'pointer' }}>{t('common.submit')}</button>
@@ -466,32 +484,7 @@ function DashboardTeacher({ user, onLogout }) {
         </div>
       )}
 
-      {/* Catch-up Modal */}
-      {activeCatchup && (
-        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div className="modal-content" style={{ background: 'white', padding: '25px', borderRadius: '12px', width: '400px', maxWidth: '90%' }}>
-            <h3>{t('absences.catchUp')}</h3>
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-              <label>{t('absences.selectDate')}</label>
-              <input type="date" value={catchupData.date} onChange={(e) => setCatchupData({...catchupData, date: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', marginTop: '5px' }} />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
-              <div className="form-group">
-                <label>{t('absences.startTime')}</label>
-                <input type="time" value={catchupData.startTime} onChange={(e) => setCatchupData({...catchupData, startTime: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', marginTop: '5px' }} />
-              </div>
-              <div className="form-group">
-                <label>{t('absences.endTime')}</label>
-                <input type="time" value={catchupData.endTime} onChange={(e) => setCatchupData({...catchupData, endTime: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', marginTop: '5px' }} />
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setActiveCatchup(null)} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>{t('common.cancel')}</button>
-              <button onClick={() => handleCatchup(activeCatchup)} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: 'white', cursor: 'pointer' }}>{t('common.submit')}</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Justification Modal and other content... */}
     </div>
   );
 }

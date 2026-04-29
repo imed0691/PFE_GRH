@@ -4,6 +4,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import AddEmployee from './AddEmployee';
 import ManageDepartments from './ManageDepartments';
+import ManageClasses from './ManageClasses';
 import ManageSalaries from './ManageSalaries';
 import ManageReminders from './ManageReminders';
 import ReminderInbox from './ReminderInbox';
@@ -140,6 +141,7 @@ function DashboardHR({ user, onLogout }) {
           <button className={`nav-item ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}>{t('sidebar.staffList')}</button>
           <button className={`nav-item ${view === 'add' ? 'active' : ''}`} onClick={() => setView('add')}>{t('sidebar.addEmployee')}</button>
           <button className={`nav-item ${view === 'departments' ? 'active' : ''}`} onClick={() => setView('departments')}>{t('sidebar.departments')}</button>
+          <button className={`nav-item ${view === 'classes' ? 'active' : ''}`} onClick={() => setView('classes')}>Gérer les Classes</button>
           <button className={`nav-item ${view === 'salaries' ? 'active' : ''}`} onClick={() => setView('salaries')}>{t('sidebar.salaries')}</button>
           <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.reminders')} <NotifBadge count={badges.reminders} /></button>
           <button className={`nav-item ${view === 'documents' ? 'active' : ''}`} onClick={() => setView('documents')}>{t('sidebar.documents')} <NotifBadge count={badges.documents} /></button>
@@ -159,6 +161,7 @@ function DashboardHR({ user, onLogout }) {
             {view === 'list' ? t('topbar.personnelManagement') :
               view === 'add' ? t('topbar.newHire') :
                 view === 'departments' ? t('topbar.manageDepartments') :
+                  view === 'classes' ? 'Structure Pédagogique' :
                   view === 'salaries' ? t('topbar.salaryCalculation') :
                     view === 'documents' ? t('topbar.documentRequests') :
                       view === 'promotions' ? t('topbar.careerAdvancements') :
@@ -176,6 +179,8 @@ function DashboardHR({ user, onLogout }) {
             />
           ) : view === 'departments' ? (
             <ManageDepartments />
+          ) : view === 'classes' ? (
+            <ManageClasses />
           ) : view === 'salaries' ? (
             <ManageSalaries />
           ) : view === 'documents' ? (

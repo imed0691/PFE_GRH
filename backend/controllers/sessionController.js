@@ -3,12 +3,16 @@ const db = require('../config/db');
 // Get all sessions (with teacher and department details)
 exports.getAllSessions = (req, res) => {
   const query = `
-    SELECT s.id, s.module_name, s.session_type, s.study_level, s.day_of_week, s.start_time, s.end_time, s.section, s.groupe,
+    SELECT s.id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.end_time, 
+           sl.name as study_level, sec.name as section, sg.name as groupe,
            u.nom as teacher_nom, u.prenom as teacher_prenom,
            d.name as department_name
     FROM academic_sessions s
     JOIN users u ON s.teacher_id = u.id
     JOIN departments d ON s.department_id = d.id
+    JOIN study_levels sl ON s.study_level_id = sl.id
+    LEFT JOIN sections sec ON s.section_id = sec.id
+    LEFT JOIN student_groups sg ON s.group_id = sg.id
     ORDER BY FIELD(s.day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'), s.start_time ASC
   `;
   
@@ -20,15 +24,15 @@ exports.getAllSessions = (req, res) => {
 
 // Create a new session
 exports.createSession = (req, res) => {
-  const { module_name, session_type, study_level, teacher_id, department_id, day_of_week, start_time, end_time, section, groupe } = req.body;
+  const { module_name, session_type, study_level_id, teacher_id, department_id, day_of_week, start_time, end_time, section_id, group_id } = req.body;
   
-  if (!module_name || !session_type || !study_level || !teacher_id || !department_id || !day_of_week || !start_time || !end_time) {
+  if (!module_name || !session_type || !study_level_id || !teacher_id || !department_id || !day_of_week || !start_time || !end_time) {
     return res.status(400).json({ message: "All fields are required." });
   }
 
-  const query = "INSERT INTO academic_sessions (module_name, session_type, study_level, teacher_id, department_id, day_of_week, start_time, end_time, section, groupe) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  const query = "INSERT INTO academic_sessions (module_name, session_type, study_level_id, teacher_id, department_id, day_of_week, start_time, end_time, section_id, group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
   
-  db.query(query, [module_name, session_type, study_level, teacher_id, department_id, day_of_week, start_time, end_time, section || null, groupe || null], (err, result) => {
+  db.query(query, [module_name, session_type, study_level_id, teacher_id, department_id, day_of_week, start_time, end_time, section_id || null, group_id || null], (err, result) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -55,10 +59,14 @@ exports.getTeacherDashboardData = (req, res) => {
 
   // 1. Get ALL sessions for the teacher
   const sessionsQuery = `
-    SELECT s.id, s.module_name, s.session_type, s.study_level, s.day_of_week, s.start_time, s.end_time, s.section, s.groupe,
+    SELECT s.id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.end_time, 
+           sl.name as study_level, sec.name as section, sg.name as groupe,
            d.name as department_name
     FROM academic_sessions s
     JOIN departments d ON s.department_id = d.id
+    JOIN study_levels sl ON s.study_level_id = sl.id
+    LEFT JOIN sections sec ON s.section_id = sec.id
+    LEFT JOIN student_groups sg ON s.group_id = sg.id
     WHERE s.teacher_id = ?
     ORDER BY FIELD(s.day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'), s.start_time ASC
   `;
@@ -66,8 +74,8 @@ exports.getTeacherDashboardData = (req, res) => {
   // 2. Get teacher stats (with dynamic unjustified count)
   const statsQuery = `
     SELECT u.volume_horaire, 
-           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND has_justification = FALSE AND is_caught_up = FALSE) as unjustified_count,
-           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND is_caught_up = FALSE) as not_caught_up_count
+           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted')) as unjustified_count,
+           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted')) as not_caught_up_count
     FROM users u WHERE u.id = ?
   `;
 
@@ -90,7 +98,7 @@ exports.getTeacherDashboardData = (req, res) => {
   `;
 
   // 4. Get absences
-  const absencesQuery = "SELECT id, date, reason, status, has_justification, is_caught_up, is_read_by_teacher, justification_text, catchup_date, catchup_start_time, catchup_end_time FROM absences WHERE teacher_id = ? ORDER BY created_at DESC";
+  const absencesQuery = "SELECT id, date, reason, status, has_justification, justification_status, justification_file, is_caught_up, is_read_by_teacher, justification_text, catchup_date, catchup_start_time, catchup_end_time FROM absences WHERE teacher_id = ? ORDER BY created_at DESC";
 
   db.query(sessionsQuery, [teacherId], (err, sessions) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -146,9 +154,9 @@ exports.getTeacherDashboardData = (req, res) => {
   });
 };
 
-// Get modules by department and optionally study level
+// Get modules by department and optionally study level ID
 exports.getModules = (req, res) => {
-  const { department_id, study_level } = req.query;
+  const { department_id, study_level_id } = req.query;
   let query = "SELECT * FROM modules WHERE 1=1";
   const params = [];
 
@@ -156,9 +164,9 @@ exports.getModules = (req, res) => {
     query += " AND department_id = ?";
     params.push(department_id);
   }
-  if (study_level) {
-    query += " AND study_level = ?";
-    params.push(study_level);
+  if (study_level_id) {
+    query += " AND study_level_id = ?";
+    params.push(study_level_id);
   }
 
   db.query(query, params, (err, results) => {
