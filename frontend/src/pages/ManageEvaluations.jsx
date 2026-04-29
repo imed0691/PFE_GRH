@@ -78,14 +78,14 @@ function ManageEvaluations({ user }) {
             <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('evaluations.rating')}</label><input type="number" min="1" max="10" value={rating} onChange={e => setRating(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
           </div>
           <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('evaluations.comments')}</label><textarea value={comments} onChange={e => setComments(e.target.value)} rows="3" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} placeholder={t('evaluations.provideFeedback')}></textarea></div>
-          <button type="submit" className="btn-submit" style={{ background: '#10b981' }}>{t('evaluations.submitEvaluation')}</button>
+          <button type="submit" className="btn-submit" style={{ background: 'var(--p-indigo)' }}>{t('evaluations.submitEvaluation')}</button>
         </form>
       )}
       {loading ? <div className="loading-spinner">{t('evaluations.loadingEvals')}</div> : (
         <table className="modern-table">
           <thead><tr><th>#</th><th>{t('evaluations.year')}</th>{!isTeacher && <th>{t('common.teacher')}</th>}<th>{t('evaluations.evaluator')}</th><th>{t('evaluations.rating')}</th><th>{t('evaluations.comments')}</th><th>{t('common.date')}</th></tr></thead>
           <tbody>
-            {evaluations.map((e, index) => (<tr key={e.id}><td>{index + 1}</td><td><strong>{e.academic_year}</strong></td>{!isTeacher && <td>{e.teacher_nom} {e.teacher_prenom}</td>}<td>{e.evaluator_nom} {e.evaluator_prenom}</td><td><span className="role-tag" style={{ background: e.rating >= 8 ? '#d1fae5' : e.rating >= 5 ? '#fef3c7' : '#fee2e2', color: e.rating >= 8 ? '#065f46' : e.rating >= 5 ? '#92400e' : '#991b1b' }}>{e.rating} / 10</span></td><td style={{ maxWidth: '300px', wordBreak: 'break-word', fontStyle: 'italic', fontSize: '13px' }}>"{e.comments}"</td><td>{new Date(e.created_at).toLocaleDateString()}</td></tr>))}
+            {evaluations.map((e, index) => (<tr key={e.id}><td>{index + 1}</td><td><strong>{e.academic_year}</strong></td>{!isTeacher && <td>{e.teacher_nom} {e.teacher_prenom}</td>}<td>{e.evaluator_nom} {e.evaluator_prenom}</td><td><span className="role-tag" style={{ background: e.rating >= 8 ? '#e0e7ff' : e.rating >= 5 ? '#fef3c7' : '#fee2e2', color: e.rating >= 8 ? '#3730a3' : e.rating >= 5 ? '#92400e' : '#991b1b' }}>{e.rating} / 10</span></td><td style={{ maxWidth: '300px', wordBreak: 'break-word', fontStyle: 'italic', fontSize: '13px' }}>"{e.comments}"</td><td>{new Date(e.created_at).toLocaleDateString()}</td></tr>))}
             {evaluations.length === 0 && <tr><td colSpan={isTeacher ? 6 : 7} className="empty-state">{t('evaluations.noEvals')}</td></tr>}
           </tbody>
         </table>

@@ -25,6 +25,7 @@ const fr = {
     confirm: 'Êtes-vous sûr ?',
     yes: 'Oui',
     no: 'Non',
+    cancel: 'Annuler',
     all: 'Tous',
     search: 'Rechercher...',
     from: 'De',
@@ -32,6 +33,9 @@ const fr = {
     seeLess: 'Voir moins',
     approve: 'Approuver',
     reject: 'Rejeter',
+    backToList: 'Retour à la liste',
+    select: 'Sélectionner...',
+    currency: 'DA',
   },
 
   // ── Connexion ──
@@ -78,9 +82,11 @@ const fr = {
 
   // ── Navigation latérale ──
   sidebar: {
+    employees: 'Annuaire du personnel',
     staffList: 'Liste du personnel',
     addEmployee: 'Ajouter un employé',
     departments: 'Départements',
+    classes: 'Gérer les Classes',
     sessions: 'Séances',
     absences: 'Absences',
     salaries: 'Salaires',
@@ -101,6 +107,12 @@ const fr = {
     schedules: 'Emplois du temps',
     notifications: 'Notifications',
     mySchedule: 'Mon emploi du temps',
+    myAbsences: 'Mes Absences',
+  },
+
+  // ── Paramètres ──
+  settings: {
+    title: 'Paramètres',
   },
 
   // ── Titres de la barre supérieure ──
@@ -146,6 +158,49 @@ const fr = {
     administrativeDocuments: 'Documents administratifs',
     myEvaluations: 'Mes évaluations',
     activityFeed: 'Fil d\'activité',
+    absenceTracking: 'Suivi des Absences',
+    academicAdvancements: 'Avancements Académiques',
+    academicPerformance: 'Performance Académique',
+    academicPromotions: 'Promotions Académiques',
+    facultyOverview: 'Aperçu de la Faculté',
+    institutionalDocuments: 'Documents Institutionnels',
+    institutionalOverview: 'Aperçu Institutionnel',
+    officialDocuments: 'Documents Officiels',
+    teachingQuality: 'Qualité de l\'Enseignement',
+    teacherSchedule: 'Emploi du Temps de l\'Enseignant',
+  },
+
+  // ── Gérer les Classes & Pédagogie ──
+  classes: {
+    title: 'Structure Pédagogique & Modules',
+    tabStructure: 'Gérer les Classes & Modules',
+    tabTeachers: 'Assigner Modules aux Profs',
+    chooseDept: 'Choisir le Département :',
+    selectDept: '-- Sélectionnez un département --',
+    levels: '1. Niveaux d\'Étude',
+    modules: '2. Modules par Niveau',
+    sections: '3. Sections',
+    groups: '4. Groupes',
+    addLevelPlaceholder: 'Ex: L1, M1...',
+    addModulePlaceholder: 'Ex: Algorithmique...',
+    addSectionPlaceholder: 'Ex: Section A...',
+    addGroupPlaceholder: 'Ex: Groupe 1...',
+    addBtn: 'Ajouter',
+    chooseTeacher: 'Choisir un Professeur',
+    assignModules: 'Assigner des Modules',
+    studyLevel: 'Niveau d\'Étude :',
+    availableModules: 'Modules Disponibles :',
+    taughtModules: 'Modules enseignés par ce professeur :',
+    noModulesAssigned: 'Aucun module assigné pour le moment.',
+    levelAdded: 'Niveau ajouté avec succès',
+    sectionAdded: 'Section ajoutée avec succès',
+    groupAdded: 'Groupe ajouté avec succès',
+    moduleAdded: 'Module ajouté avec succès',
+    deleted: 'Supprimé avec succès',
+    moduleAssigned: 'Module assigné avec succès',
+    moduleUnassigned: 'Module retiré',
+    alreadyAssigned: 'Erreur ou déjà assigné',
+    confirmDelete: 'Êtes-vous sûr de vouloir supprimer cet élément ?',
   },
 
   // ── Tableau de bord RH ──
@@ -156,6 +211,16 @@ const fr = {
     errorDeleting: 'Erreur lors de la suppression',
     noEmployeesFound: 'Aucun employé trouvé.',
     direction: 'Direction',
+    deleteError: 'Erreur lors de la suppression de l\'utilisateur',
+    deleteSuccess: 'Utilisateur supprimé avec succès',
+    totalStaff: 'Total Personnel',
+    faculty: 'Faculté',
+    staffDirectory: 'Annuaire du Personnel',
+    allRoles: 'Tous les Rôles',
+    boardMembers: 'Membres du Conseil',
+    searchPersonnel: 'Rechercher du personnel...',
+    personnel: 'Personnel',
+    actions: 'Actions',
   },
 
   // ── Tableau de bord Enseignant ──
@@ -171,6 +236,8 @@ const fr = {
     level: 'Niveau',
     type: 'Type',
     sectionGroup: 'Section/Groupe',
+    sec: 'Sec',
+    grp: 'Gr',
     totalApprovedAbsences: 'Total des absences injustifiées (Impact Salaire)',
     reportAbsence: 'Signaler une absence',
     reason: 'Motif / Justification',
@@ -197,6 +264,7 @@ const fr = {
     tutorial: 'TD',
     practical: 'TP',
     loadingDashboard: 'Chargement de votre tableau de bord...',
+    errorLoadingReminders: 'Erreur lors du chargement des rappels',
   },
 
   // ── Tableau de bord Chef de département ──
@@ -216,6 +284,11 @@ const fr = {
     activeSessions: 'Séances actives',
     noStaffFound: 'Aucun personnel trouvé.',
     loadingDirectory: 'Chargement de l\'annuaire...',
+    summaryTitle: 'Résumé Institutionnel Exécutif',
+    summaryText: 'En tant que Recteur, vous avez une vue d\'ensemble complète des ressources humaines et des performances académiques de l\'université. Ce portail fournit une visualisation des données de haut niveau et un contrôle administratif sur l\'ensemble du personnel de l\'institution. Surveillez les promotions, examinez les documents institutionnels et assurez les plus hauts standards d\'excellence académique.',
+    recentActivity: 'ACTIVITÉ RÉCENTE',
+    noAlerts: 'Aucune alerte institutionnelle critique aujourd\'hui.',
+    reports: 'Rapports Institutionnels',
   },
 
   // ── Tableau de bord Doyen ──
@@ -225,6 +298,12 @@ const fr = {
     teachers: 'Enseignants',
     noEmployeesFound: 'Aucun employé trouvé.',
     errorFetchStaff: 'Erreur lors du chargement du personnel',
+    facultyStrength: 'Effectif de la Faculté',
+    activeDepts: 'Départements Actifs',
+    adminHighlights: 'Points Forts Administratifs',
+    welcomeText: 'Bienvenue sur le Portail Exécutif du Doyen. À partir d\'ici, vous pouvez superviser l\'intégrité académique de la faculté, valider les avancements de carrière et surveiller les évaluations pédagogiques dans tous les départements. Utilisez la navigation latérale pour accéder aux modules administratifs spécifiques.',
+    reviewEvals: 'Examiner les Évaluations',
+    careerTracking: 'Suivi de Carrière',
   },
 
   // ── Tableau de bord Vice-doyen ──
@@ -292,6 +371,18 @@ const fr = {
     endTime: 'Heure de fin',
     justificationSubmitted: 'Justification envoyée',
     catchupSubmitted: 'Rattrapage programmé',
+    recordNew: 'Enregistrer une nouvelle absence',
+    selectPersonnel: 'Sélectionner le personnel',
+    saveRecord: 'Enregistrer l\'absence',
+    personnelAbsences: 'Absences du personnel',
+    staffMember: 'Membre du personnel',
+    justificationLabel: 'Justification :',
+    viewAttachment: 'Voir la pièce jointe',
+    none: 'Sans justification',
+    pending: 'En attente',
+    accepted: 'Acceptée',
+    rejected: 'Rejetée',
+    attachmentLabel: 'Pièce jointe (PDF, Image)',
   },
 
   // ── Gestion des départements ──
@@ -308,6 +399,14 @@ const fr = {
     noDepts: 'Aucun département trouvé. Créez-en un ci-dessus !',
     loadingDepts: 'Chargement des départements...',
     errorFetching: 'Erreur lors du chargement des départements',
+    selectOrType: 'Sélectionner ou saisir un département',
+    selectFaculty: '-- Sélectionner (Faculté des Sciences) --',
+    typeManual: 'Ou saisir manuellement...',
+    it: 'Informatique',
+    math: 'Mathématiques',
+    physics: 'Sciences de la Matière',
+    biology: 'Sciences de la Nature et de la Vie',
+    architecture: 'Architecture',
   },
 
   // ── Gestion des documents ──
@@ -332,6 +431,7 @@ const fr = {
     requestMarkedAs: 'Demande marquée comme',
     errorUpdating: 'Erreur lors de la mise à jour',
     noRequests: 'Aucune demande de document trouvée.',
+    ready: 'Prêt',
   },
 
   // ── Gestion des évaluations ──
@@ -377,6 +477,15 @@ const fr = {
     promotionApproved: 'Promotion officiellement',
     errorStatus: 'Erreur lors de la mise à jour',
     noRecords: 'Aucun dossier de promotion trouvé.',
+    finalize: 'Finaliser la Promotion',
+    gradeUpdated: 'Grade mis à jour avec succès',
+    promotionRejected: 'Demande de promotion rejetée',
+    validateAndSend: 'Valider & Transmettre au Doyen',
+    decideAndSend: 'Décider & Transmettre au Recteur',
+    signAndSend: 'Signer & Transmettre aux RH',
+    finalizeGrade: 'Finaliser le changement de grade :',
+    updateFile: 'Mettre à jour le dossier RH',
+    historyTitle: 'Historique du circuit :',
   },
 
   // ── Gestion des recrutements ──
@@ -425,10 +534,15 @@ const fr = {
     messagePlaceholder: 'Ex : N\'oubliez pas de soumettre les notes avant le 15...',
     sending: 'Envoi en cours...',
     sendBtn: 'Envoyer le rappel',
+    allMyTeachers: 'Tous mes enseignants',
+    subtitle: 'Communiquez avec votre équipe instantanément.',
+    history: 'Historique des communications',
     sent: 'Rappel envoyé avec succès',
     errorSending: 'Erreur lors de l\'envoi du rappel',
     messageRequired: 'Le message est obligatoire',
     errorLoadingData: 'Erreur lors du chargement des données',
+    historyTitle: 'Communications récentes',
+    specificDean: 'Doyen Spécifique',
   },
 
   // ── Gestion de la recherche ──
@@ -459,9 +573,9 @@ const fr = {
   salaries: {
     title: 'Salaires des enseignants',
     grade: 'Grade',
-    baseSalary: 'Salaire de base (DA)',
-    extraHours: 'Heures supplémentaires',
-    ratePenalty: 'Taux / Pénalité',
+    baseSalary: 'Base (DA)',
+    extraHours: 'Heures Sup.',
+    ratePenalty: 'Taux / Pén.',
     netSalary: 'Salaire net',
     rate: 'Taux :',
     absencesPenalty: 'Absences :',
@@ -471,6 +585,7 @@ const fr = {
     errorLoading: 'Erreur lors du chargement des salaires',
     calculating: 'Calcul des salaires...',
     noTeachers: 'Aucun enseignant trouvé.',
+    adjustFor: 'Ajuster le salaire pour',
   },
 
   // ── Gestion des séances ──
@@ -510,6 +625,16 @@ const fr = {
     tutorialTD: 'TD',
     practicalTP: 'TP',
     failedFetch: 'Échec de la récupération des données du serveur.',
+    failedCreate: 'Erreur lors de la création de la séance',
+    teacher: 'Enseignant',
+    sessionType: 'Type de Séance',
+    tutorial: 'Travaux Dirigés (TD)',
+    practical: 'Travaux Pratiques (TP)',
+    create: 'Créer la séance',
+    startTime: 'Heure de début',
+    selectTime: 'Sélectionner l\'heure...',
+    selectLevelFirst: 'Choisir le niveau d\'abord',
+    selectTeacherFirst: 'Choisir l\'enseignant d\'abord',
   },
 
   // ── Fil de notifications ──
@@ -546,7 +671,22 @@ const fr = {
   settings: {
     title: 'Paramètres',
     profile: 'Informations du profil',
-    security: 'Sécurité et mot de passe',
+    security: 'Sécurité du compte',
+    personalData: 'Données personnelles',
+    preferences: 'Options du système',
+    profileTitle: 'Profil personnel',
+    profileDesc: 'Mettez à jour vos détails d\'identification et la façon dont les autres vous voient.',
+    changePhoto: 'Changer la photo',
+    removePhoto: 'Supprimer',
+    photoSpecs: 'JPG, PNG ou GIF. Max 2 Mo.',
+    updateInfo: 'Mettre à jour les informations',
+    securityTitle: 'Paramètres de sécurité',
+    securityDesc: 'Gérez votre mot de passe et protégez votre compte académique.',
+    updateCredentials: 'Mettre à jour les identifiants',
+    interfaceTitle: 'Préférences d\'interface',
+    interfaceDesc: 'Adaptez le portail à votre langue et région personnelles.',
+    portalLanguage: 'Langue du portail',
+    confirmRemovePhoto: 'Voulez-vous vraiment supprimer votre photo de profil ?',
     currentPassword: 'Mot de passe actuel',
     newPassword: 'Nouveau mot de passe',
     confirmPassword: 'Confirmer le mot de passe',
@@ -554,6 +694,31 @@ const fr = {
     updatePassword: 'Mettre à jour le mot de passe',
     profileSuccess: 'Profil mis à jour avec succès !',
     profileError: 'Échec de la mise à jour du profil.',
+  },
+
+  // ── Days ──
+  days: {
+    Sunday: 'Dimanche',
+    Monday: 'Lundi',
+    Tuesday: 'Mardi',
+    Wednesday: 'Mercredi',
+    Thursday: 'Jeudi',
+    Friday: 'Vendredi',
+    Saturday: 'Samedi',
+  },
+  grades: {
+    Teacher: 'Enseignant',
+    Vacataire: 'Vacataire',
+    Assistant: 'Assistant',
+    MAB: 'Maître-Assistant B',
+    MAA: 'Maître-Assistant A',
+    MCB: 'Maître de Conférences B',
+    MCA: 'Maître de Conférences A',
+    Professeur: 'Professeur',
+    'Maître-Assistant B': 'Maître-Assistant B',
+    'Maître-Assistant A': 'Maître-Assistant A',
+    'Maître de Conférences B': 'Maître de Conférences B',
+    'Maître de Conférences A': 'Maître de Conférences A',
   },
 };
 

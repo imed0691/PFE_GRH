@@ -184,7 +184,7 @@ function ManageSessions({ user }) {
               options={moduleOptions}
               value={moduleOptions.find(o => o.value === moduleName) || null}
               onChange={handleModuleChange}
-              placeholder={!selectedTeacherId ? 'Choisissez d\'abord l\'enseignant' : t('sessions.moduleSubject')}
+              placeholder={!selectedTeacherId ? t('sessions.selectTeacherFirst') : t('sessions.moduleSubject')}
               styles={{ control: (base) => ({ ...base, borderRadius: '8px', border: '1px solid #cbd5e1', minHeight: '42px' }) }}
             />
           </div>
@@ -192,8 +192,8 @@ function ManageSessions({ user }) {
 
         {/* Level automatically determined, select Section and Group */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '15px' }}>
-          <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.section')}</label><select value={sectionId} onChange={e => { setSectionId(e.target.value); setGroupId(''); }} disabled={!studyLevelId} style={{ width: '100%', height: '42px', padding: '0 10px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: !studyLevelId ? '#f1f5f9' : 'white' }}><option value="">-- Sélect --</option>{sectionsList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
-          <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.group')}</label><select value={groupId} onChange={e => setGroupId(e.target.value)} disabled={!sectionId} style={{ width: '100%', height: '42px', padding: '0 10px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: !sectionId ? '#f1f5f9' : 'white' }}><option value="">-- Sélect --</option>{groupsList.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}</select></div>
+          <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.section')}</label><select value={sectionId} onChange={e => { setSectionId(e.target.value); setGroupId(''); }} disabled={!studyLevelId} style={{ width: '100%', height: '42px', padding: '0 10px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: !studyLevelId ? '#f1f5f9' : 'white' }}><option value="">-- {t('common.search')} --</option>{sectionsList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+          <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.group')}</label><select value={groupId} onChange={e => setGroupId(e.target.value)} disabled={!sectionId} style={{ width: '100%', height: '42px', padding: '0 10px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: !sectionId ? '#f1f5f9' : 'white' }}><option value="">-- {t('common.search')} --</option>{groupsList.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}</select></div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px', marginBottom: '15px' }}>
@@ -203,15 +203,15 @@ function ManageSessions({ user }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
           <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.day')}</label><select value={dayOfWeek} onChange={e => setDayOfWeek(e.target.value)} style={{ width: '100%', height: '42px', padding: '0 10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>{['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (<option key={day} value={day}>{t(`days.${day}`)}</option>))}</select></div>
           <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>Heure de début</label>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.startTime')}</label>
             <select value={startTime} onChange={handleTimeChange} style={{ width: '100%', height: '42px', padding: '0 10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required>
-              <option value="">Sélectionner une heure...</option>
-              <option value="08:00">08:00 (Fin: 09:30)</option>
-              <option value="09:35">09:35 (Fin: 11:05)</option>
-              <option value="11:10">11:10 (Fin: 12:40)</option>
-              <option value="12:45">12:45 (Fin: 14:15)</option>
-              <option value="14:20">14:20 (Fin: 15:50)</option>
-              <option value="15:55">15:55 (Fin: 17:25)</option>
+              <option value="">-- {t('common.search')} --</option>
+              <option value="08:00">08:00</option>
+              <option value="09:35">09:35</option>
+              <option value="11:10">11:10</option>
+              <option value="12:45">12:45</option>
+              <option value="14:20">14:20</option>
+              <option value="15:55">15:55</option>
             </select>
           </div>
         </div>

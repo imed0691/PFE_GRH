@@ -38,6 +38,8 @@ function useNotificationBadges() {
 
   useEffect(() => {
     fetchBadges();
+    const interval = setInterval(fetchBadges, 30000); // Poll every 30s
+    return () => clearInterval(interval);
   }, [fetchBadges]);
 
   return { badges, markSeen, fetchBadges };

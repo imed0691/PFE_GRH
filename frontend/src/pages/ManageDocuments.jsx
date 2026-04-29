@@ -64,7 +64,7 @@ function ManageDocuments({ user }) {
                 <td>{new Date(d.request_date).toLocaleDateString('en-GB')}</td>
                 {!isTeacher && <td><strong>{d.nom}</strong> {d.prenom}<br/><small style={{color: '#64748b'}}>{d.department_name || '-'}</small></td>}
                 <td><strong>{d.type}</strong></td>
-                <td><span className="role-tag" style={{ background: d.status === 'Ready' ? '#d1fae5' : d.status === 'Rejected' ? '#fee2e2' : d.status === 'Processing' ? '#fef3c7' : '#e2e8f0', color: d.status === 'Ready' ? '#065f46' : d.status === 'Rejected' ? '#991b1b' : d.status === 'Processing' ? '#92400e' : '#475569' }}>{d.status === 'Ready' ? (locale === 'fr' ? 'Prêt' : 'Ready') : d.status}</span></td>
+                <td><span className="role-tag" style={{ background: d.status === 'Ready' ? '#e0e7ff' : d.status === 'Rejected' ? '#fee2e2' : d.status === 'Processing' ? '#fef3c7' : '#e2e8f0', color: d.status === 'Ready' ? '#3730a3' : d.status === 'Rejected' ? '#991b1b' : d.status === 'Processing' ? '#92400e' : '#475569' }}>{d.status === 'Ready' ? t('documents.ready') : d.status}</span></td>
                 {!isTeacher && (
                   <td>{d.status !== 'Ready' && d.status !== 'Rejected' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
@@ -72,7 +72,7 @@ function ManageDocuments({ user }) {
                         <textarea placeholder="e.g. Available at office 102" value={responseNote} onChange={(e) => setResponseNote(e.target.value)} style={{ width: '100%', padding: '5px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '12px' }} />
                         <div style={{ display: 'flex', gap: '5px' }}>
                           <button onClick={() => handleStatusUpdate(d.id, 'Processing')} style={{ flex: 1, background: '#f59e0b', color: 'white', border: 'none', padding: '5px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}>{t('documents.markProcessing')}</button>
-                          <button onClick={() => handleStatusUpdate(d.id, 'Ready')} style={{ flex: 1, background: '#10b981', color: 'white', border: 'none', padding: '5px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}>Prêt</button>
+                          <button onClick={() => handleStatusUpdate(d.id, 'Ready')} style={{ flex: 1, background: 'var(--p-indigo)', color: 'white', border: 'none', padding: '5px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}>{t('documents.ready')}</button>
                         </div>
                         <button onClick={() => setActiveDocId(null)} style={{ background: '#94a3b8', color: 'white', border: 'none', padding: '5px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}>{t('common.cancel')}</button>
                       </>) : (

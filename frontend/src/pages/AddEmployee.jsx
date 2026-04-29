@@ -65,7 +65,7 @@ function AddEmployee({ onCancel, onSuccess }) {
               <label>{t('addEmployee.department')}</label>
               <select name="department_id" value={formData.department_id} onChange={handleChange} required>
                 <option value="">{t('addEmployee.noDepartment')}</option>
-                {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                {departments.map(d => <option key={d.id} value={d.id}>{t('departments.' + d.name) || d.name}</option>)}
               </select>
             </div>
           )}
@@ -86,14 +86,14 @@ function AddEmployee({ onCancel, onSuccess }) {
             <div className="form-group">
               <label>{t('addEmployee.academicGrade')}</label>
               <select name="grade" value={formData.grade} onChange={handleChange}>
-                <option value="Teacher">{t('addEmployee.teacherDefault')}</option>
-                <option value="Vacataire">Vacataire</option>
-                <option value="Assistant">Assistant</option>
-                <option value="Maître-Assistant B">Maître-Assistant B (MAB)</option>
-                <option value="Maître-Assistant A">Maître-Assistant A (MAA)</option>
-                <option value="Maître de Conférences B">Maître de Conférences B (MCB)</option>
-                <option value="Maître de Conférences A">Maître de Conférences A (MCA)</option>
-                <option value="Professeur">Professeur</option>
+                <option value="Teacher">{t('grades.Teacher')}</option>
+                <option value="Vacataire">{t('grades.Vacataire')}</option>
+                <option value="Assistant">{t('grades.Assistant')}</option>
+                <option value="MAB">{t('grades.MAB')}</option>
+                <option value="MAA">{t('grades.MAA')}</option>
+                <option value="MCB">{t('grades.MCB')}</option>
+                <option value="MCA">{t('grades.MCA')}</option>
+                <option value="Professeur">{t('grades.Professeur')}</option>
               </select>
             </div>
             <div className="form-group"><label>{t('addEmployee.extraHourlyRate')}</label><input type="number" name="hourly_rate" value={formData.hourly_rate} onChange={handleChange} placeholder="e.g. 600" /></div>

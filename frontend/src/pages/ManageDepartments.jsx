@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
+import ConfirmModal from '../components/ConfirmModal';
 import './DashboardHR.css';
 
 function ManageDepartments() {
@@ -8,6 +9,8 @@ function ManageDepartments() {
   const [newDeptName, setNewDeptName] = useState('');
   const [loading, setLoading] = useState(true);
   const { t } = useLanguage();
+
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null, name: '' });
 
   const fetchDepartments = async () => {
     setLoading(true);
@@ -27,17 +30,27 @@ function ManageDepartments() {
     } catch (error) { toast.dismiss(loadToast); toast.error(t('common.serverError')); }
   };
 
-  const handleDelete = async (id, name) => {
-    if (!window.confirm(t('departments.confirmDelete').replace('{name}', name))) return;
-    try { const token = localStorage.getItem('token'); const res = await fetch(`http://localhost:5000/api/departments/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) { toast.success(t('departments.deleted')); fetchDepartments(); } else { toast.error(t('departments.errorDeleting')); } } catch (error) { toast.error(t('common.serverError')); }
+  const handleDeleteClick = (id, name) => {
+    setConfirmModal({ isOpen: true, id, name });
+  };
+
+  const performDelete = async () => {
+    const { id } = confirmModal;
+    setConfirmModal({ ...confirmModal, isOpen: false });
+    try { 
+      const token = localStorage.getItem('token'); 
+      const res = await fetch(`http://localhost:5000/api/departments/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); 
+      if (res.ok) { toast.success(t('departments.deleted')); fetchDepartments(); } 
+      else { toast.error(t('departments.errorDeleting')); } 
+    } catch (error) { toast.error(t('common.serverError')); }
   };
 
   const predefinedDepts = [
-    "Informatique",
-    "Mathématiques",
-    "Sciences de la Matière",
-    "Sciences de la Nature et de la Vie",
-    "Architecture"
+    t('departments.it'),
+    t('departments.math'),
+    t('departments.physics'),
+    t('departments.biology'),
+    t('departments.architecture')
   ];
 
   const handlePredefinedChange = (e) => {
@@ -49,15 +62,15 @@ function ManageDepartments() {
 
   return (
     <div className="table-card" style={{ padding: '20px' }}>
-      <form onSubmit={handleAddDepartment} style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', marginBottom: '30px', alignItems: 'flex-end' }}>
-        <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#4b5563' }}>Sélectionner ou saisir un département</label>
-          <div style={{ display: 'flex', gap: '10px' }}>
+      <form onSubmit={handleAddDepartment} className="grid-responsive" style={{ marginBottom: '30px', alignItems: 'flex-end', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <label style={{ fontSize: '13px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>{t('departments.selectOrType')}</label>
+          <div className="form-row-responsive">
             <select 
               onChange={handlePredefinedChange}
-              style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ddd', background: 'white', flex: 1 }}
+              style={{ padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white' }}
             >
-              <option value="">-- Sélectionner (Faculté des Sciences) --</option>
+              <option value="">{t('common.select')}</option>
               {predefinedDepts.map(dept => (
                 <option key={dept} value={dept}>{dept}</option>
               ))}
@@ -66,23 +79,39 @@ function ManageDepartments() {
               type="text" 
               value={newDeptName} 
               onChange={(e) => setNewDeptName(e.target.value)} 
-              placeholder="Ou saisir manuellement..." 
-              style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ddd', flex: 2 }} 
+              placeholder={t('departments.typeManual')}
+              style={{ padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1' }} 
               required 
             />
           </div>
         </div>
-        <button type="submit" className="btn-submit" style={{ margin: 0, padding: '10px 20px', height: '42px' }}>{t('departments.addDepartment')}</button>
+        <button type="submit" className="btn-confirm-pro" style={{ width: '100%', padding: '12px' }}>{t('departments.addDepartment')}</button>
       </form>
       {loading ? <div className="loading-spinner">{t('departments.loadingDepts')}</div> : (
         <table className="modern-table">
           <thead><tr><th>#</th><th>{t('common.id')}</th><th>{t('departments.deptName')}</th><th>{t('common.actions')}</th></tr></thead>
           <tbody>
-            {departments.map((d, index) => (<tr key={d.id}><td>{index + 1}</td><td>#{d.id}</td><td><strong>{d.name}</strong></td><td><button className="btn-delete" onClick={() => handleDelete(d.id, d.name)}>{t('common.delete')}</button></td></tr>))}
+            {departments.map((d, index) => (
+              <tr key={d.id}>
+                <td data-label="#">{index + 1}</td>
+                <td data-label={t('common.id')}>#{d.id}</td>
+                <td data-label={t('departments.deptName')}><strong>{d.name}</strong></td>
+                <td data-label={t('common.actions')}>
+                  <button className="btn-delete" onClick={() => handleDeleteClick(d.id, d.name)}>{t('common.delete')}</button>
+                </td>
+              </tr>
+            ))}
             {departments.length === 0 && <tr><td colSpan="4" className="empty-state">{t('departments.noDepts')}</td></tr>}
           </tbody>
         </table>
       )}
+
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        message={t('departments.confirmDelete').replace('{name}', confirmModal.name)}
+        onConfirm={performDelete}
+        onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+      />
     </div>
   );
 }

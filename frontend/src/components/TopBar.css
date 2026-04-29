@@ -1,0 +1,39 @@
+.topbar-academic {
+  height: 70px;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  border-bottom: 1px solid #f1f5f9;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin-left: 0;
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.topbar-path-serif {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.02em;
+}
+
+.topbar-utility-nav {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.topbar-date-display {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  background: #f8fafc;
+  padding: 6px 16px;
+  border-radius: 100px;
+  border: 1px solid #e2e8f0;
+}

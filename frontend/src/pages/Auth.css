@@ -1,142 +1,73 @@
-.auth-card {
-  max-width: 480px;
-  margin: 60px auto;
-  padding: 40px;
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
-  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  transition: transform 0.3s ease;
-}
-
-.auth-header {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.auth-header h2 {
-  color: #1a202c;
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  font-weight: 700;
-}
-
-.auth-header p {
-  color: #718096;
-  margin: 0;
-  font-size: 14px;
-}
-
-.form-row {
+.login-page-v2 {
+  height: 100vh;
+  width: 100%;
   display: flex;
-  gap: 15px;
+  background: white;
+  overflow: hidden;
 }
 
-.form-row .form-group {
-  flex: 1;
+.login-hero-section {
+  flex: 1.2;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px;
+  background: #0f172a;
 }
 
-.form-group {
-  margin-bottom: 20px;
-  text-align: left;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #4a5568;
-}
-
-.form-group input, 
-.form-group select {
+.login-hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  padding: 14px 16px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 15px;
-  box-sizing: border-box;
-  transition: all 0.2s ease;
-  background-color: #f8fafc;
-  outline: none;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.6;
 }
 
-.form-group input:focus, 
-.form-group select:focus {
-  border-color: #3182ce;
-  background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
+.login-hero-content {
+  position: relative;
+  z-index: 10;
+  max-width: 600px;
 }
 
-.form-group input.input-error {
-  border-color: #e53e3e;
-  background-color: #fff5f5;
+.login-form-section {
+  flex: 0.8;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  border-left: 1px solid var(--border);
 }
 
-.form-group input.input-error:focus {
-  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.15);
-}
-
-.error-text {
-  display: block;
-  color: #e53e3e;
-  font-size: 12px;
-  margin-top: 6px;
-  font-weight: 600;
-}
-
-.help-text {
-  display: block;
-  color: #a0aec0;
-  font-size: 12px;
-  margin-top: 6px;
-}
-
-.auth-btn {
+.login-card-v2 {
   width: 100%;
-  padding: 14px;
-  background-color: #3182ce;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: 15px;
-  box-shadow: 0 4px 6px rgba(49, 130, 206, 0.2);
+  max-width: 440px;
+  background: white;
+  padding: 48px;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border);
 }
 
-.auth-btn:hover {
-  background-color: #2b6cb0;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 12px rgba(49, 130, 206, 0.3);
-}
-
-.auth-btn:active {
-  transform: translateY(1px);
-}
-
-.toggle-link {
-  text-align: center;
-  margin-top: 25px;
-  color: #718096;
-  font-size: 14px;
-}
-
-.toggle-link span {
-  color: #3182ce;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.toggle-link span:hover {
-  text-decoration: underline;
-}
-
-/* Désactiver l'icône oeil native des navigateurs (comme Edge) pour éviter les doublons */
-input[type="password"]::-ms-reveal,
-input[type="password"]::-ms-clear {
-  display: none;
+@media (max-width: 1024px) {
+  .login-page-v2 {
+    overflow-y: auto;
+  }
+  .login-hero-section {
+    display: none;
+  }
+  .login-form-section {
+    flex: 1;
+    border-left: none;
+    padding: 20px;
+  }
+  .login-card-v2 {
+    padding: 32px 20px;
+    box-shadow: none;
+    border: none;
+    background: transparent;
+  }
 }

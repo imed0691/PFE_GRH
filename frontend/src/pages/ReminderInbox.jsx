@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 function ReminderInbox({ user }) {
   const [reminders, setReminders] = useState([]);
   const [loading, setLoading] = useState(true);
   const { t, locale } = useLanguage();
+  const [showClearAllModal, setShowClearAllModal] = useState(false);
 
   const fetchReminders = async () => {
     setLoading(true);
@@ -45,6 +47,7 @@ function ReminderInbox({ user }) {
   };
 
   const handleClearAllReminders = async () => {
+    setShowClearAllModal(false);
     if (reminders.length === 0) return;
     const allIds = reminders.map(r => r.id);
     try {
@@ -66,11 +69,11 @@ function ReminderInbox({ user }) {
   if (loading && reminders.length === 0) return <div className="loading-spinner">{t('common.loading')}</div>;
 
   return (
-    <div className="table-card" style={{ marginTop: '20px' }}>
+    <div className="table-card" style={{ margin: 0 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h3 style={{ margin: 0 }}>{t('teacher.communicationsFromHR') || 'Inbox / Communications'}</h3>
         {reminders.length > 0 && (
-          <button onClick={handleClearAllReminders} style={{ padding: '6px 12px', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
+          <button onClick={() => setShowClearAllModal(true)} style={{ padding: '6px 12px', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
             {t('teacher.clearAll') || 'Clear All'}
           </button>
         )}
@@ -87,7 +90,7 @@ function ReminderInbox({ user }) {
                   <span style={{ fontSize: '0.85em', fontWeight: 'normal', color: '#64748b' }}>
                     {t('common.from') || 'From'}: {r.sender_prenom} {r.sender_nom} ({r.sender_role})
                   </span>
-                  <button onClick={() => handleDeleteReminder(r.id)} style={{ background: 'rgba(0,0,0,0.05)', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px', color: '#64748b' }} title={t('common.delete')}>✕</button>
+                  <button onClick={() => handleDeleteReminder(r.id)} className="btn-delete-icon" title={t('common.delete')}>✕</button>
                 </div>
               </div>
               <div style={{ color: '#334155', lineHeight: '1.5' }}>{r.message || r.text}</div>
@@ -97,6 +100,13 @@ function ReminderInbox({ user }) {
       ) : (
         <div style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>{t('teacher.noReminders') || 'No communications'}</div>
       )}
+
+      <ConfirmModal 
+        isOpen={showClearAllModal}
+        message={t('common.confirm')}
+        onConfirm={handleClearAllReminders}
+        onCancel={() => setShowClearAllModal(false)}
+      />
     </div>
   );
 }

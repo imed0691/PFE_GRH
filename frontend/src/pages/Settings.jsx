@@ -1,231 +1,202 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import ConfirmModal from '../components/ConfirmModal';
 import toast from 'react-hot-toast';
 import './Settings.css';
 
 function Settings({ user, onProfileUpdate }) {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState(localStorage.getItem('settings_active_tab') || 'profile');
   
-  // Profile state
-  const [profileData, setProfileData] = useState({
-    nom: user.nom,
-    prenom: user.prenom
-  });
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    localStorage.setItem('settings_active_tab', tab);
+  };
   
-  // Password state
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-
+  const [profileData, setProfileData] = useState({ nom: user.nom, prenom: user.prenom });
+  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     setLoadingProfile(true);
-    const token = localStorage.getItem('token');
     try {
       const res = await fetch('http://localhost:5000/api/profile', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify(profileData)
+      });
+      if (res.ok) { toast.success(t('settings.profileSuccess')); onProfileUpdate(profileData); }
+    } catch (err) { toast.error(t('common.serverError')); } finally { setLoadingProfile(false); }
+  };
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    setUploadingImage(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/profile-image', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(t('settings.profileSuccess'));
+        onProfileUpdate({ profile_image: data.profile_image });
+      } else {
+        toast.error('Upload failed');
+      }
+    } catch (err) {
+      toast.error('Error uploading image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    setShowConfirmModal(false);
+    try {
+      const res = await fetch('http://localhost:5000/api/profile-image', {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       if (res.ok) {
         toast.success(t('settings.profileSuccess'));
-        onProfileUpdate(profileData);
-      } else {
-        toast.error(t('settings.profileError'));
+        onProfileUpdate({ profile_image: null });
       }
     } catch (err) {
-      toast.error(t('common.serverError'));
-    } finally {
-      setLoadingProfile(false);
-    }
-  };
-
-  const validatePassword = (pass) => {
-    return pass.length >= 8 && /[A-Z]/.test(pass) && /[a-z]/.test(pass) && /[0-9]/.test(pass);
-  };
-
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error(t('changePassword.mismatch'));
-      return;
-    }
-    if (!validatePassword(passwordData.newPassword)) {
-      toast.error(t('changePassword.requirements'));
-      return;
-    }
-
-    setLoadingPassword(true);
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch('http://localhost:5000/api/change-password', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword
-        })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(t('settings.updatePassword'));
-        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      } else {
-        toast.error(data.message || t('changePassword.error'));
-      }
-    } catch (err) {
-      toast.error(t('common.serverError'));
-    } finally {
-      setLoadingPassword(false);
+      toast.error('Error removing photo');
     }
   };
 
   return (
-    <div className="settings-wrapper animate-fade-in">
-      <div className="settings-sidebar">
-        <button 
-          className={`tab-link ${activeTab === 'profile' ? 'active' : ''}`}
-          onClick={() => setActiveTab('profile')}
-        >
-          <span className="tab-icon">👤</span>
-          <div className="tab-text">
-            <span className="tab-label">{t('settings.profile')}</span>
-            <span className="tab-desc">Your personal info</span>
-          </div>
-        </button>
-        <button 
-          className={`tab-link ${activeTab === 'security' ? 'active' : ''}`}
-          onClick={() => setActiveTab('security')}
-        >
-          <span className="tab-icon">🔒</span>
-          <div className="tab-text">
-            <span className="tab-label">{t('settings.security')}</span>
-            <span className="tab-desc">Password & access</span>
-          </div>
-        </button>
-        <button 
-          className={`tab-link ${activeTab === 'preferences' ? 'active' : ''}`}
-          onClick={() => setActiveTab('preferences')}
-        >
-          <span className="tab-icon">🌐</span>
-          <div className="tab-text">
-            <span className="tab-label">{t('lang.label')}</span>
-            <span className="tab-desc">Language & region</span>
-          </div>
-        </button>
+    <div className="card-pro animate-float" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="settings-container-v2">
+        <div className="settings-sidebar-v2">
+          <button className={`settings-tab-v2 ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => handleTabChange('profile')}>
+            {t('settings.personalData')}
+          </button>
+          <button className={`settings-tab-v2 ${activeTab === 'security' ? 'active' : ''}`} onClick={() => handleTabChange('security')}>
+            {t('settings.security')}
+          </button>
+          <button className={`settings-tab-v2 ${activeTab === 'preferences' ? 'active' : ''}`} onClick={() => handleTabChange('preferences')}>
+            {t('settings.preferences')}
+          </button>
+        </div>
+
+        <div className="settings-content-v2">
+          {activeTab === 'profile' && (
+            <div className="settings-pane-v2">
+              <h2 className="serif" style={{ fontSize: '28px', marginBottom: '8px' }}>{t('settings.profileTitle')}</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '40px' }}>{t('settings.profileDesc')}</p>
+              
+              <div className="profile-image-section" style={{ marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '32px' }}>
+                <div style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', border: '4px solid white', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', position: 'relative', background: 'var(--p-indigo)' }}>
+                  {user.profile_image ? (
+                    <img src={`http://localhost:5000${user.profile_image}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '48px', fontWeight: 'bold' }}>
+                      {user.nom[0]}{user.prenom[0]}
+                    </div>
+                  )}
+                  {uploadingImage && (
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div className="spinner-academic" style={{ width: '24px', height: '24px', borderWidth: '2px' }}></div>
+                    </div>
+                  )}
+                </div>
+                <div className="profile-actions-v2">
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <label htmlFor="profile-upload" className="btn-profile-v2 btn-profile-primary">
+                      {uploadingImage ? '...' : t('settings.changePhoto')}
+                    </label>
+                    {user.profile_image && (
+                      <button onClick={() => setShowConfirmModal(true)} className="btn-profile-v2 btn-remove">
+                        {t('settings.removePhoto')}
+                      </button>
+                    )}
+                  </div>
+                  <input id="profile-upload" type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, fontWeight: '600' }}>{t('settings.photoSpecs')}</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleProfileSubmit}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '40px' }}>
+                  <div className="input-field-pro">
+                    <label>{t('addEmployee.lastName')}</label>
+                    <input type="text" value={profileData.nom} onChange={(e) => setProfileData({ ...profileData, nom: e.target.value })} required />
+                  </div>
+                  <div className="input-field-pro">
+                    <label>{t('addEmployee.firstName')}</label>
+                    <input type="text" value={profileData.prenom} onChange={(e) => setProfileData({ ...profileData, prenom: e.target.value })} required />
+                  </div>
+                </div>
+                <button type="submit" className="btn-grad" disabled={loadingProfile}>
+                  {loadingProfile ? t('common.loading') : t('settings.updateInfo')}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {activeTab === 'security' && (
+            <div className="settings-pane-v2">
+              <h2 className="serif" style={{ fontSize: '28px', marginBottom: '8px' }}>{t('settings.securityTitle')}</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '40px' }}>{t('settings.securityDesc')}</p>
+              
+              <form onSubmit={(e) => e.preventDefault()}>
+                <div className="input-field-pro" style={{ maxWidth: '400px' }}>
+                  <label>{t('settings.currentPassword')}</label>
+                  <input type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '40px' }}>
+                  <div className="input-field-pro">
+                    <label>{t('settings.newPassword')}</label>
+                    <input type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} />
+                  </div>
+                  <div className="input-field-pro">
+                    <label>{t('settings.confirmPassword')}</label>
+                    <input type="password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} />
+                  </div>
+                </div>
+                <button type="submit" className="btn-grad" disabled={loadingPassword}>
+                  {t('settings.updateCredentials')}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {activeTab === 'preferences' && (
+            <div className="settings-pane-v2">
+              <h2 className="serif" style={{ fontSize: '28px', marginBottom: '8px' }}>{t('settings.interfaceTitle')}</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '40px' }}>{t('settings.interfaceDesc')}</p>
+              
+              <div style={{ background: '#f8fafc', padding: '32px', borderRadius: '16px', border: '1px solid var(--border-soft)' }}>
+                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', marginBottom: '24px' }}>{t('settings.portalLanguage')}</label>
+                 <LanguageSwitcher variant="boxed" />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="settings-content-card">
-        {activeTab === 'profile' && (
-          <div className="tab-pane animate-slide-up">
-            <div className="pane-header">
-              <h3>{t('settings.profile')}</h3>
-              <p>Manage your account name and identity</p>
-            </div>
-            <form onSubmit={handleProfileSubmit}>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('addEmployee.lastName')}</label>
-                  <input 
-                    type="text" 
-                    value={profileData.nom} 
-                    onChange={(e) => setProfileData({ ...profileData, nom: e.target.value })} 
-                    required 
-                  />
-                </div>
-                <div className="form-group">
-                  <label>{t('addEmployee.firstName')}</label>
-                  <input 
-                    type="text" 
-                    value={profileData.prenom} 
-                    onChange={(e) => setProfileData({ ...profileData, prenom: e.target.value })} 
-                    required 
-                  />
-                </div>
-              </div>
-              <div className="form-footer">
-                <button type="submit" className="btn-pro-save" disabled={loadingProfile}>
-                  {loadingProfile ? t('common.loading') : t('settings.updateProfile')}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {activeTab === 'security' && (
-          <div className="tab-pane animate-slide-up">
-            <div className="pane-header">
-              <h3>{t('settings.security')}</h3>
-              <p>Keep your account secure with a strong password</p>
-            </div>
-            <form onSubmit={handlePasswordSubmit}>
-              <div className="form-group">
-                <label>{t('settings.currentPassword')}</label>
-                <input 
-                  type="password" 
-                  value={passwordData.currentPassword} 
-                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} 
-                  required 
-                  placeholder="••••••••"
-                />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('settings.newPassword')}</label>
-                  <input 
-                    type="password" 
-                    value={passwordData.newPassword} 
-                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} 
-                    required 
-                    placeholder="Min 8 characters"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>{t('settings.confirmPassword')}</label>
-                  <input 
-                    type="password" 
-                    value={passwordData.confirmPassword} 
-                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} 
-                    required 
-                    placeholder="Repeat new password"
-                  />
-                </div>
-              </div>
-              <p className="requirements-text-pro">{t('changePassword.requirements')}</p>
-              <div className="form-footer">
-                <button type="submit" className="btn-pro-save" disabled={loadingPassword}>
-                  {loadingPassword ? t('common.loading') : t('settings.updatePassword')}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {activeTab === 'preferences' && (
-          <div className="tab-pane animate-slide-up">
-            <div className="pane-header">
-              <h3>{t('lang.label')}</h3>
-              <p>Choose your preferred language for the interface</p>
-            </div>
-            <div className="pro-lang-container">
-               <LanguageSwitcher />
-            </div>
-          </div>
-        )}
-      </div>
+      {/* REUSABLE CONFIRMATION MODAL */}
+      <ConfirmModal 
+        isOpen={showConfirmModal}
+        message={t('settings.confirmRemovePhoto')}
+        onConfirm={handleRemoveImage}
+        onCancel={() => setShowConfirmModal(false)}
+      />
     </div>
   );
 }

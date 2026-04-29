@@ -11,6 +11,7 @@ import DashboardViceDean from './pages/DashboardViceDean'
 import DashboardRector from './pages/DashboardRector'
 import DashboardViceRector from './pages/DashboardViceRector'
 import ChangePasswordModal from './components/ChangePasswordModal'
+import DashboardLayout from './components/DashboardLayout'
 
 function App() {
   const [user, setUser] = useState(null);
@@ -22,13 +23,19 @@ function App() {
     const storedToken = localStorage.getItem('token');
 
     if (storedUser && storedToken) {
-      const parsedUser = JSON.parse(storedUser);
-      // Si c'est une vieille session sans rôle, on force la déconnexion
-      if (!parsedUser.role) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        // Si c'est une vieille session sans rôle, on force la déconnexion
+        if (!parsedUser || !parsedUser.role) {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        } else {
+          setUser(parsedUser);
+        }
+      } catch (e) {
+        console.error("Erreur parsing localStorage:", e);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
-      } else {
-        setUser(parsedUser);
       }
     }
   }, []);
@@ -136,24 +143,28 @@ function App() {
 
   // Standard view for other employees
   return (
-    <div className="container">
-      <Toaster position="top-right" />
-
-      <div className="content" style={{ textAlign: 'center', marginTop: '50px' }}>
-        <h2>{t('app.personalSpace')}</h2>
-        <h3>{t('app.welcomeUser')} {user.prenom} {user.nom}</h3>
-        <p style={{ marginTop: '10px', color: '#666' }}>
+    <DashboardLayout
+      user={user}
+      activeView="home"
+      setView={() => {}}
+      menuItems={[{ id: 'home', label: t('app.personalSpace'), icon: '🏠' }]}
+      onLogout={handleLogout}
+      title={t('app.personalSpace')}
+    >
+      <div className="animate-fade-in-up" style={{ textAlign: 'center', padding: '100px 0' }}>
+        <h2 className="gradient-text" style={{ fontSize: '32px', marginBottom: '16px' }}>
+          {t('app.welcomeUser')} {user.prenom} {user.nom}
+        </h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '16px' }}>
           {t('app.loggedInAs')} <strong>{t('roles.' + user.role) || user.role}</strong>
         </p>
+        <div style={{ marginTop: '32px' }}>
+          <p style={{ color: 'var(--text-light)' }}>Accès restreint. Veuillez contacter l'administrateur si vous devriez avoir accès à plus de fonctionnalités.</p>
+        </div>
       </div>
-
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
-        <button onClick={handleLogout} style={{ padding: '10px 20px', cursor: 'pointer', background: '#e53e3e', color: 'white', border: 'none', borderRadius: '5px' }}>
-          {t('common.logout')}
-        </button>
-      </div>
-    </div>
-  )
+    </DashboardLayout>
+  );
 }
+
 
 export default App

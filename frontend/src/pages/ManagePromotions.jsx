@@ -48,16 +48,25 @@ function ManagePromotions({ user }) {
     }
   };
 
-  const handleRecommendation = async (id) => {
-    if (!recommendation) return toast.error(t('promotions.enterRecommendation'));
-    console.log(`[ManagePromotions] --> PUT /api/promotions/${id}/recommend payload:`, { recommendation });
+  const handleRecommendation = async (id, action = 'approve') => {
+    if (action === 'approve' && !recommendation) return toast.error(t('promotions.enterRecommendation'));
+    console.log(`[ManagePromotions] --> PUT /api/promotions/${id}/recommend payload:`, { recommendation, action });
     try {
       const token = localStorage.getItem('token'); 
-      const res = await fetch(`http://localhost:5000/api/promotions/${id}/recommend`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ recommendation }) });
-      console.log(`[ManagePromotions] <-- PUT /api/promotions/${id}/recommend response status:`, res.status);
-      if (res.ok) { toast.success(t('promotions.recommendationSubmitted')); setRecommendation(''); setActivePromoId(null); fetchPromotions(); } else { toast.error(t('promotions.errorRecommendation')); }
+      const res = await fetch(`http://localhost:5000/api/promotions/${id}/recommend`, { 
+        method: 'PUT', 
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+        body: JSON.stringify({ recommendation, action }) 
+      });
+      if (res.ok) { 
+        toast.success(action === 'reject' ? 'Demande refusée et transmise' : t('promotions.recommendationSubmitted')); 
+        setRecommendation(''); 
+        setActivePromoId(null); 
+        fetchPromotions(); 
+      } else { 
+        toast.error(t('promotions.errorRecommendation')); 
+      }
     } catch (error) { 
-      console.error("[ManagePromotions] Error recommending promotion:", error);
       toast.error(t('common.serverError')); 
     }
   };
@@ -71,7 +80,6 @@ function ManagePromotions({ user }) {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
         body: JSON.stringify({ status, finalGrade }) 
       });
-      console.log(`[ManagePromotions] <-- PUT /api/promotions/${id}/status response status:`, res.status);
       if (res.ok) { 
         toast.success(status === 'Approved' ? t('promotions.gradeUpdated') || 'Grade mis à jour avec succès' : t('promotions.promotionRejected')); 
         fetchPromotions(); 
@@ -79,7 +87,6 @@ function ManagePromotions({ user }) {
         toast.error(t('promotions.errorStatus')); 
       }
     } catch (error) { 
-      console.error("[ManagePromotions] Error updating status:", error);
       toast.error(t('common.serverError')); 
     }
   };
@@ -95,12 +102,13 @@ function ManagePromotions({ user }) {
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case 'Approved': return { bg: '#d1fae5', color: '#065f46' };
-      case 'Rejected': return { bg: '#fee2e2', color: '#991b1b' };
+      case 'Approved': return { bg: '#dcfce7', color: '#166534', label: 'Completed' };
+      case 'Rejected': return { bg: '#fee2e2', color: '#991b1b', label: 'Rejected by HR' };
+      case 'Rejected_Dean': return { bg: '#fee2e2', color: '#991b1b', label: 'Rejected by Dean' };
       case 'Pending_Dept': return { bg: '#fef3c7', color: '#92400e', label: 'Pending Dept' };
       case 'Pending_Dean': return { bg: '#dbeafe', color: '#1e40af', label: 'With Dean' };
       case 'Pending_Rector': return { bg: '#e0e7ff', color: '#3730a3', label: 'With Rector' };
-      case 'Pending_HR': return { bg: '#f3e8ff', color: '#6b21a8', label: 'With HR' };
+      case 'Pending_HR': return { bg: '#f3e8ff', color: '#6b21a8', label: 'With HR (Signed)' };
       default: return { bg: '#f1f5f9', color: '#475569' };
     }
   };
@@ -132,20 +140,20 @@ function ManagePromotions({ user }) {
 
               let actionLabel = t('promotions.addRecommendation');
               let submitLabel = t('common.submit');
-              if (isDeptHead) { actionLabel = "Traiter & Envoyer au Doyen"; submitLabel = "Envoyer au Doyen"; }
-              else if (isDean) { actionLabel = "Traiter & Envoyer au Recteur"; submitLabel = "Envoyer au Recteur"; }
-              else if (isRector) { actionLabel = "Traiter & Envoyer aux RH"; submitLabel = "Envoyer aux RH"; }
+              if (isDeptHead) { actionLabel = t('promotions.validateAndSend'); submitLabel = t('common.approve'); }
+              else if (isDean) { actionLabel = t('promotions.decideAndSend'); submitLabel = t('common.approve'); }
+              else if (isRector) { actionLabel = t('promotions.signAndSend'); submitLabel = t('promotions.signAndSend'); }
 
               return (
                 <tr key={p.id}>
-                  <td>{index + 1}</td>
-                  <td><strong>{p.nom} {p.prenom}</strong><br /><small style={{ color: '#64748b' }}>{p.department_name || '-'}</small></td>
-                  <td><span className="role-tag" style={{ background: '#e2e8f0', color: '#475569' }}>{p.current_grade}</span> → <span className="role-tag" style={{ background: '#ede9fe', color: '#5b21b6' }}>{p.requested_grade}</span></td>
-                  <td><span className="role-tag" style={{ background: style.bg, color: style.color }}>{style.label || p.status}</span></td>
-                  <td>
+                  <td data-label="#">{index + 1}</td>
+                  <td data-label={t('promotions.candidate')}><strong>{p.nom} {p.prenom}</strong><br /><small style={{ color: '#64748b' }}>{p.department_name || '-'}</small></td>
+                  <td data-label={t('promotions.transition')}><span className="role-tag" style={{ background: '#e2e8f0', color: '#475569' }}>{p.current_grade}</span> → <span className="role-tag" style={{ background: '#ede9fe', color: '#5b21b6' }}>{p.requested_grade}</span></td>
+                  <td data-label={t('common.status')}><span className="role-tag" style={{ background: style.bg, color: style.color }}>{style.label || p.status}</span></td>
+                  <td data-label={t('common.actions')}>
                     {p.dept_head_recommendation && (
                       <div style={{ marginBottom: '8px', padding: '8px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '11px', whiteSpace: 'pre-wrap' }}>
-                        <div style={{ fontWeight: '600', color: '#475569', marginBottom: '4px', textTransform: 'uppercase', fontSize: '10px' }}>Historique des avis :</div>
+                        <div style={{ fontWeight: '600', color: '#475569', marginBottom: '4px', textTransform: 'uppercase', fontSize: '10px' }}>{t('promotions.historyTitle')}</div>
                         {p.dept_head_recommendation}
                       </div>
                     )}
@@ -153,36 +161,45 @@ function ManagePromotions({ user }) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                         <textarea value={recommendation} onChange={e => setRecommendation(e.target.value)} placeholder={t('promotions.writeRecommendation')} rows="2" style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }} />
                         <div style={{ display: 'flex', gap: '5px' }}>
-                          <button onClick={() => handleRecommendation(p.id)} style={{ flex: 1, background: '#10b981', color: 'white', border: 'none', padding: '6px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}>{submitLabel}</button>
-                          <button onClick={() => setActivePromoId(null)} style={{ flex: 1, background: '#94a3b8', color: 'white', border: 'none', padding: '6px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}>{t('common.cancel')}</button>
+                          <button onClick={() => handleRecommendation(p.id, 'approve')} className="btn-confirm-pro" style={{ flex: 1, padding: '8px', fontSize: '11px' }}>{submitLabel}</button>
+                          {isDean && <button onClick={() => handleRecommendation(p.id, 'reject')} className="btn-cancel-pro" style={{ flex: 1, padding: '8px', fontSize: '11px' }}>{t('common.reject')}</button>}
+                          <button onClick={() => setActivePromoId(null)} className="btn-cancel-pro" style={{ flex: 1, padding: '8px', fontSize: '11px' }}>{t('common.cancel')}</button>
                         </div>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', gap: '5px' }}>
                         <button onClick={() => setActivePromoId(p.id)} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>{actionLabel}</button>
-                        <button onClick={() => handleStatusUpdate(p.id, 'Rejected')} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>{t('common.reject')}</button>
                       </div>
                     ))}
                     {canApprove && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#475569' }}>Confirmer le Grade Final :</div>
+                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#475569' }}>{t('promotions.finalizeGrade')}</div>
                         <div style={{ display: 'flex', gap: '5px' }}>
                           <select 
                             id={`grade-select-${p.id}`}
                             defaultValue={p.requested_grade}
-                            style={{ padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '12px', flex: 1 }}
+                            style={{ 
+                              padding: '8px 30px 8px 12px', 
+                              borderRadius: '8px', 
+                              border: '1px solid #cbd5e1', 
+                              fontSize: '13px', 
+                              flex: '2',
+                              background: 'white',
+                              cursor: 'pointer'
+                            }}
                           >
                             {gradeHierarchy.map(g => <option key={g} value={g}>{g}</option>)}
                           </select>
-                          <button 
-                            onClick={() => {
-                              const finalGrade = document.getElementById(`grade-select-${p.id}`).value;
-                              handleStatusUpdate(p.id, 'Approved', finalGrade);
-                            }} 
-                            style={{ background: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
-                          >
-                            {t('promotions.finalize') || 'Finaliser la Promotion'}
-                          </button>
+                            <button 
+                              onClick={() => {
+                                const finalGrade = document.getElementById(`grade-select-${p.id}`).value;
+                                handleStatusUpdate(p.id, 'Approved', finalGrade);
+                              }} 
+                              className="btn-confirm-pro"
+                              style={{ padding: '8px 16px', fontSize: '13px', flex: '1' }}
+                            >
+                              {t('promotions.updateFile')}
+                            </button>
                         </div>
                       </div>
                     )}

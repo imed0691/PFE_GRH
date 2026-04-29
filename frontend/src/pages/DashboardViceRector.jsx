@@ -1,25 +1,19 @@
-import { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
+import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
-
+import DashboardLayout from '../components/DashboardLayout';
+import ManageAbsences from './ManageAbsences';
+import ManagePromotions from './ManagePromotions';
+import ManageDocuments from './ManageDocuments';
 import ManageEvaluations from './ManageEvaluations';
-import ManageReminders from './ManageReminders';
 import ReminderInbox from './ReminderInbox';
 import useNotificationBadges from '../hooks/useNotificationBadges';
-import NotifBadge from '../components/NotifBadge';
 import Settings from './Settings';
-import './DashboardViceRector.css';
 
 function DashboardViceRector({ user, onLogout }) {
-  const [sessionsCount, setSessionsCount] = useState(0);
-  const [teachersCount, setTeachersCount] = useState(0);
-  const [deansCount, setDeansCount] = useState(0);
-  const [users, setUsers] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  const [view, setViewRaw] = useState('overview');
-  const [loading, setLoading] = useState(true);
+  const [view, setViewRaw] = useState(localStorage.getItem('vicerector_dashboard_view') || 'overview');
   const { badges, markSeen } = useNotificationBadges();
-  const { t, locale } = useLanguage();
+  const { t } = useLanguage();
+  const lastClearedView = useRef(null);
 
   const handleProfileUpdate = (newData) => {
     const updatedUser = { ...user, ...newData };
@@ -27,69 +21,61 @@ function DashboardViceRector({ user, onLogout }) {
     window.location.reload();
   };
 
-  const setView = (newView) => { setViewRaw(newView); if (badges[newView] && badges[newView] > 0) markSeen(newView); };
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const headers = { 'Authorization': `Bearer ${token}` };
-      const [resUsers, resSessions, resDepts] = await Promise.all([
-        fetch('http://localhost:5000/api/users', { headers }),
-        fetch('http://localhost:5000/api/sessions', { headers }),
-        fetch('http://localhost:5000/api/departments', { headers })
-      ]);
-      if (resUsers.ok) { 
-        const usersData = await resUsers.json(); 
-        setUsers(usersData); 
-        setTeachersCount(usersData.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT').length); 
-        setDeansCount(usersData.filter(u => ['DEAN', 'DOYEN', 'VICE_DEAN', 'VICE_DOYEN'].includes(u.role)).length); 
-      }
-      if (resSessions.ok) { setSessionsCount((await resSessions.json()).length); }
-      if (resDepts.ok) { setDepartments(await resDepts.json()); }
-    } catch (error) { console.error(error); } finally { setLoading(false); }
+  const setView = (newView) => { 
+    setViewRaw(newView); 
+    localStorage.setItem('vicerector_dashboard_view', newView);
+    if (badges[newView] && badges[newView] > 0) markSeen(newView); 
   };
 
-  useEffect(() => { if (view === 'overview') fetchData(); }, [view]);
+  useEffect(() => {
+    if (view !== lastClearedView.current && badges[view] > 0) {
+      markSeen(view);
+      lastClearedView.current = view;
+    }
+  }, [view, badges[view]]);
+
+  const menuItems = [
+    { id: 'overview', label: t('sidebar.overview'), icon: '🏛️' },
+    { id: 'absences', label: t('sidebar.absences'), icon: '⚠️', badge: badges.absences },
+    { id: 'promotions', label: t('sidebar.promotions'), icon: '📈', badge: badges.promotions },
+    { id: 'documents', label: t('sidebar.documents'), icon: '📄', badge: badges.documents },
+    { id: 'evaluations', label: t('sidebar.evaluations'), icon: '⭐', badge: badges.evaluations },
+    { id: 'reminders', label: t('sidebar.notifications'), icon: '🔔', badge: badges.reminders },
+    { id: 'settings', label: t('settings.title'), icon: '⚙️' },
+  ];
 
   return (
-    <div className="dashboard-container">
-      <aside className="sidebar" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
-        <div className="sidebar-header"><h2>PFE_GRH</h2></div>
-        <div className="user-profile">
-          <div className="avatar" style={{ background: 'linear-gradient(135deg, #10b981, #34d399)' }}>{user.prenom[0]}{user.nom[0]}</div>
-          <div className="user-info"><h4>{user.prenom} {user.nom}</h4><span className="badge-role" style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#a7f3d0' }}>{t('roles.VICE_RECTOR')}</span></div>
-        </div>
-        <nav className="sidebar-nav">
-          <button className={`nav-item ${view === 'overview' ? 'active' : ''}`} onClick={() => setView('overview')}>{t('sidebar.overview')}</button>
-          <button className={`nav-item ${view === 'reminders' ? 'active' : ''}`} onClick={() => setView('reminders')}>{t('sidebar.communications')} <NotifBadge count={badges.reminders} /></button>
-          <button className={`nav-item ${view === 'evaluations' ? 'active' : ''}`} onClick={() => setView('evaluations')}>{t('sidebar.evaluations')} <NotifBadge count={badges.evaluations} /></button>
-          <button className={`nav-item ${view === 'settings' ? 'active' : ''}`} onClick={() => setView('settings')}>{t('settings.title')}</button>
-        </nav>
-        <button className="btn-logout" onClick={onLogout}>{t('common.logout')}</button>
-      </aside>
-      <main className="main-content">
-        <header className="topbar">
-          <h1>{view === 'overview' ? t('topbar.universityPedagogy') : view === 'promotions' ? t('topbar.promotionsManagement') : view === 'evaluations' ? t('topbar.evaluationsManagement') : view === 'settings' ? t('settings.title') : t('topbar.officialCommunications')}</h1>
-          <div className="date-display">{new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
-        </header>
-        <div className="content-area">
-          {view === 'overview' ? (loading ? <div className="loading-spinner">{t('common.loading')}</div> : (
-            <div className="overview-grid">
-              <div className="stat-card"><h3>{t('rector.totalStaff')}</h3><p className="stat-value">{users.length}</p></div>
-              <div className="stat-card"><h3>{t('rector.teachers')}</h3><p className="stat-value">{teachersCount}</p></div>
-              <div className="stat-card"><h3>{t('rector.deansViceDeans')}</h3><p className="stat-value">{deansCount}</p></div>
-              <div className="stat-card"><h3>{t('rector.departments')}</h3><p className="stat-value">{departments.length}</p></div>
-            </div>
-          )) : view === 'evaluations' ? <ManageEvaluations user={user} /> : view === 'reminders' ? (
-            <>
-              <ManageReminders user={user} />
-              <ReminderInbox user={user} />
-            </>
-          ) : view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : null}
-        </div>
-      </main>
-    </div>
+    <DashboardLayout
+      user={user}
+      activeView={view}
+      setView={setView}
+      menuItems={menuItems}
+      onLogout={onLogout}
+      title={view === 'settings' ? t('settings.title') : 'Vice Rector Dashboard'}
+    >
+      <div className="animate-academic">
+        {view === 'absences' ? <ManageAbsences user={user} /> : 
+         view === 'promotions' ? <ManagePromotions user={user} /> : 
+         view === 'documents' ? <ManageDocuments user={user} /> : 
+         view === 'evaluations' ? <ManageEvaluations user={user} /> : 
+         view === 'reminders' ? <ReminderInbox user={user} /> : 
+         view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : (
+           <div className="vicerector-view">
+              <div className="card-academic">
+                <h3 className="academic-title">Vice Rector Executive Office</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '18px', lineHeight: '1.8' }}>
+                  Overseeing institutional strategy, faculty development, and academic quality assurance. 
+                  Access critical management modules via the executive sidebar to ensure institutional excellence.
+                </p>
+                <div style={{ marginTop: '40px', display: 'flex', gap: '20px' }}>
+                   <button className="btn-academic">Institutional Strategy</button>
+                   <button className="btn-academic btn-academic-outline">Quality Reports</button>
+                </div>
+              </div>
+           </div>
+         )}
+      </div>
+    </DashboardLayout>
   );
 }
 
