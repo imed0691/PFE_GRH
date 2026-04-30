@@ -1,11 +1,11 @@
 import { useLanguage } from "../i18n/LanguageContext";
 import "./Sidebar.css";
 
-function Sidebar({ user, activeView, setView, menuItems, onLogout }) {
+function Sidebar({ user, activeView, setView, menuItems, onLogout, isOpen }) {
   const { t } = useLanguage();
 
   return (
-    <aside className="sidebar-academic">
+    <aside className={`sidebar-academic ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header" style={{ padding: '40px 24px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <img src="/logo_univ.png" alt="Logo" style={{ width: '190px', height: 'auto' }} />
       </div>

@@ -232,7 +232,7 @@ function ManageAbsences({ user: propUser }) {
               <tr>
                 <th style={{ width: '120px' }}>{t('common.date')}</th>
                 {!isTeacher && <th style={{ width: '220px' }}>{t('absences.staffMember')}</th>}
-                <th style={{ minWidth: '300px' }}>{t('teacher.reason')} / {t('absences.justificationLabel')}</th>
+                <th style={{ minWidth: '300px' }}>{t('teacher.reason')}</th>
                 <th style={{ width: '160px' }}>{t('common.status')}</th>
                 <th style={{ width: '200px' }}>{t('common.actions')}</th>
               </tr>
@@ -354,7 +354,7 @@ function ManageAbsences({ user: propUser }) {
                   </td>
                 </tr>
               ))}
-              {absences.length === 0 && <tr><td colSpan={isTeacher ? 4 : 5} style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)', fontStyle: 'italic' }}>{t('absences.noRequests')}</td></tr>}
+              {absences.length === 0 && <tr><td colSpan={isTeacher ? 4 : 5} className="empty-state-cell">{t('absences.noRequests')}</td></tr>}
             </tbody>
           </table>
         </div>

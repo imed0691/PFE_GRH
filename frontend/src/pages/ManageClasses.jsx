@@ -64,7 +64,11 @@ function ManageClasses({ user }) {
 
   // --- FETCHING DATA ---
   useEffect(() => {
-    if (!selectedDeptId) { setLevels([]); setSelectedLevelId(''); return; }
+    // Reset downstream selections when dept changes
+    setSelectedLevelId('');
+    setSelectedSectionId('');
+    
+    if (!selectedDeptId) { setLevels([]); return; }
     fetchLevels();
   }, [selectedDeptId]);
 
@@ -77,7 +81,10 @@ function ManageClasses({ user }) {
   };
 
   useEffect(() => {
-    if (!selectedLevelId) { setSections([]); setModules([]); setSelectedSectionId(''); return; }
+    // Reset downstream selections when level changes
+    setSelectedSectionId('');
+    
+    if (!selectedLevelId) { setSections([]); setModules([]); return; }
     fetchSections();
     fetchModules();
   }, [selectedLevelId]);
@@ -251,29 +258,8 @@ function ManageClasses({ user }) {
       {user.role === 'RH_MANAGER' && (
         <>
           {/* PREMIUM HEADER AREA */}
-          <div style={{ marginBottom: '30px', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+          <div style={{ marginBottom: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
-            {/* DEPT SELECTION CARD */}
-            <div className="card-academic" style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '24px' }}>
-              <div style={{ padding: '12px', background: '#eff6ff', borderRadius: '16px', color: 'var(--p-indigo)' }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-              </div>
-              <div style={{ flex: 1 }}>
-                <label className="mnadm-label" style={{ marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('classes.chooseDept')}</label>
-                <select className="mnadm-input" value={selectedDeptId} onChange={e => setSelectedDeptId(e.target.value)} style={{ fontWeight: '800', border: 'none', background: '#f8fafc', padding: '10px 14px' }}>
-                  <option value="">{t('classes.selectDept')}</option>
-                  {departments.map(d => {
-                    const translated = t('departments.' + d.name);
-                    return (
-                      <option key={d.id} value={d.id}>
-                        {translated.includes('.') ? d.name : translated}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-            </div>
-
             {/* PREMIUM SUB-TABS */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div 
@@ -322,6 +308,28 @@ function ManageClasses({ user }) {
                 </div>
               </div>
             </div>
+
+            {/* DEPT SELECTION CARD */}
+            <div className="card-academic" style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '24px', width: 'fit-content', minWidth: '400px', maxWidth: '100%' }}>
+              <div style={{ padding: '12px', background: '#eff6ff', borderRadius: '16px', color: 'var(--p-indigo)' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="mnadm-label" style={{ marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('classes.chooseDept')}</label>
+                <select className="mnadm-input" value={selectedDeptId} onChange={e => setSelectedDeptId(e.target.value)} style={{ fontWeight: '800', border: 'none', background: '#f8fafc', padding: '10px 14px', width: '100%', minWidth: '250px' }}>
+                  <option value="">{t('classes.selectDept')}</option>
+                  {departments.map(d => {
+                    const translated = t('departments.' + d.name);
+                    return (
+                      <option key={d.id} value={d.id}>
+                        {translated.includes('.') ? d.name : translated}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </div>
+
           </div>
 
           <div className="explorer-container" style={{ gridTemplateColumns: activeTab === 'modules' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)' }}>
@@ -332,7 +340,9 @@ function ManageClasses({ user }) {
                 <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> {t('classes.levels')}</h3>
               </div>
               <div className="explorer-list">
-                {levels.map(l => (
+                {!selectedDeptId ? (
+                  <div style={{ padding: '20px', color: 'var(--text-muted)', textAlign: 'center', fontSize: '13px' }}>{t('classes.selectDeptFirst')}</div>
+                ) : levels.map(l => (
                   <div key={l.id} className={`explorer-item ${selectedLevelId == l.id ? 'active' : ''}`} onClick={() => setSelectedLevelId(l.id)}>
                     <strong>{l.name}</strong>
                     <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('levels', l.id); }} className="btn-delete-pro" style={{ padding: '4px 8px', fontSize: '10px' }}>
@@ -343,11 +353,11 @@ function ManageClasses({ user }) {
               </div>
               <div className="explorer-footer">
                 <form onSubmit={handleAddLevel} style={{ display: 'flex', gap: '8px', position: 'relative' }}>
-                  <input type="text" className="mnadm-input" value={newLevelName} onChange={e => setNewLevelName(e.target.value)} placeholder={t('classes.addLevelPlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required />
+                  <input type="text" className="mnadm-input" value={newLevelName} onChange={e => setNewLevelName(e.target.value)} placeholder={t('classes.addLevelPlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required disabled={!selectedDeptId} />
                   <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                   </span>
-                  <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }}>{t('classes.addBtn')}</button>
+                  <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }} disabled={!selectedDeptId}>{t('classes.addBtn')}</button>
                 </form>
               </div>
             </div>
@@ -360,7 +370,9 @@ function ManageClasses({ user }) {
                     <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg> {t('classes.sections')}</h3>
                   </div>
                   <div className="explorer-list">
-                    {sections.map(s => (
+                    {!selectedLevelId ? (
+                      <div style={{ padding: '20px', color: 'var(--text-muted)', textAlign: 'center', fontSize: '13px' }}>{t('classes.selectLevelFirst')}</div>
+                    ) : sections.map(s => (
                       <div key={s.id} className={`explorer-item ${selectedSectionId == s.id ? 'active' : ''}`} onClick={() => setSelectedSectionId(s.id)}>
                         <strong>{s.name}</strong>
                         <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('sections', s.id); }} className="btn-delete-pro" style={{ padding: '4px 8px', fontSize: '10px' }}>
@@ -371,11 +383,11 @@ function ManageClasses({ user }) {
                   </div>
                   <div className="explorer-footer">
                     <form onSubmit={handleAddSection} style={{ display: 'flex', gap: '8px', position: 'relative' }}>
-                      <input type="text" className="mnadm-input" value={newSectionName} onChange={e => setNewSectionName(e.target.value)} placeholder={t('classes.addSectionPlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required />
+                      <input type="text" className="mnadm-input" value={newSectionName} onChange={e => setNewSectionName(e.target.value)} placeholder={t('classes.addSectionPlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required disabled={!selectedLevelId} />
                       <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                       </span>
-                      <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }}>{t('classes.addBtn')}</button>
+                      <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }} disabled={!selectedLevelId}>{t('classes.addBtn')}</button>
                     </form>
                   </div>
                 </div>
@@ -386,7 +398,9 @@ function ManageClasses({ user }) {
                     <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> {t('classes.groups')}</h3>
                   </div>
                   <div className="explorer-list">
-                    {groups.map(g => (
+                    {!selectedSectionId ? (
+                      <div style={{ padding: '20px', color: 'var(--text-muted)', textAlign: 'center', fontSize: '13px' }}>{t('classes.selectSectionFirst')}</div>
+                    ) : groups.map(g => (
                       <div key={g.id} className="explorer-item">
                         <strong>{g.name}</strong>
                         <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('groups', g.id); }} className="btn-delete-pro" style={{ padding: '4px 8px', fontSize: '10px' }}>
@@ -397,11 +411,11 @@ function ManageClasses({ user }) {
                   </div>
                   <div className="explorer-footer">
                     <form onSubmit={handleAddGroup} style={{ display: 'flex', gap: '8px', position: 'relative' }}>
-                      <input type="text" className="mnadm-input" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t('classes.addGroupPlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required />
+                      <input type="text" className="mnadm-input" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t('classes.addGroupPlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required disabled={!selectedSectionId} />
                       <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                       </span>
-                      <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }}>{t('classes.addBtn')}</button>
+                      <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }} disabled={!selectedSectionId}>{t('classes.addBtn')}</button>
                     </form>
                   </div>
                 </div>
@@ -413,7 +427,9 @@ function ManageClasses({ user }) {
                   <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> {t('classes.modules')}</h3>
                 </div>
                 <div className="explorer-list">
-                  {modules.map(m => (
+                  {!selectedLevelId ? (
+                    <div style={{ padding: '20px', color: 'var(--text-muted)', textAlign: 'center', fontSize: '13px' }}>{t('classes.selectLevelFirst')}</div>
+                  ) : modules.map(m => (
                     <div key={m.id} className="explorer-item">
                       <strong>{m.name}</strong>
                       <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('modules', m.id); }} className="btn-delete-pro" style={{ padding: '4px 8px', fontSize: '10px' }}>
@@ -424,11 +440,11 @@ function ManageClasses({ user }) {
                 </div>
                 <div className="explorer-footer">
                   <form onSubmit={handleAddModule} style={{ display: 'flex', gap: '8px', position: 'relative' }}>
-                    <input type="text" className="mnadm-input" value={newModuleName} onChange={e => setNewModuleName(e.target.value)} placeholder={t('classes.addModulePlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required />
+                    <input type="text" className="mnadm-input" value={newModuleName} onChange={e => setNewModuleName(e.target.value)} placeholder={t('classes.addModulePlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required disabled={!selectedLevelId} />
                     <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     </span>
-                    <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }}>{t('classes.addBtn')}</button>
+                    <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }} disabled={!selectedLevelId}>{t('classes.addBtn')}</button>
                   </form>
                 </div>
               </div>

@@ -73,6 +73,7 @@ function ManageDocuments({ user }) {
                           {t('documents.ready')}
                         </span>
                       ) : d.status === 'Processing' ? (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span style={{ 
                             background: '#ef4444', 
                             color: 'white', 
@@ -83,7 +84,7 @@ function ManageDocuments({ user }) {
                             textTransform: 'uppercase',
                             marginRight: '8px',
                             animation: 'badgePulse 2s infinite'
-                          }}>NEW</span>
+                          }}>{t('common.new') || 'NEW'}</span>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                           {d.status}
                         </span>
@@ -108,7 +109,7 @@ function ManageDocuments({ user }) {
                   )}
                 </tr>
               ))}
-              {documents.length === 0 && <tr><td colSpan={isTeacher ? 4 : 6} className="empty-state">{t('documents.noRequests')}</td></tr>}
+              {documents.length === 0 && <tr><td colSpan={isTeacher ? 4 : 6} className="empty-state-cell">{t('documents.noRequests')}</td></tr>}
             </tbody>
           </table>
         </div>

@@ -39,6 +39,7 @@ const fr = {
     regular: 'Régulier',
     confirmDelete: 'Êtes-vous sûr de vouloir supprimer cet élément ?',
     completed: 'Terminé',
+    new: 'Nouveau',
   },
 
   // ── Connexion ──
@@ -187,6 +188,9 @@ const fr = {
     modules: '2. Curriculum Académique',
     sections: '2. Sections',
     groups: '3. Groupes',
+    selectDeptFirst: 'Veuillez d\'abord sélectionner un département',
+    selectLevelFirst: 'Veuillez d\'abord sélectionner un niveau',
+    selectSectionFirst: 'Veuillez d\'abord sélectionner une section',
     addLevelPlaceholder: 'Ex: L1, M1...',
     addModulePlaceholder: 'Ex: Algorithmique...',
     addSectionPlaceholder: 'Ex: Section A...',

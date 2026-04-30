@@ -361,7 +361,7 @@ function ManageSessions({ user }) {
                   <td><button onClick={() => handleCancelSession(s.id)} className="btn-cancel-pro" style={{ padding: '6px 12px', fontSize: '11px' }}>{t('common.cancel')}</button></td>
                 </tr>
               ))}
-              {(!sessions || sessions.length === 0) && <tr><td colSpan="8" className="empty-state">{t('sessions.noSessions')}</td></tr>}
+              {(!sessions || sessions.length === 0) && <tr><td colSpan="8" className="empty-state-cell">{t('sessions.noSessions')}</td></tr>}
             </tbody>
           </table>
         </div>

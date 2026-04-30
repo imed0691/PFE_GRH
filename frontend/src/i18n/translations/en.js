@@ -37,6 +37,7 @@ const en = {
     regular: 'Regular',
     confirmDelete: 'Are you sure you want to delete this item?',
     completed: 'Completed',
+    new: 'New',
   },
 
   // ── Login ──
@@ -199,6 +200,9 @@ const en = {
     modules: '2. Academic Curriculum',
     sections: '2. Sections',
     groups: '3. Groups',
+    selectDeptFirst: 'Please select a department first',
+    selectLevelFirst: 'Please select a level first',
+    selectSectionFirst: 'Please select a section first',
     addLevelPlaceholder: 'E.g. L1, M1...',
     addModulePlaceholder: 'E.g. Algorithmics...',
     addSectionPlaceholder: 'E.g. Section A...',

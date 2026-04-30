@@ -5,7 +5,7 @@ exports.calculateSalaries = (req, res) => {
   const query = `
     SELECT 
       u.id, u.nom, u.prenom, u.role, u.volume_horaire, u.grade, u.hourly_rate, u.absence_penalty, u.base_salary, u.extra_hours,
-      (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND has_justification = FALSE AND is_caught_up = FALSE) as unjustified_absences
+      (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND justification_status != 'Accepted' AND is_caught_up = FALSE) as unjustified_absences
     FROM users u 
     WHERE u.role IN ('TEACHER', 'ENSEIGNANT')
   `;

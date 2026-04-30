@@ -118,24 +118,20 @@
   
   .settings-sidebar-v2 {
     width: 100%;
-    flex-direction: row;
-    overflow-x: auto;
-    padding: 15px;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    padding: 20px;
     border-right: none;
     border-bottom: 1px solid var(--border-soft);
     gap: 10px;
-    white-space: nowrap;
-    scrollbar-width: none;
-  }
-
-  .settings-sidebar-v2::-webkit-scrollbar {
-    display: none;
+    background: #f1f5f9;
   }
 
   .settings-sidebar-v2 button.settings-tab-v2 {
-    padding: 8px 16px;
+    padding: 12px 16px;
     font-size: 13px;
-    flex-shrink: 0;
+    justify-content: center;
+    text-align: center;
   }
 
   .settings-content-v2 {

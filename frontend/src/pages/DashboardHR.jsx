@@ -175,7 +175,7 @@ function DashboardHR({ user, onLogout }) {
                 <button className={filter === 'direction' ? 'btn-confirm-pro' : 'btn-cancel-pro'} onClick={() => setFilter('direction')} style={{ padding: '10px 24px', fontSize: '13px' }}>{t('hr.direction')}</button>
                 <button className={filter === 'DEPARTMENT_HEAD' ? 'btn-confirm-pro' : 'btn-cancel-pro'} onClick={() => setFilter('DEPARTMENT_HEAD')} style={{ padding: '10px 24px', fontSize: '13px' }}>{t('roles.DEPARTMENT_HEAD')}</button>
 
-                <div style={{ height: '24px', width: '1px', background: '#e2e8f0', margin: '0 8px' }}></div>
+                <div className="hide-mobile" style={{ height: '24px', width: '1px', background: '#e2e8f0', margin: '0 8px' }}></div>
 
                 <select
                   className="mnadm-input"
@@ -226,11 +226,11 @@ function DashboardHR({ user, onLogout }) {
                 <table className="modern-table">
                   <thead>
                     <tr>
-                      <th style={{ width: '60px' }}>#</th>
-                      <th style={{ width: '100px' }}>{t('common.id')}</th>
+                      <th className="hide-mobile" style={{ width: '60px' }}>#</th>
+                      <th className="hide-mobile" style={{ width: '100px' }}>{t('common.id')}</th>
                       <th style={{ width: '250px' }}>{t('common.fullName')}</th>
-                      <th style={{ width: '250px' }}>{t('common.email')}</th>
-                      <th style={{ width: '200px' }}>{t('common.department')}</th>
+                      <th className="hide-mobile" style={{ width: '250px' }}>{t('common.email')}</th>
+                      <th className="hide-tablet" style={{ width: '200px' }}>{t('common.department')}</th>
                       <th style={{ width: '180px' }}>{t('common.role')}</th>
                       <th style={{ width: '150px' }}>{t('common.actions')}</th>
                     </tr>
@@ -253,8 +253,8 @@ function DashboardHR({ user, onLogout }) {
                       })
                       .map((u, index) => (
                         <tr key={u.id}>
-                          <td>{index + 1}</td>
-                          <td style={{ color: 'var(--text-muted)', fontWeight: '600' }}>#{u.id}</td>
+                          <td className="hide-mobile">{index + 1}</td>
+                          <td className="hide-mobile" style={{ color: 'var(--text-muted)', fontWeight: '600' }}>#{u.id}</td>
                           <td>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                               <div className="user-avatar-mini" style={{ width: '32px', height: '32px' }}>
@@ -263,8 +263,8 @@ function DashboardHR({ user, onLogout }) {
                               <strong>{u.nom} {u.prenom}</strong>
                             </div>
                           </td>
-                          <td>{u.email}</td>
-                          <td>{u.department_name && u.department_name !== 'null' ? (t('departments.' + u.department_name) === 'departments.' + u.department_name ? u.department_name : t('departments.' + u.department_name)) : '-'}</td>
+                          <td className="hide-mobile">{u.email}</td>
+                          <td className="hide-tablet">{u.department_name && u.department_name !== 'null' ? (t('departments.' + u.department_name) === 'departments.' + u.department_name ? u.department_name : t('departments.' + u.department_name)) : '-'}</td>
                           <td><span className={`role-tag role-${u.role.toLowerCase()}`}>{t('roles.' + u.role) || u.role}</span></td>
                           <td>
                             {u.role !== 'RH_MANAGER' && (
@@ -276,7 +276,7 @@ function DashboardHR({ user, onLogout }) {
                         </tr>
                       ))}
                     {users.length === 0 && (
-                      <tr><td colSpan="7" className="empty-state" style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>{t('hr.noEmployeesFound')}</td></tr>
+                      <tr><td colSpan="7" className="empty-state-cell">{t('hr.noEmployeesFound')}</td></tr>
                     )}
                   </tbody>
                 </table>

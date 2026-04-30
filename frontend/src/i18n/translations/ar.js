@@ -35,6 +35,7 @@ const ar = {
     regular: 'عادي',
     confirmDelete: 'هل أنت متأكد من حذف هذا العنصر؟',
     completed: 'مكتمل',
+    new: 'جديد',
   },
   login: {
     title: 'تسجيل الدخول',
@@ -164,6 +165,9 @@ const ar = {
     modules: '2. المنهج الأكاديمي',
     sections: '2. الدفعات / الأقسام',
     groups: '3. الأفواج',
+    selectDeptFirst: 'يرجى اختيار القسم أولاً',
+    selectLevelFirst: 'يرجى اختيار المستوى أولاً',
+    selectSectionFirst: 'يرجى اختيار الدفعة أولاً',
     addLevelPlaceholder: 'مثال: L1, M1...',
     addModulePlaceholder: 'مثال: الخوارزميات...',
     addSectionPlaceholder: 'مثال: الدفعة أ...',

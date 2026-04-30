@@ -9,15 +9,23 @@ exports.markAbsence = (req, res) => {
     return res.status(400).json({ message: "Tous les champs sont requis." });
   }
 
-  // Seul le Chef de Département ou Admin peut marquer une absence
+  // Seul le Chef de Département, Admin, RH ou l'Enseignant lui-même peut marquer une absence
   const userRole = req.user.role ? req.user.role.toUpperCase() : '';
-  if (userRole !== 'DEPARTMENT_HEAD' && userRole !== 'CHEF_DEPARTEMENT' && userRole !== 'RH_MANAGER' && userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
+  const isSelfReporting = (userRole === 'TEACHER' || userRole === 'ENSEIGNANT') && Number(teacher_id) === Number(sender_id);
+  
+  if (!isSelfReporting && userRole !== 'DEPARTMENT_HEAD' && userRole !== 'CHEF_DEPARTEMENT' && userRole !== 'RH_MANAGER' && userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
     return res.status(403).json({ message: "Accès refusé." });
   }
 
-  const query = "INSERT INTO absences (teacher_id, date, reason, status, is_read_by_teacher) VALUES (?, ?, ?, 'Approved', FALSE)";
+  const query = "INSERT INTO absences (teacher_id, date, reason, status, justification_status, is_read_by_teacher) VALUES (?, ?, ?, 'Approved', 'None', FALSE)";
   db.query(query, [teacher_id, date, reason], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
+
+    // Notification pour l'enseignant
+    const msg = `Une absence a été enregistrée pour vous le ${new Date(date).toLocaleDateString()}. Raison: ${reason}`;
+    db.query('INSERT INTO reminders (teacher_id, sender_id, message, type) VALUES (?, ?, ?, ?)', 
+      [teacher_id, sender_id, msg, 'warning']);
+
     res.status(201).json({ message: "Absence enregistrée." });
   });
 };
@@ -27,16 +35,27 @@ exports.getAllAbsences = (req, res) => {
   const userRole = req.user.role ? req.user.role.toUpperCase() : '';
   const userId = req.user.id;
 
-  const query = `
+  let query = `
     SELECT a.id, a.date, a.reason, a.status, a.has_justification, a.justification_status, a.is_caught_up, 
            a.justification_text, a.justification_file, a.catchup_date, a.catchup_start_time, a.catchup_end_time,
            a.created_at, a.is_read_by_admin, a.is_read_by_teacher, 
            u.nom, u.prenom, u.department_id 
      FROM absences a
      JOIN users u ON a.teacher_id = u.id
-     WHERE a.is_archived_by_dept = FALSE
-     ORDER BY a.created_at DESC
+     WHERE 1=1
   `;
+
+  if (userRole === 'TEACHER' || userRole === 'ENSEIGNANT') {
+    query += " AND a.teacher_id = ? ORDER BY a.created_at DESC";
+    db.query(query, [userId], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
+    });
+    return;
+  }
+
+  // Managers view (HR, Dept Head, Admin)
+  query += " AND a.is_archived_by_dept = FALSE ORDER BY a.created_at DESC";
   db.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     

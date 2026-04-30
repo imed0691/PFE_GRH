@@ -227,7 +227,8 @@ h1, h2, h3, h4, .outfit {
   background: white;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modern-table {
@@ -612,4 +613,277 @@ textarea.mnadm-input {
   .explorer-container {
     grid-template-columns: 1fr;
   }
+}
+
+/* MOBILE MENU TOGGLE */
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-main);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: var(--transition);
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--p-indigo-light);
+  color: var(--p-indigo);
+}
+
+/* RESPONSIVE LAYOUT SYSTEM */
+@media (max-width: 1024px) {
+  .sidebar-academic {
+    transform: translateX(-100%);
+    box-shadow: 20px 0 50px rgba(0, 0, 0, 0.1);
+  }
+
+  [dir="rtl"] .sidebar-academic {
+    transform: translateX(100%);
+  }
+
+  .sidebar-academic.open {
+    transform: translateX(0);
+  }
+
+  .main-viewport {
+    margin-left: 0 !important;
+  }
+
+  [dir="rtl"] .main-viewport {
+    margin-right: 0 !important;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .topbar-academic {
+    padding: 0 16px;
+    height: 70px;
+    gap: 10px;
+  }
+  
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .hide-tablet {
+    display: none !important;
+  }
+  
+  .topbar-date-display {
+    display: none;
+  }
+}
+
+.modern-table-wrapper {
+  width: 100%;
+}
+
+/* OVERLAY */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.3);
+  backdrop-filter: blur(2px);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* MOBILE SPECIFIC TWEAKS */
+@media (max-width: 768px) {
+  .explorer-container {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+  
+  .explorer-column {
+    min-width: 0;
+    max-height: none;
+  }
+
+  .explorer-list {
+    max-height: 300px;
+  }
+
+  .card-academic {
+    padding: 16px !important;
+  }
+  
+  .list-controls {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 16px !important;
+    padding: 20px !important;
+    border-radius: 20px !important;
+  }
+
+  .filter-nav {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px !important;
+    width: 100%;
+  }
+
+  .filter-nav button {
+    width: 100% !important;
+    padding: 12px 8px !important;
+    font-size: 12px !important;
+    white-space: nowrap;
+    justify-content: center;
+  }
+
+  .filter-nav select {
+    grid-column: span 2;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 48px !important;
+  }
+  
+  .search-box {
+    flex: none !important;
+    width: 100%;
+  }
+
+  .modern-table-wrapper {
+    overflow: hidden !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .modern-table {
+    display: block !important;
+  }
+
+  .modern-table thead {
+    display: none !important;
+  }
+
+  .modern-table tbody {
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px;
+    padding: 4px;
+  }
+
+  .modern-table tr {
+    display: flex !important;
+    flex-direction: column;
+    background: white !important;
+    padding: 24px !important;
+    border-radius: 24px !important;
+    border: 1px solid var(--border-soft) !important;
+    box-shadow: var(--shadow-sm) !important;
+    position: relative;
+    gap: 12px;
+  }
+
+  .modern-table td {
+    display: none !important; /* Hide all by default */
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  /* SHOW ONLY ESSENTIALS IN PREMIUM LAYOUT */
+  
+  /* 1. Profile Header (Full Name + Avatar) */
+  .modern-table td:nth-child(3) {
+    display: flex !important;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .modern-table td:nth-child(3) strong {
+    font-size: 18px !important;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+  }
+
+  /* 2. Department & Role Info Row */
+  .modern-table td:nth-child(5),
+  .modern-table td:nth-child(6) {
+    display: block !important;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .modern-table td:nth-child(6) {
+    margin-top: 4px;
+  }
+
+  /* 3. Action Footer */
+  .modern-table td:last-child {
+    display: flex !important;
+    justify-content: flex-end;
+    margin-top: 16px;
+    padding-top: 16px !important;
+    border-top: 1px solid var(--border-soft) !important;
+  }
+
+  .user-avatar-mini {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 16px !important;
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+  }
+
+  .btn-delete-pro {
+    padding: 8px 20px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
+  }
+
+  .user-avatar-mini {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .topbar-path-serif {
+    font-size: 15px;
+  }
+}
+
+/* GLOBAL EMPTY STATE STYLES (Web + Mobile) */
+.modern-table td.empty-state-cell {
+  text-align: center !important;
+  padding: 60px 20px !important;
+  color: var(--text-muted) !important;
+  font-style: italic !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+@media (max-width: 768px) {
+  .modern-table td.empty-state-cell {
+    display: block !important;
+    width: 100% !important;
+    box-shadow: none !important;
+  }
+}
+
+/* ANIMATIONS */
+@keyframes badgePulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+@keyframes mnadmFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

@@ -229,7 +229,7 @@ function ManagePromotions({ user }) {
                   </tr>
                 );
               })}
-              {promotions.length === 0 && <tr><td colSpan="5" className="empty-state">{t('promotions.noRecords')}</td></tr>}
+              {promotions.length === 0 && <tr><td colSpan="5" className="empty-state-cell">{t('promotions.noRecords')}</td></tr>}
             </tbody>
           </table>
         </div>

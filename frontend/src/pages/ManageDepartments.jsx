@@ -108,7 +108,7 @@ function ManageDepartments() {
                 </td>
               </tr>
             ))}
-            {departments.length === 0 && <tr><td colSpan="4" className="empty-state">{t('departments.noDepts')}</td></tr>}
+            {departments.length === 0 && <tr><td colSpan="4" className="empty-state-cell">{t('departments.noDepts')}</td></tr>}
           </tbody>
         </table>
       )}
