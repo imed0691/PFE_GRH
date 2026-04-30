@@ -50,10 +50,10 @@ function ManageSalaries() {
   };
 
   return (
-    <div className="table-card" style={{ padding: '20px' }}>
-      <h3 style={{ marginBottom: '20px' }}>{t('salaries.title')}</h3>
+    <div className="card-academic" style={{ padding: '32px' }}>
+      <h3 style={{ marginBottom: '24px', fontSize: '24px' }}>{t('salaries.title')}</h3>
       {loading ? <div className="loading-spinner">{t('salaries.calculating')}</div> : (
-        <div className="table-scroll-pro">
+        <div className="modern-table-wrapper">
           <table className="modern-table">
             <thead><tr><th>#</th><th>{t('common.fullName')}</th><th>{t('salaries.grade')}</th><th>{t('salaries.baseSalary')}</th><th>{t('salaries.extraHours')}</th><th>{t('salaries.ratePenalty')}</th><th>{t('salaries.netSalary')}</th><th>{t('common.actions')}</th></tr></thead>
             <tbody>
@@ -61,11 +61,11 @@ function ManageSalaries() {
                 <tr key={s.id}>
                   <td data-label="#">{index + 1}</td>
                   <td data-label={t('common.fullName')}><strong>{s.nom}</strong> {s.prenom}</td>
-                  <td data-label={t('salaries.grade')}><span className="role-tag" style={{ background: '#e2e8f0', color: '#475569' }}>{t(`grades.${s.grade}`) || s.grade}</span></td>
+                  <td data-label={t('salaries.grade')}><span className="role-tag" style={{ background: 'var(--border-soft)', color: 'var(--text-secondary)' }}>{t(`grades.${s.grade}`) || s.grade}</span></td>
                   <td data-label={t('salaries.baseSalary')}>{Number(s.base_salary).toLocaleString()} {t('common.currency')}</td>
                   <td data-label={t('salaries.extraHours')}>{s.extra_hours || 0}h</td>
-                  <td data-label={t('salaries.ratePenalty')}><small style={{ display: 'block', color: 'var(--p-indigo)' }}>{t('salaries.rate')} {Number(s.hourly_rate || 0).toLocaleString()} {t('common.currency')}/h</small><small style={{ display: 'block', color: '#ef4444' }}>{t('salaries.absencesPenalty')} -{Number(s.total_penalty || 0).toLocaleString()} {t('common.currency')}</small></td>
-                  <td data-label={t('salaries.netSalary')}><strong style={{ color: '#1e293b', fontSize: '1.1em' }}>{Number(s.net_salary).toLocaleString()} {t('common.currency')}</strong></td>
+                  <td data-label={t('salaries.ratePenalty')}><small style={{ display: 'block', color: 'var(--p-indigo)', fontWeight: '700' }}>{t('salaries.rate')} {Number(s.hourly_rate || 0).toLocaleString()} {t('common.currency')}/h</small><small style={{ display: 'block', color: 'var(--danger)', fontWeight: '700' }}>{t('salaries.absencesPenalty')} -{Number(s.total_penalty || 0).toLocaleString()} {t('common.currency')}</small></td>
+                  <td data-label={t('salaries.netSalary')}><strong style={{ color: 'var(--secondary)', fontSize: '1.1em' }}>{Number(s.net_salary).toLocaleString()} {t('common.currency')}</strong></td>
                   <td data-label={t('common.actions')}>
                     <button 
                       onClick={() => setEditingSalary({ 
@@ -77,7 +77,7 @@ function ManageSalaries() {
                         fullName: `${s.prenom} ${s.nom}` 
                       })} 
                       className="btn-confirm-pro"
-                      style={{ padding: '6px 12px', fontSize: '12px' }}
+                      style={{ padding: '8px 16px', fontSize: '12px' }}
                     >
                       {t('salaries.adjust')}
                     </button>
@@ -95,25 +95,25 @@ function ManageSalaries() {
           <div className="modal-content animate-mnadm" style={{ background: 'white', padding: '32px', borderRadius: '16px', width: '450px', maxWidth: '95%', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
             <h3 style={{ marginBottom: '24px', fontSize: '20px' }}>{t('salaries.adjustFor')} {editingSalary.fullName}</h3>
             <form onSubmit={handleSaveSalary}>
-              <div className="form-row-responsive" style={{ marginBottom: '15px' }}>
-                <div className="form-group">
-                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('salaries.baseSalary')} (DA)</label>
-                  <input type="number" value={editingSalary.base_salary} onChange={e => setEditingSalary({...editingSalary, base_salary: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
+              <div className="mnadm-form-row">
+                <div className="mnadm-form-group">
+                  <label className="mnadm-label">{t('salaries.baseSalary')} (DA)</label>
+                  <input type="number" className="mnadm-input" value={editingSalary.base_salary} onChange={e => setEditingSalary({...editingSalary, base_salary: e.target.value})} required />
                 </div>
-                <div className="form-group">
-                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('salaries.extraHours')} (h)</label>
-                  <input type="number" value={editingSalary.extra_hours} onChange={e => setEditingSalary({...editingSalary, extra_hours: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
+                <div className="mnadm-form-group">
+                  <label className="mnadm-label">{t('salaries.extraHours')} (h)</label>
+                  <input type="number" className="mnadm-input" value={editingSalary.extra_hours} onChange={e => setEditingSalary({...editingSalary, extra_hours: e.target.value})} required />
                 </div>
               </div>
 
-              <div className="form-row-responsive" style={{ marginBottom: '24px' }}>
-                <div className="form-group">
-                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('addEmployee.extraHourlyRate')} (DA/h)</label>
-                  <input type="number" value={editingSalary.hourly_rate} onChange={e => setEditingSalary({...editingSalary, hourly_rate: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
+              <div className="mnadm-form-row">
+                <div className="mnadm-form-group">
+                  <label className="mnadm-label">{t('addEmployee.extraHourlyRate')} (DA/h)</label>
+                  <input type="number" className="mnadm-input" value={editingSalary.hourly_rate} onChange={e => setEditingSalary({...editingSalary, hourly_rate: e.target.value})} required />
                 </div>
-                <div className="form-group">
-                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('addEmployee.absencePenalty')} (DA)</label>
-                  <input type="number" value={editingSalary.absence_penalty} onChange={e => setEditingSalary({...editingSalary, absence_penalty: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
+                <div className="mnadm-form-group">
+                  <label className="mnadm-label">{t('addEmployee.absencePenalty')} (DA)</label>
+                  <input type="number" className="mnadm-input" value={editingSalary.absence_penalty} onChange={e => setEditingSalary({...editingSalary, absence_penalty: e.target.value})} required />
                 </div>
               </div>
 

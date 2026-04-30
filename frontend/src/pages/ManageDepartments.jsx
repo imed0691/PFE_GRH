@@ -61,14 +61,14 @@ function ManageDepartments() {
   };
 
   return (
-    <div className="table-card" style={{ padding: '20px' }}>
-      <form onSubmit={handleAddDepartment} className="grid-responsive" style={{ marginBottom: '30px', alignItems: 'flex-end', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <label style={{ fontSize: '13px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>{t('departments.selectOrType')}</label>
-          <div className="form-row-responsive">
+    <div className="card-academic" style={{ padding: '24px' }}>
+      <form onSubmit={handleAddDepartment} className="mnadm-form-row" style={{ marginBottom: '32px', alignItems: 'flex-end', background: '#f8fafc', padding: '32px', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <label className="mnadm-label" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('departments.selectOrType')}</label>
+          <div className="mnadm-form-row" style={{ marginBottom: 0 }}>
             <select 
+              className="mnadm-input"
               onChange={handlePredefinedChange}
-              style={{ padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white' }}
             >
               <option value="">{t('common.select')}</option>
               {predefinedDepts.map(dept => (
@@ -76,16 +76,16 @@ function ManageDepartments() {
               ))}
             </select>
             <input 
+              className="mnadm-input"
               type="text" 
               value={newDeptName} 
               onChange={(e) => setNewDeptName(e.target.value)} 
               placeholder={t('departments.typeManual')}
-              style={{ padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1' }} 
               required 
             />
           </div>
         </div>
-        <button type="submit" className="btn-confirm-pro" style={{ width: '100%', padding: '12px' }}>{t('departments.addDepartment')}</button>
+        <button type="submit" className="btn-confirm-pro" style={{ padding: '14px 32px' }}>{t('departments.addDepartment')}</button>
       </form>
       {loading ? <div className="loading-spinner">{t('departments.loadingDepts')}</div> : (
         <table className="modern-table">
@@ -97,7 +97,7 @@ function ManageDepartments() {
                 <td data-label={t('common.id')}>#{d.id}</td>
                 <td data-label={t('departments.deptName')}><strong>{d.name}</strong></td>
                 <td data-label={t('common.actions')}>
-                  <button className="btn-delete" onClick={() => handleDeleteClick(d.id, d.name)}>{t('common.delete')}</button>
+                  <button className="btn-delete-pro" style={{ padding: '8px 16px', fontSize: '12px' }} onClick={() => handleDeleteClick(d.id, d.name)}>{t('common.delete')}</button>
                 </td>
               </tr>
             ))}

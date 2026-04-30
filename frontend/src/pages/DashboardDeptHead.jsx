@@ -147,7 +147,7 @@ function DashboardDeptHead({ user, onLogout }) {
            <div className="card-academic">
              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
                  <h3 className="academic-title" style={{ margin: 0 }}>{selectedTeacherName}</h3>
-                <button onClick={() => setView('list')} className="btn-academic btn-academic-outline">
+                <button onClick={() => setView('list')} className="btn-cancel-pro" style={{ padding: '8px 20px', fontSize: '13px' }}>
                   {t('common.backToList')}
                 </button>
              </div>
@@ -188,15 +188,17 @@ function DashboardDeptHead({ user, onLogout }) {
            <div className="card-academic">
              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
                 <h2 className="academic-title" style={{ margin: 0 }}>{t('sidebar.teachers')}</h2>
-                <div style={{ position: 'relative' }}>
+                <div className="mnadm-search-wrapper" style={{ width: '350px' }}>
+                  <span className="search-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  </span>
                   <input 
                     type="text" 
+                    className="mnadm-input"
                     placeholder={t('common.search')}
-                    style={{ padding: '12px 12px 12px 40px', border: '1px solid #ddd', width: '280px' }}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
-                  <span style={{ position: 'absolute', left: '15px', top: '12px' }}>🔍</span>
                 </div>
              </div>
 
@@ -236,8 +238,8 @@ function DashboardDeptHead({ user, onLogout }) {
                           <td><span className="badge-academic badge-gold">{u.grade || 'Teacher'}</span></td>
                           <td style={{ textAlign: 'right' }}>
                             <button 
-                              className="btn-academic" 
-                              style={{ padding: '8px 16px', fontSize: '10px' }}
+                              className="btn-confirm-pro" 
+                              style={{ padding: '8px 16px', fontSize: '11px' }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 fetchTeacherSchedule(u);

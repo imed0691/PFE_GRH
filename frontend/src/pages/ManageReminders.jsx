@@ -74,19 +74,19 @@ function ManageReminders({ user }) {
     <div className="content-area">
 
       {/* TWO COLUMN ALIGNED LAYOUT */}
-      <div className="grid-responsive" style={{ gap: '30px', alignItems: 'start' }}>
+      <div className="grid-reminders">
         
-        {/* FORM CARD */}
-        <div className="table-card" style={{ padding: '32px', margin: 0, height: '100%' }}>
+        {/* FORM CARD (LEFT) */}
+        <div className="card-academic" style={{ margin: 0 }}>
           <div className="card-header" style={{ marginBottom: '30px' }}>
             <h3 style={{ fontSize: '24px' }}>{t('reminders.sendReminder')}</h3>
             <p>{t('reminders.subtitle') || 'Communiquez avec votre équipe instantanément.'}</p>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div className="form-group">
-              <label>{t('reminders.recipientCategory')}</label>
-              <select value={recipientType} onChange={e => { setRecipientType(e.target.value); setSelectedRecipientId(null); }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('reminders.recipientCategory')}</label>
+              <select className="mnadm-input" value={recipientType} onChange={e => { setRecipientType(e.target.value); setSelectedRecipientId(null); }}>
                 {recipientCategories.map(([val, label]) => (
                   <option key={val} value={val}>{label}</option>
                 ))}
@@ -94,8 +94,8 @@ function ManageReminders({ user }) {
             </div>
 
             {recipientType !== 'all' && (
-              <div className="form-group">
-                <label>
+              <div className="mnadm-form-group">
+                <label className="mnadm-label">
                   {recipientType === 'head' ? t('reminders.selectDeptHead') : recipientType === 'dean' ? t('reminders.selectDean') : t('reminders.selectTeacher')}
                 </label>
                 <Select 
@@ -103,37 +103,46 @@ function ManageReminders({ user }) {
                   value={(recipientType === 'head' ? headOptions : recipientType === 'dean' ? deanOptions : teacherOptions).find(o => o.value === selectedRecipientId)} 
                   onChange={o => setSelectedRecipientId(o?.value)} 
                   placeholder={t('common.search')}
-                  styles={{ control: (b) => ({ ...b, borderRadius: '8px', border: '1px solid var(--border)', background: '#f9fafb' }) }} 
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      padding: '4px',
+                      fontSize: '14px',
+                      background: 'white'
+                    })
+                  }}
                 />
               </div>
             )}
 
-            <div className="form-group">
-              <label>{t('reminders.reminderType')}</label>
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('reminders.reminderType')}</label>
               <div style={{ display: 'flex', gap: '10px' }}>
                 {['info', 'warning', 'error'].map(tType => (
-                  <button key={tType} onClick={() => setType(tType)} style={{ flex: 1, background: type === tType ? 'var(--p-indigo)' : 'white', color: type === tType ? 'white' : 'var(--text-main)', border: '1px solid var(--border)', padding: '10px' }}>
+                  <button key={tType} onClick={() => setType(tType)} className={type === tType ? 'btn-confirm-pro' : 'btn-cancel-pro'} style={{ flex: 1, padding: '10px' }}>
                     {tType.toUpperCase()}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="form-group">
-              <label>{t('reminders.message')}</label>
-              <textarea value={message} onChange={e => setMessage(e.target.value)} rows="5" placeholder={t('reminders.messagePlaceholder')} />
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('reminders.message')}</label>
+              <textarea className="mnadm-input" value={message} onChange={e => setMessage(e.target.value)} rows="8" placeholder={t('reminders.messagePlaceholder')} />
             </div>
 
-            <div className="form-actions">
-              <button onClick={handleSend} disabled={sending} className="btn-submit" style={{ width: '100%' }}>
+            <div style={{ marginTop: '10px' }}>
+              <button onClick={handleSend} disabled={sending} className="btn-confirm-pro" style={{ width: '100%', padding: '16px', fontSize: '15px' }}>
                 {sending ? t('reminders.sending') : t('reminders.sendBtn')}
               </button>
             </div>
           </div>
         </div>
 
-        {/* HISTORY CARD */}
-        <div style={{ height: '100%', margin: 0 }}>
+        {/* HISTORY CARD (RIGHT) */}
+        <div className="card-academic" style={{ margin: 0, padding: 0, overflow: 'hidden' }}>
           <ReminderInbox user={user} />
         </div>
 

@@ -126,7 +126,7 @@ function ManageSessions({ user }) {
         });
       toast.dismiss(loadToast);
       if (res.ok) { 
-        toast.success(`${moduleName} — ${dayOfWeek} ${startTime}-${endTime}`); 
+        toast.success(`${moduleName} ظ¤ ${dayOfWeek} ${startTime}-${endTime}`); 
         setModuleName(''); 
         setStudyLevelId('');
         setSectionId('');
@@ -157,67 +157,141 @@ function ManageSessions({ user }) {
     }
   };
 
+  const handleCancelSession = async (id) => {
+    const token = localStorage.getItem('token');
+    await fetch(`http://localhost:5000/api/sessions/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    toast.success(t('sessions.cancelled'));
+  };
+
   return (
-    <div style={{ padding: '20px' }}>
-      <form onSubmit={handleCreateSession} style={{ background: '#f8fafc', padding: '25px', borderRadius: '12px', marginBottom: '30px', border: '1px solid #e2e8f0' }}>
-        
-        {/* NEW FLOW: Teacher first, then Module */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '15px' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.teacher')}</label>
-            <Select
-              isLoading={loading}
-              isClearable
-              options={teachers.map(t => ({ value: t.id, label: `${t.nom} ${t.prenom}` }))}
-              value={teachers.filter(t => t.id === selectedTeacherId).map(t => ({ value: t.id, label: `${t.nom} ${t.prenom}` }))[0] || null}
-              onChange={(o) => setSelectedTeacherId(o ? o.value : null)}
-              placeholder={t('sessions.selectTeacher')}
-              styles={{ control: (base) => ({ ...base, borderRadius: '8px', border: '1px solid #cbd5e1', minHeight: '42px' }) }}
-            />
+    <div className="animate-slide-up">
+      <div className="table-card" style={{ marginBottom: '30px' }}>
+        <div className="card-header">
+          <h3>{t('sessions.scheduleSession')}</h3>
+          <p>{t('sessions.subtitle') || 'Create and manage academic schedules'}</p>
+        </div>
+        <form onSubmit={handleCreateSession} className="card-academic" style={{ marginBottom: '32px' }}>
+          <div className="mnadm-form-row">
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('common.teacher')}</label>
+              <Select
+                isLoading={loading}
+                isClearable
+                options={teachers.map(t => ({ value: t.id, label: `${t.nom} ${t.prenom}` }))}
+                value={teachers.filter(t => t.id === selectedTeacherId).map(t => ({ value: t.id, label: `${t.nom} ${t.prenom}` }))[0] || null}
+                onChange={(o) => setSelectedTeacherId(o ? o.value : null)}
+                placeholder={t('sessions.selectTeacher')}
+                styles={{ control: (base) => ({ ...base, borderRadius: '12px', padding: '4px', border: '1px solid #e2e8f0', fontSize: '14px' }) }}
+              />
+            </div>
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('sessions.moduleSubject')}</label>
+              <Select
+                isClearable
+                isDisabled={!selectedTeacherId}
+                options={moduleOptions}
+                value={moduleOptions.find(o => o.value === moduleName) || null}
+                onChange={handleModuleChange}
+                placeholder={!selectedTeacherId ? t('sessions.chooseTeacherFirst') : t('sessions.moduleSubject')}
+                styles={{ control: (base) => ({ ...base, borderRadius: '12px', padding: '4px', border: '1px solid #e2e8f0', fontSize: '14px' }) }}
+              />
+            </div>
           </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.moduleSubject')}</label>
-            <Select
-              isClearable
-              isDisabled={!selectedTeacherId}
-              options={moduleOptions}
-              value={moduleOptions.find(o => o.value === moduleName) || null}
-              onChange={handleModuleChange}
-              placeholder={!selectedTeacherId ? t('sessions.selectTeacherFirst') : t('sessions.moduleSubject')}
-              styles={{ control: (base) => ({ ...base, borderRadius: '8px', border: '1px solid #cbd5e1', minHeight: '42px' }) }}
-            />
+          <div className="mnadm-form-row">
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('sessions.section')}</label>
+              <select className="mnadm-input" value={sectionId} onChange={e => { setSectionId(e.target.value); setGroupId(''); }} disabled={!studyLevelId}>
+                <option value="">-- {t('common.select')} --</option>
+                {sectionsList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('sessions.group')}</label>
+              <select className="mnadm-input" value={groupId} onChange={e => setGroupId(e.target.value)} disabled={!sectionId}>
+                <option value="">-- {t('common.select')} --</option>
+                {groupsList.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+            </div>
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('teacher.type')}</label>
+              <select className="mnadm-input" value={sessionType} onChange={e => setSessionType(e.target.value)}>
+                <option value="Lecture">{t('sessions.lecture')}</option>
+                <option value="Tutorial">{t('sessions.tutorialTD')}</option>
+                <option value="Practical">{t('sessions.practicalTP')}</option>
+              </select>
+            </div>
           </div>
-        </div>
 
-        {/* Level automatically determined, select Section and Group */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '15px' }}>
-          <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.section')}</label><select value={sectionId} onChange={e => { setSectionId(e.target.value); setGroupId(''); }} disabled={!studyLevelId} style={{ width: '100%', height: '42px', padding: '0 10px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: !studyLevelId ? '#f1f5f9' : 'white' }}><option value="">-- {t('common.search')} --</option>{sectionsList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
-          <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.group')}</label><select value={groupId} onChange={e => setGroupId(e.target.value)} disabled={!sectionId} style={{ width: '100%', height: '42px', padding: '0 10px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: !sectionId ? '#f1f5f9' : 'white' }}><option value="">-- {t('common.search')} --</option>{groupsList.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}</select></div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px', marginBottom: '15px' }}>
-          <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.sessionType')}</label><select value={sessionType} onChange={e => setSessionType(e.target.value)} style={{ width: '100%', height: '42px', padding: '0 10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}><option value="Lecture">{t('sessions.lecture')}</option><option value="Tutorial">{t('sessions.tutorial')}</option><option value="Practical">{t('sessions.practical')}</option></select></div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-          <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.day')}</label><select value={dayOfWeek} onChange={e => setDayOfWeek(e.target.value)} style={{ width: '100%', height: '42px', padding: '0 10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>{['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (<option key={day} value={day}>{t(`days.${day}`)}</option>))}</select></div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.startTime')}</label>
-            <select value={startTime} onChange={handleTimeChange} style={{ width: '100%', height: '42px', padding: '0 10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required>
-              <option value="">-- {t('common.search')} --</option>
-              <option value="08:00">08:00</option>
-              <option value="09:35">09:35</option>
-              <option value="11:10">11:10</option>
-              <option value="12:45">12:45</option>
-              <option value="14:20">14:20</option>
-              <option value="15:55">15:55</option>
-            </select>
+          <div className="mnadm-form-row">
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('sessions.day')}</label>
+              <select className="mnadm-input" value={dayOfWeek} onChange={e => setDayOfWeek(e.target.value)}>
+                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+                  <option key={day} value={day}>{t(`days.${day}`)}</option>
+                ))}
+              </select>
+            </div>
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('sessions.startTime')}</label>
+              <select className="mnadm-input" value={startTime} onChange={handleTimeChange} required>
+                <option value="">{t('common.search')}...</option>
+                <option value="08:00">08:00 (Fin: 09:30)</option>
+                <option value="09:35">09:35 (Fin: 11:05)</option>
+                <option value="11:10">11:10 (Fin: 12:40)</option>
+                <option value="12:45">12:45 (Fin: 14:15)</option>
+                <option value="14:20">14:20 (Fin: 15:50)</option>
+                <option value="15:55">15:55 (Fin: 17:25)</option>
+              </select>
+            </div>
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('sessions.endTime')}</label>
+              <input type="text" className="mnadm-input" value={endTime} readOnly style={{ backgroundColor: '#f8fafc' }} />
+            </div>
           </div>
-        </div>
 
-        <button type="submit" style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '12px 25px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', width: '100%', fontSize: '15px' }}>{t('sessions.create')}</button>
-      </form>
+          <div style={{ marginTop: '24px' }}>
+            <button type="submit" className="btn-confirm-pro" style={{ width: '100%', padding: '14px' }}>{t('sessions.scheduleSession')}</button>
+          </div>
+        </form>
+      </div>
+
+      <div className="table-card">
+        <div className="card-header">
+          <h3>{t('sessions.activeSchedule')}</h3>
+        </div>
+        <div className="table-responsive">
+          <table className="modern-table">
+            <thead>
+              <tr>
+                <th>{t('sessions.day')}</th>
+                <th>{t('teacher.time')}</th>
+                <th>{t('sessions.moduleSubjectCol')}</th>
+                <th>{t('teacher.level')}</th>
+                <th>{t('teacher.type')}</th>
+                <th>{t('sessions.secGrp')}</th>
+                <th>{t('common.teacher')}</th>
+                <th>{t('common.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sessions?.map(s => (
+                <tr key={s.id}>
+                  <td><strong>{s.day_of_week}</strong></td>
+                  <td>{s.start_time?.substring(0,5)} - {s.end_time?.substring(0,5)}</td>
+                  <td>{s.module_name}</td>
+                  <td><span className="role-tag" style={{ background: '#dbeafe', color: '#1e40af' }}>{s.study_level || '-'}</span></td>
+                  <td><span className="role-tag" style={{ background: '#f1f5f9', color: '#475569' }}>{s.session_type === 'Lecture' ? t('sessions.lecture') : s.session_type === 'Tutorial' ? t('sessions.tutorialTD') : t('sessions.practicalTP')}</span></td>
+                  <td>{(s.section || s.groupe) ? <span style={{ fontSize: '13px', color: '#64748b' }}>{s.section && `${s.section}`} {s.groupe && `/ ${s.groupe}`}</span> : '-'}</td>
+                  <td>{s.teacher_nom} {s.teacher_prenom}</td>
+                  <td><button onClick={() => handleCancelSession(s.id)} className="btn-cancel-pro" style={{ padding: '6px 12px', fontSize: '11px' }}>{t('common.cancel')}</button></td>
+                </tr>
+              ))}
+              {(!sessions || sessions.length === 0) && <tr><td colSpan="8" className="empty-state">{t('sessions.noSessions')}</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

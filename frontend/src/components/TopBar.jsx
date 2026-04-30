@@ -3,7 +3,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import './TopBar.css';
 
-const TopBar = ({ title, onToggleMobileMenu }) => {
+const TopBar = ({ title }) => {
   const { locale } = useLanguage();
   const dateStr = new Date().toLocaleDateString(locale, { 
     weekday: 'long', 
@@ -15,9 +15,6 @@ const TopBar = ({ title, onToggleMobileMenu }) => {
   return (
     <header className="topbar-academic">
       <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-        <button className="mobile-menu-toggle" onClick={onToggleMobileMenu}>
-          ☰
-        </button>
         <div className="topbar-path-serif">
           {title}
         </div>

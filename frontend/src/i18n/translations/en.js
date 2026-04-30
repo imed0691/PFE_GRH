@@ -654,6 +654,9 @@ const en = {
     selectTime: 'Select start time...',
     selectLevelFirst: 'Choose level first',
     selectTeacherFirst: 'Choose teacher first',
+    chooseTeacherFirst: 'Choose teacher first',
+    subtitle: 'Manage academic schedules',
+    activeSchedule: 'Active Schedule',
   },
 
   // ── Notification Feed ──

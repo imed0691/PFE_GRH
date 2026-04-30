@@ -120,7 +120,7 @@ function DashboardRector({ user, onLogout }) {
                       <h5 style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold)', marginBottom: '16px' }}>{t('hr.recentActivity')}</h5>
                       <p style={{ fontSize: '14px', color: '#666' }}>{t('hr.noAlerts')}</p>
                    </div>
-                   <button className="btn-academic">{t('hr.reports')}</button>
+                   <button className="btn-confirm-pro" style={{ padding: '10px 24px' }}>{t('hr.reports')}</button>
                 </div>
               </div>
            </div>

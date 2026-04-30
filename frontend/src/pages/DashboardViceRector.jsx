@@ -68,8 +68,8 @@ function DashboardViceRector({ user, onLogout }) {
                   Access critical management modules via the executive sidebar to ensure institutional excellence.
                 </p>
                 <div style={{ marginTop: '40px', display: 'flex', gap: '20px' }}>
-                   <button className="btn-academic">Institutional Strategy</button>
-                   <button className="btn-academic btn-academic-outline">Quality Reports</button>
+                   <button className="btn-confirm-pro" style={{ padding: '10px 24px' }}>Institutional Strategy</button>
+                   <button className="btn-cancel-pro" style={{ padding: '10px 24px' }}>Quality Reports</button>
                 </div>
               </div>
            </div>

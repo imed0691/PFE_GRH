@@ -53,19 +53,19 @@ function ManageEvaluations({ user }) {
   const teacherOptions = teachers.map(tt => ({ value: tt.id, label: `${tt.nom} ${tt.prenom}` }));
 
   return (
-    <div className="table-card" style={{ padding: '20px' }}>
-      <h3 style={{ marginBottom: '20px' }}>{t('evaluations.title')}</h3>
+    <div className="card-academic" style={{ padding: '32px' }}>
+      <h3 style={{ marginBottom: '24px', fontSize: '24px' }}>{t('evaluations.title')}</h3>
       {isDeptHead && (
-        <form onSubmit={handleSubmit} style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', marginBottom: '30px', border: '1px solid #e2e8f0' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-            <h4 style={{ margin: 0, color: '#1e293b' }}>{t('evaluations.evaluateTeacher')}</h4>
-            <span style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', background: '#e2e8f0', padding: '4px 12px', borderRadius: '20px' }}>
+        <form onSubmit={handleSubmit} className="card-academic" style={{ marginBottom: '32px', background: 'var(--bg-main)', border: '1px solid var(--border-soft)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <h4 style={{ margin: 0, color: 'var(--secondary)', fontSize: '18px' }}>{t('evaluations.evaluateTeacher')}</h4>
+            <span className="badge-pro badge-pro-info">
               {t('evaluations.academicYear')}: {academicYear}
             </span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('common.teacher')}</label>
+          <div className="mnadm-form-row">
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('common.teacher')}</label>
               <Select 
                 options={teacherOptions} 
                 value={teacherOptions.find(o => o.value === teacherId)} 
@@ -73,22 +73,55 @@ function ManageEvaluations({ user }) {
                 placeholder={t('evaluations.selectTeacher')} 
                 isClearable 
                 isSearchable 
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    borderRadius: '12px',
+                    border: '1px solid #e2e8f0',
+                    padding: '4px',
+                    fontSize: '14px',
+                    boxShadow: 'none',
+                    '&:hover': { borderColor: 'var(--p-indigo)' }
+                  })
+                }}
               />
             </div>
-            <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('evaluations.rating')}</label><input type="number" min="1" max="10" value={rating} onChange={e => setRating(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('evaluations.rating')} (1-10)</label>
+              <input type="number" className="mnadm-input" min="1" max="10" value={rating} onChange={e => setRating(e.target.value)} required />
+            </div>
           </div>
-          <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('evaluations.comments')}</label><textarea value={comments} onChange={e => setComments(e.target.value)} rows="3" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} placeholder={t('evaluations.provideFeedback')}></textarea></div>
-          <button type="submit" className="btn-submit" style={{ background: 'var(--p-indigo)' }}>{t('evaluations.submitEvaluation')}</button>
+          <div className="mnadm-form-group">
+            <label className="mnadm-label">{t('evaluations.comments')}</label>
+            <textarea className="mnadm-input" value={comments} onChange={e => setComments(e.target.value)} rows="3" placeholder={t('evaluations.provideFeedback')}></textarea>
+          </div>
+          <button type="submit" className="btn-confirm-pro" style={{ width: '100%', padding: '16px', fontSize: '15px' }}>{t('evaluations.submitEvaluation')}</button>
         </form>
       )}
       {loading ? <div className="loading-spinner">{t('evaluations.loadingEvals')}</div> : (
-        <table className="modern-table">
-          <thead><tr><th>#</th><th>{t('evaluations.year')}</th>{!isTeacher && <th>{t('common.teacher')}</th>}<th>{t('evaluations.evaluator')}</th><th>{t('evaluations.rating')}</th><th>{t('evaluations.comments')}</th><th>{t('common.date')}</th></tr></thead>
-          <tbody>
-            {evaluations.map((e, index) => (<tr key={e.id}><td>{index + 1}</td><td><strong>{e.academic_year}</strong></td>{!isTeacher && <td>{e.teacher_nom} {e.teacher_prenom}</td>}<td>{e.evaluator_nom} {e.evaluator_prenom}</td><td><span className="role-tag" style={{ background: e.rating >= 8 ? '#e0e7ff' : e.rating >= 5 ? '#fef3c7' : '#fee2e2', color: e.rating >= 8 ? '#3730a3' : e.rating >= 5 ? '#92400e' : '#991b1b' }}>{e.rating} / 10</span></td><td style={{ maxWidth: '300px', wordBreak: 'break-word', fontStyle: 'italic', fontSize: '13px' }}>"{e.comments}"</td><td>{new Date(e.created_at).toLocaleDateString()}</td></tr>))}
-            {evaluations.length === 0 && <tr><td colSpan={isTeacher ? 6 : 7} className="empty-state">{t('evaluations.noEvals')}</td></tr>}
-          </tbody>
-        </table>
+        <div className="modern-table-wrapper">
+          <table className="modern-table">
+            <thead><tr><th>#</th><th>{t('evaluations.year')}</th>{!isTeacher && <th>{t('common.teacher')}</th>}<th>{t('evaluations.evaluator')}</th><th>{t('evaluations.rating')}</th><th>{t('evaluations.comments')}</th><th>{t('common.date')}</th></tr></thead>
+            <tbody>
+              {evaluations.map((e, index) => (
+                <tr key={e.id}>
+                  <td>{index + 1}</td>
+                  <td><strong>{e.academic_year}</strong></td>
+                  {!isTeacher && <td><strong>{e.teacher_nom}</strong> {e.teacher_prenom}</td>}
+                  <td>{e.evaluator_nom} {e.evaluator_prenom}</td>
+                  <td>
+                    <span className={`badge-pro ${e.rating >= 8 ? 'badge-pro-success' : e.rating >= 5 ? 'badge-pro-warning' : 'badge-pro-danger'}`}>
+                      {e.rating} / 10
+                    </span>
+                  </td>
+                  <td style={{ maxWidth: '300px', wordBreak: 'break-word', fontStyle: 'italic', fontSize: '13px', color: 'var(--text-secondary)' }}>"{e.comments}"</td>
+                  <td>{new Date(e.created_at).toLocaleDateString()}</td>
+                </tr>
+              ))}
+              {evaluations.length === 0 && <tr><td colSpan={isTeacher ? 6 : 7} className="empty-state">{t('evaluations.noEvals')}</td></tr>}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

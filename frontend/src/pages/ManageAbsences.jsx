@@ -150,25 +150,43 @@ function ManageAbsences({ user: propUser }) {
         <div className="card-academic" style={{ marginBottom: '32px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ margin: 0 }}>{t('absences.recordNew')}</h3>
-            <button onClick={() => setShowForm(!showForm)} style={{ background: showForm ? '#ef4444' : '', color: showForm ? 'white' : '' }}>
+            <button 
+              className={showForm ? "btn-cancel-pro" : "btn-confirm-pro"} 
+              onClick={() => setShowForm(!showForm)}
+            >
               {showForm ? t('common.cancel') : t('absences.recordNew')}
             </button>
           </div>
           {showForm && (
-            <form onSubmit={handleMarkAbsence} style={{ marginTop: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', alignItems: 'end' }}>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: '700', display: 'block', marginBottom: '8px' }}>{t('absences.selectPersonnel')}</label>
-                <Select options={teacherOptions} value={teacherOptions.find(o => o.value === selectedTeacher)} onChange={o => setSelectedTeacher(o?.value || '')} />
+            <form onSubmit={handleMarkAbsence} style={{ marginTop: '24px' }}>
+              <div className="mnadm-form-row">
+                <div className="mnadm-form-group">
+                  <label className="mnadm-label">{t('absences.selectPersonnel')}</label>
+                  <Select 
+                    options={teacherOptions} 
+                    value={teacherOptions.find(o => o.value === selectedTeacher)} 
+                    onChange={o => setSelectedTeacher(o?.value || '')} 
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
+                        padding: '4px',
+                        fontSize: '14px'
+                      })
+                    }}
+                  />
+                </div>
+                <div className="mnadm-form-group">
+                  <label className="mnadm-label">{t('common.date')}</label>
+                  <input type="date" className="mnadm-input" value={absenceDate} onChange={e => setAbsenceDate(e.target.value)} required />
+                </div>
+                <div className="mnadm-form-group">
+                  <label className="mnadm-label">{t('teacher.reason')}</label>
+                  <input type="text" className="mnadm-input" value={absenceReason} onChange={e => setAbsenceReason(e.target.value)} required placeholder={t('teacher.reason')} />
+                </div>
               </div>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: '700', display: 'block', marginBottom: '8px' }}>{t('common.date')}</label>
-                <input type="date" value={absenceDate} onChange={e => setAbsenceDate(e.target.value)} required />
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: '700', display: 'block', marginBottom: '8px' }}>{t('teacher.reason')}</label>
-                <input type="text" value={absenceReason} onChange={e => setAbsenceReason(e.target.value)} required placeholder={t('teacher.reason')} />
-              </div>
-              <button type="submit" style={{ gridColumn: 'span 3' }}>{t('absences.saveRecord')}</button>
+              <button type="submit" className="btn-confirm-pro" style={{ width: '100%', padding: '14px' }}>{t('absences.saveRecord')}</button>
             </form>
           )}
         </div>
@@ -176,94 +194,114 @@ function ManageAbsences({ user: propUser }) {
 
       <div className="card-academic">
         <h3 style={{ marginBottom: '24px' }}>{isTeacher ? t('teacher.myAbsenceHistory') : t('absences.personnelAbsences')}</h3>
-        <div className="table-academic-wrapper">
-          <table className="table-academic">
+        <div className="modern-table-wrapper">
+          <table className="modern-table">
             <thead>
               <tr>
-                <th>{t('common.date')}</th>
-                {!isTeacher && <th>{t('absences.staffMember')}</th>}
-                <th>{t('teacher.reason')}</th>
-                <th>{t('common.status')}</th>
-                <th>{t('common.actions')}</th>
+                <th style={{ width: '120px' }}>{t('common.date')}</th>
+                {!isTeacher && <th style={{ width: '220px' }}>{t('absences.staffMember')}</th>}
+                <th style={{ minWidth: '300px' }}>{t('teacher.reason')} / {t('absences.justificationLabel')}</th>
+                <th style={{ width: '160px' }}>{t('common.status')}</th>
+                <th style={{ width: '200px' }}>{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {absences.map((a) => (
-                <tr key={a.id} style={{ transition: 'background 0.2s' }}>
-                  <td><div style={{ fontWeight: '600', color: '#1e293b' }}>{new Date(a.date).toLocaleDateString()}</div></td>
-                  {!isTeacher && <td><span style={{ fontWeight: '700', color: 'var(--p-indigo)' }}>{a.nom}</span> {a.prenom}</td>}
+                <tr key={a.id}>
                   <td>
-                    <div style={{ fontWeight: '500', color: '#334155' }}>{a.reason}</div>
+                    <div style={{ fontWeight: '700', color: 'var(--secondary)' }}>
+                      {new Date(a.date).toLocaleDateString()}
+                    </div>
+                  </td>
+                  {!isTeacher && (
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div className="user-avatar-mini" style={{ width: '28px', height: '28px', fontSize: '10px' }}>
+                          {a.nom[0]}{a.prenom[0]}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: '800', color: 'var(--p-indigo)' }}>{a.nom}</div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{a.prenom}</div>
+                        </div>
+                      </div>
+                    </td>
+                  )}
+                  <td>
+                    <div style={{ fontWeight: '600', color: 'var(--text-main)', marginBottom: '4px' }}>{a.reason}</div>
                     {a.justification_text && (
                        <div style={{ 
                          fontSize: '12px', 
-                         marginTop: '8px', 
-                         background: '#f8fafc', 
-                         padding: '10px', 
-                         borderRadius: '10px',
-                         border: '1px solid #e2e8f0',
-                         boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                         marginTop: '10px', 
+                         background: 'var(--bg-main)', 
+                         padding: '12px', 
+                         borderRadius: '12px',
+                         border: '1px solid var(--border-soft)',
+                         boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
                        }}>
-                         <div style={{ fontWeight: '700', color: '#64748b', fontSize: '10px', textTransform: 'uppercase', marginBottom: '4px' }}>{t('absences.justificationLabel')}</div>
-                         <div style={{ color: '#475569', lineHeight: '1.4' }}>{a.justification_text}</div>
+                         <div style={{ color: 'var(--text-secondary)', lineHeight: '1.5', fontStyle: 'italic' }}>"{a.justification_text}"</div>
                          {a.justification_file && (
                            <a href={`http://localhost:5000/uploads/justifications/${a.justification_file}`} 
                               target="_blank" rel="noreferrer" 
                               style={{ 
                                 display: 'inline-flex', 
                                 alignItems: 'center', 
-                                gap: '4px',
-                                marginTop: '8px', 
+                                gap: '6px',
+                                marginTop: '10px', 
                                 color: 'var(--p-indigo)', 
-                                fontWeight: '600',
+                                fontWeight: '700',
                                 textDecoration: 'none',
                                 fontSize: '11px',
-                                background: '#eef2ff',
-                                padding: '4px 8px',
-                                borderRadius: '6px'
+                                background: 'var(--p-indigo-light)',
+                                padding: '6px 12px',
+                                borderRadius: '100px'
                               }}>
-                             📎 {t('absences.viewAttachment')}
+                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                             {t('absences.viewAttachment')}
                            </a>
                          )}
                        </div>
                     )}
                   </td>
                   <td>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start' }}>
-                      <span style={{ 
-                        display: 'inline-flex',
-                        padding: '6px 12px',
-                        borderRadius: '100px',
-                        fontSize: '11px',
-                        fontWeight: '800',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.025em',
-                        background: a.justification_status === 'Accepted' ? '#dcfce7' : a.justification_status === 'Pending' ? '#fef3c7' : '#fee2e2', 
-                        color: a.justification_status === 'Accepted' ? '#166534' : a.justification_status === 'Pending' ? '#92400e' : '#991b1b',
-                        boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)'
-                      }}>
-                        {a.justification_status === 'None' ? t('absences.none') : 
-                         a.justification_status === 'Pending' ? `⏳ ${t('absences.pending')}` :
-                         a.justification_status === 'Accepted' ? `✅ ${t('absences.accepted')}` : `❌ ${t('absences.rejected')}`}
-                      </span>
-                    </div>
+                    <span className={`badge-pro ${
+                      a.justification_status === 'Accepted' ? 'badge-pro-success' : 
+                      a.justification_status === 'Pending' ? 'badge-pro-warning' : 'badge-pro-danger'
+                    }`}>
+                      {a.justification_status === 'None' ? t('absences.none') : 
+                       a.justification_status === 'Pending' ? (
+                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                           {t('absences.pending')}
+                         </span>
+                       ) : a.justification_status === 'Accepted' ? (
+                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                           {t('absences.accepted')}
+                         </span>
+                       ) : (
+                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                           {t('absences.rejected')}
+                         </span>
+                       )}
+                    </span>
                   </td>
                   <td>
-                    {isTeacher && a.justification_status !== 'Accepted' && (
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={() => setActiveJustifyId(a.id)} className="btn-academic-action" style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.2)' }}>{t('absences.justify')}</button>
-                      </div>
-                    )}
-                    {(isDeptHead || isHR || isAdmin) && a.justification_status === 'Pending' && (
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={() => handleJustificationStatus(a.id, 'Accepted')} style={{ padding: '8px 14px', fontSize: '11px', background: '#22c55e', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(34, 197, 94, 0.2)' }}>{t('common.approve').toUpperCase()}</button>
-                        <button onClick={() => handleJustificationStatus(a.id, 'Rejected')} style={{ padding: '8px 14px', fontSize: '11px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.2)' }}>{t('common.reject').toUpperCase()}</button>
-                      </div>
-                    )}
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {isTeacher && a.justification_status !== 'Accepted' && (
+                        <button onClick={() => setActiveJustifyId(a.id)} className="btn-confirm-pro" style={{ padding: '8px 16px', fontSize: '12px' }}>{t('absences.justify')}</button>
+                      )}
+                      {(isDeptHead || isHR || isAdmin) && a.justification_status === 'Pending' && (
+                        <>
+                          <button onClick={() => handleJustificationStatus(a.id, 'Accepted')} className="btn-confirm-pro" style={{ padding: '8px 14px', fontSize: '11px', flex: '1' }}>{t('common.approve').toUpperCase()}</button>
+                          <button onClick={() => handleJustificationStatus(a.id, 'Rejected')} className="btn-cancel-pro" style={{ padding: '8px 14px', fontSize: '11px', flex: '1' }}>{t('common.reject').toUpperCase()}</button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
-              {absences.length === 0 && <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>{t('absences.noRequests')}</td></tr>}
+              {absences.length === 0 && <tr><td colSpan={isTeacher ? 4 : 5} style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)', fontStyle: 'italic' }}>{t('absences.noRequests')}</td></tr>}
             </tbody>
           </table>
         </div>
@@ -275,19 +313,19 @@ function ManageAbsences({ user: propUser }) {
           <div className="card-academic" style={{ width: '100%', maxWidth: '500px' }}>
             <h3>{t('absences.justify')}</h3>
             <form onSubmit={handleSubmitJustification} style={{ marginTop: '20px' }}>
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '700' }}>{t('absences.justificationText')}</label>
-                <textarea value={justificationText} onChange={e => setJustificationText(e.target.value)} required rows="3" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+              <div className="mnadm-form-group">
+                <label className="mnadm-label">{t('absences.justificationText')}</label>
+                <textarea className="mnadm-input" value={justificationText} onChange={e => setJustificationText(e.target.value)} required rows="3" />
               </div>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '700' }}>{t('absences.attachmentLabel')}</label>
-                <input type="file" onChange={e => setJustificationFile(e.target.files[0])} style={{ width: '100%' }} />
+              <div className="mnadm-form-group">
+                <label className="mnadm-label">{t('absences.attachmentLabel')}</label>
+                <input type="file" className="mnadm-input" onChange={e => setJustificationFile(e.target.files[0])} />
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="submit" disabled={isSubmitting} style={{ flex: 1 }}>
+                <button type="submit" className="btn-confirm-pro" disabled={isSubmitting} style={{ flex: 1 }}>
                   {isSubmitting ? t('common.loading') : t('common.submit')}
                 </button>
-                <button type="button" onClick={() => setActiveJustifyId(null)} disabled={isSubmitting} style={{ flex: 1, background: '#ef4444', color: 'white' }}>{t('common.cancel')}</button>
+                <button type="button" onClick={() => setActiveJustifyId(null)} className="btn-cancel-pro" disabled={isSubmitting} style={{ flex: 1 }}>{t('common.cancel')}</button>
               </div>
             </form>
           </div>

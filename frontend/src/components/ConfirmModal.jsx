@@ -17,10 +17,10 @@ const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
           <p>{message}</p>
         </div>
         <div className="custom-modal-footer">
-          <button className="custom-modal-btn btn-confirm" onClick={onConfirm}>
+          <button className="btn-confirm-pro" style={{ flex: 1 }} onClick={onConfirm}>
             {t('common.yes')}
           </button>
-          <button className="custom-modal-btn btn-cancel" onClick={onCancel}>
+          <button className="btn-cancel-pro" style={{ flex: 1 }} onClick={onCancel}>
             {t('common.cancel')}
           </button>
         </div>

@@ -235,10 +235,10 @@ function ManageClasses() {
 
       {/* TABS */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
-        <button onClick={() => setActiveTab('structure')} style={{ padding: '10px 20px', background: activeTab === 'structure' ? '#3b82f6' : 'transparent', color: activeTab === 'structure' ? 'white' : '#64748b', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+        <button onClick={() => setActiveTab('structure')} className={activeTab === 'structure' ? 'btn-confirm-pro' : 'btn-cancel-pro'} style={{ padding: '10px 24px', fontSize: '13px' }}>
           {t('classes.tabStructure')}
         </button>
-        <button onClick={() => setActiveTab('teachers')} style={{ padding: '10px 20px', background: activeTab === 'teachers' ? '#3b82f6' : 'transparent', color: activeTab === 'teachers' ? 'white' : '#64748b', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+        <button onClick={() => setActiveTab('teachers')} className={activeTab === 'teachers' ? 'btn-confirm-pro' : 'btn-cancel-pro'} style={{ padding: '10px 24px', fontSize: '13px' }}>
           {t('classes.tabTeachers')}
         </button>
       </div>
@@ -246,8 +246,8 @@ function ManageClasses() {
       {activeTab === 'structure' && (
         <>
           <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>{t('classes.chooseDept')}</label>
-            <select value={selectedDeptId} onChange={e => setSelectedDeptId(e.target.value)} style={{ width: '100%', maxWidth: '400px', height: '42px', padding: '0 10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+            <label className="mnadm-label">{t('classes.chooseDept')}</label>
+            <select className="mnadm-input" value={selectedDeptId} onChange={e => setSelectedDeptId(e.target.value)} style={{ maxWidth: '400px' }}>
               <option value="">{t('classes.selectDept')}</option>
               {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
@@ -258,76 +258,76 @@ function ManageClasses() {
             {/* LEVELS */}
             <div style={{ opacity: selectedDeptId ? 1 : 0.5, pointerEvents: selectedDeptId ? 'auto' : 'none', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>{t('classes.levels')}</h3>
-              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '15px', maxHeight: '150px', overflowY: 'auto' }}>
+              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '15px' }}>
                 {levels.map(l => (
                   <li key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', marginBottom: '5px', borderRadius: '6px', background: selectedLevelId == l.id ? '#eff6ff' : '#f8fafc', border: selectedLevelId == l.id ? '1px solid #bfdbfe' : '1px solid transparent', cursor: 'pointer' }} onClick={() => setSelectedLevelId(l.id)}>
                     <span>{l.name}</span>
-                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('levels', l.id); }} className="btn-delete">
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('levels', l.id); }} className="btn-delete-pro">
                       {t('common.delete')}
                     </button>
                   </li>
                 ))}
               </ul>
               <form onSubmit={handleAddLevel} style={{ display: 'flex', gap: '10px' }}>
-                <input type="text" value={newLevelName} onChange={e => setNewLevelName(e.target.value)} placeholder={t('classes.addLevelPlaceholder')} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} required />
-                <button type="submit" style={{ padding: '8px 15px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px' }}>{t('classes.addBtn')}</button>
+                <input type="text" className="mnadm-input" value={newLevelName} onChange={e => setNewLevelName(e.target.value)} placeholder={t('classes.addLevelPlaceholder')} required />
+                <button type="submit" className="btn-confirm-pro" style={{ padding: '8px 15px', fontSize: '12px' }}>{t('classes.addBtn')}</button>
               </form>
             </div>
 
             {/* MODULES (Attached to Level) */}
             <div style={{ opacity: selectedLevelId ? 1 : 0.5, pointerEvents: selectedLevelId ? 'auto' : 'none', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px', color: 'var(--p-indigo)' }}>{t('classes.modules')}</h3>
-              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '15px', maxHeight: '150px', overflowY: 'auto' }}>
+              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '15px' }}>
                 {modules.map(m => (
                   <li key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', marginBottom: '5px', borderRadius: '6px', background: '#f8fafc' }}>
                     <span>{m.name}</span>
-                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('modules', m.id); }} className="btn-delete">
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('modules', m.id); }} className="btn-delete-pro">
                       {t('common.delete')}
                     </button>
                   </li>
                 ))}
               </ul>
               <form onSubmit={handleAddModule} style={{ display: 'flex', gap: '10px' }}>
-                <input type="text" value={newModuleName} onChange={e => setNewModuleName(e.target.value)} placeholder={t('classes.addModulePlaceholder')} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} required />
-                <button type="submit" style={{ padding: '8px 15px', background: 'var(--p-indigo)', color: 'white', border: 'none', borderRadius: '6px' }}>{t('classes.addBtn')}</button>
+                <input type="text" className="mnadm-input" value={newModuleName} onChange={e => setNewModuleName(e.target.value)} placeholder={t('classes.addModulePlaceholder')} required />
+                <button type="submit" className="btn-confirm-pro" style={{ padding: '8px 15px', fontSize: '12px' }}>{t('classes.addBtn')}</button>
               </form>
             </div>
 
             {/* SECTIONS */}
             <div style={{ opacity: selectedLevelId ? 1 : 0.5, pointerEvents: selectedLevelId ? 'auto' : 'none', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>{t('classes.sections')}</h3>
-              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '15px', maxHeight: '150px', overflowY: 'auto' }}>
+              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '15px' }}>
                 {sections.map(s => (
                   <li key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', marginBottom: '5px', borderRadius: '6px', background: selectedSectionId == s.id ? '#eff6ff' : '#f8fafc', border: selectedSectionId == s.id ? '1px solid #bfdbfe' : '1px solid transparent', cursor: 'pointer' }} onClick={() => setSelectedSectionId(s.id)}>
                     <span>{s.name}</span>
-                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('sections', s.id); }} className="btn-delete">
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('sections', s.id); }} className="btn-delete-pro">
                       {t('common.delete')}
                     </button>
                   </li>
                 ))}
               </ul>
               <form onSubmit={handleAddSection} style={{ display: 'flex', gap: '10px' }}>
-                <input type="text" value={newSectionName} onChange={e => setNewSectionName(e.target.value)} placeholder={t('classes.addSectionPlaceholder')} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} required />
-                <button type="submit" style={{ padding: '8px 15px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px' }}>{t('classes.addBtn')}</button>
+                <input type="text" className="mnadm-input" value={newSectionName} onChange={e => setNewSectionName(e.target.value)} placeholder={t('classes.addSectionPlaceholder')} required />
+                <button type="submit" className="btn-confirm-pro" style={{ padding: '8px 15px', fontSize: '12px' }}>{t('classes.addBtn')}</button>
               </form>
             </div>
 
             {/* GROUPS */}
             <div style={{ opacity: selectedSectionId ? 1 : 0.5, pointerEvents: selectedSectionId ? 'auto' : 'none', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>{t('classes.groups')}</h3>
-              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '15px', maxHeight: '150px', overflowY: 'auto' }}>
+              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '15px' }}>
                 {groups.map(g => (
                   <li key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', marginBottom: '5px', borderRadius: '6px', background: '#f8fafc' }}>
                     <span>{g.name}</span>
-                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('groups', g.id); }} className="btn-delete">
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('groups', g.id); }} className="btn-delete-pro">
                       {t('common.delete')}
                     </button>
                   </li>
                 ))}
               </ul>
               <form onSubmit={handleAddGroup} style={{ display: 'flex', gap: '10px' }}>
-                <input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t('classes.addGroupPlaceholder')} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} required />
-                <button type="submit" style={{ padding: '8px 15px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px' }}>{t('classes.addBtn')}</button>
+                <input type="text" className="mnadm-input" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t('classes.addGroupPlaceholder')} required />
+                <button type="submit" className="btn-confirm-pro" style={{ padding: '8px 15px', fontSize: '12px' }}>{t('classes.addBtn')}</button>
               </form>
             </div>
 
@@ -340,7 +340,7 @@ function ManageClasses() {
           
           <div style={{ padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>{t('classes.chooseTeacher')}</h3>
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <div style={{ paddingRight: '10px' }}>
               {teachers.map(t => (
                 <div key={t.id} onClick={() => setSelectedTeacherId(t.id)} style={{ padding: '12px', marginBottom: '8px', borderRadius: '8px', cursor: 'pointer', background: selectedTeacherId === t.id ? '#eff6ff' : '#f8fafc', border: selectedTeacherId === t.id ? '1px solid #bfdbfe' : '1px solid transparent' }}>
                   <div style={{ fontWeight: 'bold', color: '#1e293b' }}>{t.nom} {t.prenom}</div>
@@ -354,8 +354,8 @@ function ManageClasses() {
             <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>{t('classes.assignModules')}</h3>
             
             <div style={{ marginBottom: '20px', padding: '15px', background: '#f8fafc', borderRadius: '8px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>{t('classes.studyLevel')}</label>
-              <select value={selectedLevelId} onChange={e => setSelectedLevelId(e.target.value)} style={{ width: '100%', height: '42px', padding: '0 10px', borderRadius: '8px', border: '1px solid #cbd5e1', marginBottom: '15px' }}>
+              <label className="mnadm-label">{t('classes.studyLevel')}</label>
+              <select className="mnadm-input" value={selectedLevelId} onChange={e => setSelectedLevelId(e.target.value)} style={{ marginBottom: '15px' }}>
                 <option value="">{t('common.all')}</option>
                 {levels.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
@@ -385,7 +385,7 @@ function ManageClasses() {
                     <strong style={{ color: '#0f172a' }}>{tm.name}</strong>
                     <span style={{ marginLeft: '10px', fontSize: '13px', color: '#64748b', background: '#e2e8f0', padding: '2px 8px', borderRadius: '12px' }}>{tm.study_level}</span>
                   </div>
-                  <button onClick={() => handleUnassignModule(tm.id)} className="btn-delete">{t('common.delete')}</button>
+                  <button onClick={() => handleUnassignModule(tm.id)} className="btn-delete-pro" style={{ padding: '6px 12px', fontSize: '11px' }}>{t('common.delete')}</button>
                 </li>
               ))}
               {teacherModules.length === 0 && <li style={{ color: '#94a3b8', fontStyle: 'italic' }}>{t('classes.noModulesAssigned')}</li>}

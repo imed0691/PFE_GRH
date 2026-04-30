@@ -1,14 +1,13 @@
 import { useLanguage } from "../i18n/LanguageContext";
 import "./Sidebar.css";
 
-function Sidebar({ user, activeView, setView, menuItems, onLogout, isOpen }) {
+function Sidebar({ user, activeView, setView, menuItems, onLogout }) {
   const { t } = useLanguage();
 
   return (
-    <aside className={`sidebar-academic ${isOpen ? 'open' : ''}`}>
-      <div className="sidebar-header-academic">
-        <h1 className="brand-academic-title">UNIVERSITY</h1>
-        <p className="brand-academic-subtitle">Management Portal</p>
+    <aside className="sidebar-academic">
+      <div className="sidebar-header">
+        <h2 className="outfit">HRM PRO</h2>
       </div>
 
       <nav className="sidebar-nav-academic">
@@ -18,15 +17,12 @@ function Sidebar({ user, activeView, setView, menuItems, onLogout, isOpen }) {
             className={`nav-item-academic ${activeView === item.id ? "active" : ""}`}
             onClick={() => setView(item.id)}
           >
-            {/* Emojis removed as requested for a cleaner Pro look */}
-            <span style={{ flex: 1, textAlign: 'center' }}>{item.label}</span>
-            <div style={{ width: '30px', display: 'flex', justifyContent: 'center' }}>
-              {item.badge > 0 && (
-                <span className="sidebar-badge-academic">
-                  {item.badge}
-                </span>
-              )}
-            </div>
+            <span style={{ flex: 1 }}>{item.label}</span>
+            {item.badge > 0 && (
+              <span className="sidebar-badge-academic">
+                {item.badge}
+              </span>
+            )}
           </button>
         ))}
       </nav>

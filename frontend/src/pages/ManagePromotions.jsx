@@ -114,102 +114,112 @@ function ManagePromotions({ user }) {
   };
 
   return (
-    <div className="table-card" style={{ padding: '20px' }}>
-      <h3 style={{ marginBottom: '20px' }}>{t('promotions.title')}</h3>
+    <div className="card-academic" style={{ padding: '32px' }}>
+      <h3 style={{ marginBottom: '24px', fontSize: '24px' }}>{t('promotions.title')}</h3>
       {isTeacher && (
-        <form onSubmit={handleRequestPromotion} style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', marginBottom: '30px', border: '1px solid #e2e8f0' }}>
-          <h4 style={{ margin: '0 0 15px 0', color: '#1e293b' }}>{t('promotions.requestPromotion')}</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-            <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('promotions.currentGrade')}</label><input type="text" value={user.grade || 'Teacher'} disabled style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f1f5f9' }} /></div>
-            <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: '600' }}>{t('promotions.requestedGrade')}</label><select value={requestedGrade} onChange={e => setRequestedGrade(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}><option value="">{t('promotions.selectNextGrade')}</option>{availableGrades.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+        <form onSubmit={handleRequestPromotion} className="card-academic" style={{ background: 'var(--bg-main)', padding: '24px', borderRadius: '16px', marginBottom: '32px', border: '1px solid var(--border-soft)' }}>
+          <h4 style={{ margin: '0 0 20px 0', color: 'var(--secondary)', fontSize: '18px' }}>{t('promotions.requestPromotion')}</h4>
+          <div className="mnadm-form-row">
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('promotions.currentGrade')}</label>
+              <input type="text" className="mnadm-input" value={user.grade || 'Teacher'} disabled />
+            </div>
+            <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('promotions.requestedGrade')}</label>
+              <select className="mnadm-input" value={requestedGrade} onChange={e => setRequestedGrade(e.target.value)} required>
+                <option value="">{t('promotions.selectNextGrade')}</option>
+                {availableGrades.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
           </div>
-          <button type="submit" className="btn-submit" style={{ background: '#8b5cf6' }}>{t('promotions.submitFile')}</button>
+          <button type="submit" className="btn-confirm-pro" style={{ width: '100%', padding: '14px' }}>{t('promotions.submitFile')}</button>
         </form>
       )}
       {loading ? <div className="loading-spinner">{t('promotions.loadingPromos')}</div> : (
-        <table className="modern-table">
-          <thead><tr><th>#</th><th>{t('promotions.candidate')}</th><th>{t('promotions.transition')}</th><th>{t('common.status')}</th><th>{t('common.actions')}</th></tr></thead>
-          <tbody>
-            {promotions.map((p, index) => {
-              const pStatus = p.status === 'Pending' ? 'Pending_Dept' : p.status;
-              const style = getStatusStyle(pStatus);
-              const canRecommend = (isDeptHead && pStatus === 'Pending_Dept') ||
-                (isDean && pStatus === 'Pending_Dean') ||
-                (isRector && pStatus === 'Pending_Rector');
-              const canApprove = isHR && pStatus === 'Pending_HR';
+        <div className="modern-table-wrapper">
+          <table className="modern-table">
+            <thead><tr><th>#</th><th>{t('promotions.candidate')}</th><th>{t('promotions.transition')}</th><th>{t('common.status')}</th><th>{t('common.actions')}</th></tr></thead>
+            <tbody>
+              {promotions.map((p, index) => {
+                const pStatus = p.status === 'Pending' ? 'Pending_Dept' : p.status;
+                const style = getStatusStyle(pStatus);
+                const canRecommend = (isDeptHead && pStatus === 'Pending_Dept') ||
+                  (isDean && pStatus === 'Pending_Dean') ||
+                  (isRector && pStatus === 'Pending_Rector');
+                const canApprove = isHR && pStatus === 'Pending_HR';
 
-              let actionLabel = t('promotions.addRecommendation');
-              let submitLabel = t('common.submit');
-              if (isDeptHead) { actionLabel = t('promotions.validateAndSend'); submitLabel = t('common.approve'); }
-              else if (isDean) { actionLabel = t('promotions.decideAndSend'); submitLabel = t('common.approve'); }
-              else if (isRector) { actionLabel = t('promotions.signAndSend'); submitLabel = t('promotions.signAndSend'); }
+                const badgeClass = pStatus.includes('Rejected') ? 'badge-pro-danger' : 
+                                 pStatus.includes('Approved') ? 'badge-pro-success' : 
+                                 'badge-pro-warning';
 
-              return (
-                <tr key={p.id}>
-                  <td data-label="#">{index + 1}</td>
-                  <td data-label={t('promotions.candidate')}><strong>{p.nom} {p.prenom}</strong><br /><small style={{ color: '#64748b' }}>{p.department_name || '-'}</small></td>
-                  <td data-label={t('promotions.transition')}><span className="role-tag" style={{ background: '#e2e8f0', color: '#475569' }}>{p.current_grade}</span> → <span className="role-tag" style={{ background: '#ede9fe', color: '#5b21b6' }}>{p.requested_grade}</span></td>
-                  <td data-label={t('common.status')}><span className="role-tag" style={{ background: style.bg, color: style.color }}>{style.label || p.status}</span></td>
-                  <td data-label={t('common.actions')}>
-                    {p.dept_head_recommendation && (
-                      <div style={{ marginBottom: '8px', padding: '8px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '11px', whiteSpace: 'pre-wrap' }}>
-                        <div style={{ fontWeight: '600', color: '#475569', marginBottom: '4px', textTransform: 'uppercase', fontSize: '10px' }}>{t('promotions.historyTitle')}</div>
-                        {p.dept_head_recommendation}
-                      </div>
-                    )}
-                    {canRecommend && (activePromoId === p.id ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                        <textarea value={recommendation} onChange={e => setRecommendation(e.target.value)} placeholder={t('promotions.writeRecommendation')} rows="2" style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }} />
-                        <div style={{ display: 'flex', gap: '5px' }}>
-                          <button onClick={() => handleRecommendation(p.id, 'approve')} className="btn-confirm-pro" style={{ flex: 1, padding: '8px', fontSize: '11px' }}>{submitLabel}</button>
-                          {isDean && <button onClick={() => handleRecommendation(p.id, 'reject')} className="btn-cancel-pro" style={{ flex: 1, padding: '8px', fontSize: '11px' }}>{t('common.reject')}</button>}
-                          <button onClick={() => setActivePromoId(null)} className="btn-cancel-pro" style={{ flex: 1, padding: '8px', fontSize: '11px' }}>{t('common.cancel')}</button>
+                return (
+                  <tr key={p.id}>
+                    <td data-label="#">{index + 1}</td>
+                    <td data-label={t('promotions.candidate')}><strong>{p.nom} {p.prenom}</strong><br /><small style={{ color: 'var(--text-muted)' }}>{p.department_name || '-'}</small></td>
+                    <td data-label={t('promotions.transition')}>
+                      <span className="role-tag">{p.current_grade}</span> 
+                      <span style={{ margin: '0 8px', color: 'var(--text-muted)' }}>→</span> 
+                      <span className="role-tag" style={{ background: 'var(--p-indigo-light)', color: 'var(--p-indigo)' }}>{p.requested_grade}</span>
+                    </td>
+                    <td data-label={t('common.status')}>
+                      <span className={`badge-pro ${badgeClass}`}>
+                         {style.label || p.status}
+                      </span>
+                    </td>
+                    <td data-label={t('common.actions')}>
+                      {p.dept_head_recommendation && (
+                        <div style={{ marginBottom: '8px', padding: '12px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border-soft)', fontSize: '12px' }}>
+                          <div style={{ fontWeight: '800', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.05em' }}>{t('promotions.historyTitle')}</div>
+                          <div style={{ fontStyle: 'italic', color: 'var(--text-secondary)' }}>"{p.dept_head_recommendation}"</div>
                         </div>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', gap: '5px' }}>
-                        <button onClick={() => setActivePromoId(p.id)} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>{actionLabel}</button>
-                      </div>
-                    ))}
-                    {canApprove && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#475569' }}>{t('promotions.finalizeGrade')}</div>
-                        <div style={{ display: 'flex', gap: '5px' }}>
-                          <select 
-                            id={`grade-select-${p.id}`}
-                            defaultValue={p.requested_grade}
-                            style={{ 
-                              padding: '8px 30px 8px 12px', 
-                              borderRadius: '8px', 
-                              border: '1px solid #cbd5e1', 
-                              fontSize: '13px', 
-                              flex: '2',
-                              background: 'white',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            {gradeHierarchy.map(g => <option key={g} value={g}>{g}</option>)}
-                          </select>
+                      )}
+                      {canRecommend && (activePromoId === p.id ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <textarea className="mnadm-input" value={recommendation} onChange={e => setRecommendation(e.target.value)} placeholder={t('promotions.writeRecommendation')} rows="2" />
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button onClick={() => handleRecommendation(p.id, 'approve')} className="btn-confirm-pro" style={{ flex: 1, padding: '10px', fontSize: '12px' }}>{isRector ? t('promotions.signAndSend') : t('common.approve')}</button>
+                            {isDean && <button onClick={() => handleRecommendation(p.id, 'reject')} className="btn-cancel-pro" style={{ flex: 1, padding: '10px', fontSize: '12px' }}>{t('common.reject')}</button>}
+                            <button onClick={() => setActivePromoId(null)} className="btn-cancel-pro" style={{ flex: 1, padding: '10px', fontSize: '12px' }}>{t('common.cancel')}</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={() => setActivePromoId(p.id)} className="btn-confirm-pro" style={{ padding: '8px 16px', fontSize: '12px' }}>
+                          {isDeptHead ? t('promotions.validateAndSend') : isDean ? t('promotions.decideAndSend') : isRector ? t('promotions.signAndSend') : t('promotions.addRecommendation')}
+                        </button>
+                      ))}
+                      {canApprove && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('promotions.finalizeGrade')}</div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <select 
+                              id={`grade-select-${p.id}`}
+                              className="mnadm-input"
+                              defaultValue={p.requested_grade}
+                              style={{ flex: '2' }}
+                            >
+                              {gradeHierarchy.map(g => <option key={g} value={g}>{g}</option>)}
+                            </select>
                             <button 
                               onClick={() => {
                                 const finalGrade = document.getElementById(`grade-select-${p.id}`).value;
                                 handleStatusUpdate(p.id, 'Approved', finalGrade);
                               }} 
                               className="btn-confirm-pro"
-                              style={{ padding: '8px 16px', fontSize: '13px', flex: '1' }}
+                              style={{ padding: '10px 16px', fontSize: '12px', flex: '1' }}
                             >
                               {t('promotions.updateFile')}
                             </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-            {promotions.length === 0 && <tr><td colSpan="5" className="empty-state">{t('promotions.noRecords')}</td></tr>}
-          </tbody>
-        </table>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {promotions.length === 0 && <tr><td colSpan="5" className="empty-state">{t('promotions.noRecords')}</td></tr>}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

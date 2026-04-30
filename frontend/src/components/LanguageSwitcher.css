@@ -21,12 +21,12 @@
 }
 
 .lang-pill-item:hover {
-  color: var(--p-indigo);
+  color: var(--primary);
   background: rgba(255, 255, 255, 0.5);
 }
 
 .lang-pill-item.active {
-  background: #4f46e5 !important;
+  background: var(--primary) !important;
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
   transform: scale(1.08);
@@ -60,7 +60,7 @@
 }
 
 .boxed-lang-btn.active {
-  border-color: var(--p-indigo);
+  border-color: var(--primary);
   background: #f5f3ff;
   box-shadow: 0 10px 20px rgba(99, 102, 241, 0.1);
 }
@@ -73,7 +73,7 @@
 }
 
 .active .boxed-lang-code {
-  color: var(--p-indigo);
+  color: var(--primary);
 }
 
 .boxed-lang-label {

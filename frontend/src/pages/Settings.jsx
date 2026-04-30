@@ -132,17 +132,17 @@ function Settings({ user, onProfileUpdate }) {
               </div>
 
               <form onSubmit={handleProfileSubmit}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '40px' }}>
-                  <div className="input-field-pro">
-                    <label>{t('addEmployee.lastName')}</label>
-                    <input type="text" value={profileData.nom} onChange={(e) => setProfileData({ ...profileData, nom: e.target.value })} required />
+                <div className="mnadm-form-row">
+                  <div className="mnadm-form-group">
+                    <label className="mnadm-label">{t('addEmployee.lastName')}</label>
+                    <input type="text" className="mnadm-input" value={profileData.nom} onChange={(e) => setProfileData({ ...profileData, nom: e.target.value })} required />
                   </div>
-                  <div className="input-field-pro">
-                    <label>{t('addEmployee.firstName')}</label>
-                    <input type="text" value={profileData.prenom} onChange={(e) => setProfileData({ ...profileData, prenom: e.target.value })} required />
+                  <div className="mnadm-form-group">
+                    <label className="mnadm-label">{t('addEmployee.firstName')}</label>
+                    <input type="text" className="mnadm-input" value={profileData.prenom} onChange={(e) => setProfileData({ ...profileData, prenom: e.target.value })} required />
                   </div>
                 </div>
-                <button type="submit" className="btn-grad" disabled={loadingProfile}>
+                <button type="submit" className="btn-confirm-pro" disabled={loadingProfile}>
                   {loadingProfile ? t('common.loading') : t('settings.updateInfo')}
                 </button>
               </form>
@@ -155,21 +155,21 @@ function Settings({ user, onProfileUpdate }) {
               <p style={{ color: 'var(--text-muted)', marginBottom: '40px' }}>{t('settings.securityDesc')}</p>
               
               <form onSubmit={(e) => e.preventDefault()}>
-                <div className="input-field-pro" style={{ maxWidth: '400px' }}>
-                  <label>{t('settings.currentPassword')}</label>
-                  <input type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} />
+                <div className="mnadm-form-group" style={{ maxWidth: '400px' }}>
+                  <label className="mnadm-label">{t('settings.currentPassword')}</label>
+                  <input type="password" className="mnadm-input" value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '40px' }}>
-                  <div className="input-field-pro">
-                    <label>{t('settings.newPassword')}</label>
-                    <input type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} />
+                <div className="mnadm-form-row">
+                  <div className="mnadm-form-group">
+                    <label className="mnadm-label">{t('settings.newPassword')}</label>
+                    <input type="password" className="mnadm-input" value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} />
                   </div>
-                  <div className="input-field-pro">
-                    <label>{t('settings.confirmPassword')}</label>
-                    <input type="password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} />
+                  <div className="mnadm-form-group">
+                    <label className="mnadm-label">{t('settings.confirmPassword')}</label>
+                    <input type="password" className="mnadm-input" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} />
                   </div>
                 </div>
-                <button type="submit" className="btn-grad" disabled={loadingPassword}>
+                <button type="submit" className="btn-confirm-pro" disabled={loadingPassword}>
                   {t('settings.updateCredentials')}
                 </button>
               </form>

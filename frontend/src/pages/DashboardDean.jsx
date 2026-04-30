@@ -114,8 +114,8 @@ function DashboardDean({ user, onLogout }) {
                   {t('dean.welcomeText')}
                 </p>
                 <div style={{ marginTop: '32px', display: 'flex', gap: '20px' }}>
-                   <button className="btn-academic" onClick={() => setView('evaluations')}>{t('dean.reviewEvals')}</button>
-                   <button className="btn-academic btn-academic-outline" onClick={() => setView('promotions')}>{t('dean.careerTracking')}</button>
+                   <button className="btn-confirm-pro" onClick={() => setView('evaluations')} style={{ padding: '10px 24px' }}>{t('dean.reviewEvals')}</button>
+                   <button className="btn-cancel-pro" onClick={() => setView('promotions')} style={{ padding: '10px 24px' }}>{t('dean.careerTracking')}</button>
                 </div>
               </div>
            </div>

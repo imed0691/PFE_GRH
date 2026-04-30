@@ -635,6 +635,9 @@ const fr = {
     selectTime: 'Sélectionner l\'heure...',
     selectLevelFirst: 'Choisir le niveau d\'abord',
     selectTeacherFirst: 'Choisir l\'enseignant d\'abord',
+    chooseTeacherFirst: 'Choisir l\'enseignant d\'abord',
+    subtitle: 'Gérez les horaires académiques',
+    activeSchedule: 'Emploi du temps actif',
   },
 
   // ── Fil de notifications ──
