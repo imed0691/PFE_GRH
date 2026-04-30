@@ -61,57 +61,69 @@ function ManageDepartments() {
   };
 
   return (
-    <div className="card-academic" style={{ padding: '24px' }}>
-      <form onSubmit={handleAddDepartment} className="mnadm-form-row" style={{ marginBottom: '32px', alignItems: 'flex-end', background: '#f8fafc', padding: '32px', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <label className="mnadm-label" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('departments.selectOrType')}</label>
-          <div className="mnadm-form-row" style={{ marginBottom: 0 }}>
-            <select 
-              className="mnadm-input"
-              onChange={handlePredefinedChange}
-            >
-              <option value="">{t('common.select')}</option>
-              {predefinedDepts.map(dept => (
-                <option key={dept} value={dept}>{dept}</option>
-              ))}
-            </select>
-            <input 
-              className="mnadm-input"
-              type="text" 
-              value={newDeptName} 
-              onChange={(e) => setNewDeptName(e.target.value)} 
-              placeholder={t('departments.typeManual')}
-              required 
-            />
+    <>
+      <div className="card-academic" style={{ padding: '32px' }}>
+        <form onSubmit={handleAddDepartment} className="mnadm-form-row" style={{ marginBottom: '32px', alignItems: 'flex-end', background: '#f8fafc', padding: '32px', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <label className="mnadm-label" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('departments.selectOrType')}</label>
+            <div className="mnadm-form-row" style={{ marginBottom: 0 }}>
+              <select 
+                className="mnadm-input"
+                onChange={handlePredefinedChange}
+              >
+                <option value="">{t('common.select')}</option>
+                {predefinedDepts.map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+              <input 
+                className="mnadm-input"
+                type="text" 
+                value={newDeptName} 
+                onChange={(e) => setNewDeptName(e.target.value)} 
+                placeholder={t('departments.typeManual')}
+                required 
+              />
+            </div>
           </div>
-        </div>
-        <button type="submit" className="btn-confirm-pro" style={{ padding: '14px 32px' }}>{t('departments.addDepartment')}</button>
-      </form>
-      {loading ? <div className="loading-spinner">{t('departments.loadingDepts')}</div> : (
-        <table className="modern-table">
-          <thead><tr><th>#</th><th>{t('common.id')}</th><th>{t('departments.deptName')}</th><th>{t('common.actions')}</th></tr></thead>
-          <tbody>
-            {departments.map((d, index) => (
-              <tr key={d.id}>
-                <td data-label="#">{index + 1}</td>
-                <td data-label={t('common.id')}>#{d.id}</td>
-                <td data-label={t('departments.deptName')}>
-                  <strong>
-                    {(() => {
-                      const translated = t('departments.' + d.name);
-                      return translated.includes('.') ? d.name : translated;
-                    })()}
-                  </strong>
-                </td>
-                <td data-label={t('common.actions')}>
-                  <button className="btn-delete-pro" style={{ padding: '8px 16px', fontSize: '12px' }} onClick={() => handleDeleteClick(d.id, d.name)}>{t('common.delete')}</button>
-                </td>
-              </tr>
-            ))}
-            {departments.length === 0 && <tr><td colSpan="4" className="empty-state-cell">{t('departments.noDepts')}</td></tr>}
-          </tbody>
-        </table>
-      )}
+          <button type="submit" className="btn-confirm-pro" style={{ padding: '14px 32px' }}>{t('departments.addDepartment')}</button>
+        </form>
+        {loading ? <div className="loading-spinner">{t('departments.loadingDepts')}</div> : (
+          <div className="modern-table-wrapper">
+            <table className="modern-table">
+              <thead><tr><th>#</th><th>{t('common.id')}</th><th>{t('departments.deptName')}</th><th style={{ textAlign: 'center' }}>{t('common.actions')}</th></tr></thead>
+              <tbody>
+                {departments.map((d, index) => (
+                  <tr key={d.id}>
+                    <td>{index + 1}</td>
+                    <td>#{d.id}</td>
+                    <td>
+                      <strong>
+                        {(() => {
+                          const translated = t('departments.' + d.name);
+                          return translated.includes('.') ? d.name : translated;
+                        })()}
+                      </strong>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <button 
+                          className="btn-delete-pro" 
+                          style={{ padding: '8px 16px', fontSize: '12px' }} 
+                          onClick={() => handleDeleteClick(d.id, d.name)}
+                        >
+                          {t('common.delete')}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {departments.length === 0 && <tr><td colSpan="4" className="empty-state-cell">{t('departments.noDepts')}</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       <ConfirmModal 
         isOpen={confirmModal.isOpen}
@@ -119,7 +131,7 @@ function ManageDepartments() {
         onConfirm={performDelete}
         onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
       />
-    </div>
+    </>
   );
 }
 

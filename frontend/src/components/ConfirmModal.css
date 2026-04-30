@@ -68,14 +68,15 @@
 }
 
 .custom-modal-btn.btn-confirm {
-  background: var(--primary) !important;
+  background: var(--p-indigo) !important;
   color: white !important;
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
 }
 
 .custom-modal-btn.btn-confirm:hover {
-  background: var(--primary-hover) !important;
+  background: var(--p-indigo-dark) !important;
   transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 6px 15px rgba(79, 70, 229, 0.4) !important;
 }
 
 .custom-modal-btn.btn-cancel {

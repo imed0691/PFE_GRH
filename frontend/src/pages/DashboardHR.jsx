@@ -15,6 +15,7 @@ import Settings from './Settings';
 import useNotificationBadges from '../hooks/useNotificationBadges';
 import NotifBadge from '../components/NotifBadge';
 import DashboardLayout from '../components/DashboardLayout';
+import ConfirmModal from '../components/ConfirmModal';
 import './DashboardHR.css';
 
 function DashboardHR({ user, onLogout }) {
@@ -28,6 +29,7 @@ function DashboardHR({ user, onLogout }) {
   const { t, locale } = useLanguage();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null, name: '' });
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -90,9 +92,13 @@ function DashboardHR({ user, onLogout }) {
     }
   }, [view]);
 
-  const handleDelete = async (id, nom) => {
-    if (!window.confirm(`${t('hr.confirmDelete')} ${nom}?`)) return;
+  const handleDelete = (id, nom) => {
+    setConfirmModal({ isOpen: true, id, name: nom });
+  };
 
+  const performDelete = async () => {
+    const { id } = confirmModal;
+    setConfirmModal({ ...confirmModal, isOpen: false });
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:5000/api/users/${id}`, {
@@ -232,7 +238,7 @@ function DashboardHR({ user, onLogout }) {
                       <th className="hide-mobile" style={{ width: '250px' }}>{t('common.email')}</th>
                       <th className="hide-tablet" style={{ width: '200px' }}>{t('common.department')}</th>
                       <th style={{ width: '180px' }}>{t('common.role')}</th>
-                      <th style={{ width: '150px' }}>{t('common.actions')}</th>
+                      <th style={{ width: '150px', textAlign: 'center' }}>{t('common.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -267,11 +273,18 @@ function DashboardHR({ user, onLogout }) {
                           <td className="hide-tablet">{u.department_name && u.department_name !== 'null' ? (t('departments.' + u.department_name) === 'departments.' + u.department_name ? u.department_name : t('departments.' + u.department_name)) : '-'}</td>
                           <td><span className={`role-tag role-${u.role.toLowerCase()}`}>{t('roles.' + u.role) || u.role}</span></td>
                           <td>
-                            {u.role !== 'RH_MANAGER' && (
-                              <button className="btn-delete-pro" onClick={() => handleDelete(u.id, u.nom)}>
-                                {t('common.delete')}
-                              </button>
-                            )}
+                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                              {u.role !== 'RH_MANAGER' && (
+                                <button 
+                                  className="btn-delete-pro" 
+                                  onClick={() => handleDelete(u.id, u.nom)}
+                                  title={t('common.delete')}
+                                  style={{ padding: '8px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -285,6 +298,12 @@ function DashboardHR({ user, onLogout }) {
           </>
         )}
       </div>
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        message={`${t('hr.confirmDelete')} ${confirmModal.name}?`}
+        onConfirm={performDelete}
+        onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+      />
     </DashboardLayout>
   );
 }
