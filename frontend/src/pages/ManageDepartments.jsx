@@ -95,7 +95,14 @@ function ManageDepartments() {
               <tr key={d.id}>
                 <td data-label="#">{index + 1}</td>
                 <td data-label={t('common.id')}>#{d.id}</td>
-                <td data-label={t('departments.deptName')}><strong>{d.name}</strong></td>
+                <td data-label={t('departments.deptName')}>
+                  <strong>
+                    {(() => {
+                      const translated = t('departments.' + d.name);
+                      return translated.includes('.') ? d.name : translated;
+                    })()}
+                  </strong>
+                </td>
                 <td data-label={t('common.actions')}>
                   <button className="btn-delete-pro" style={{ padding: '8px 16px', fontSize: '12px' }} onClick={() => handleDeleteClick(d.id, d.name)}>{t('common.delete')}</button>
                 </td>

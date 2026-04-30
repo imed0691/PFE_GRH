@@ -229,6 +229,7 @@ exports.assignModule = (req, res) => {
                 (SELECT department_id FROM modules WHERE id = ?) as module_dept
         `;
         db.query(checkQuery, [teacher_id, module_id], (err, results) => {
+            if (err || !results || results.length === 0) return res.status(500).json({ message: "Erreur de vérification des données." });
             const { teacher_dept, module_dept } = results[0];
             if (teacher_dept !== req.user.department_id || module_dept !== req.user.department_id) {
                 return res.status(403).json({ message: "Accès refusé : Vous ne pouvez assigner que des profs/modules de votre département." });

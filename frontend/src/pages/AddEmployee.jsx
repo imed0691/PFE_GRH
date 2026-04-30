@@ -65,7 +65,14 @@ function AddEmployee({ onCancel, onSuccess }) {
               <label className="mnadm-label">{t('addEmployee.department')}</label>
               <select className="mnadm-input" name="department_id" value={formData.department_id} onChange={handleChange} required>
                 <option value="">{t('addEmployee.noDepartment')}</option>
-                {departments.map(d => <option key={d.id} value={d.id}>{t('departments.' + d.name) || d.name}</option>)}
+                {departments.map(d => {
+                  const translated = t('departments.' + d.name);
+                  return (
+                    <option key={d.id} value={d.id}>
+                      {translated.includes('.') ? d.name : translated}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           )}

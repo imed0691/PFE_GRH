@@ -148,7 +148,7 @@ function DashboardHR({ user, onLogout }) {
       onLogout={onLogout}
       title={getPageTitle()}
     >
-      <div className="animate-mnadm">
+      <div>
         {view === 'add' ? (
           <AddEmployee onCancel={() => setView('list')} onSuccess={() => setView('list')} />
         ) : view === 'departments' ? (
@@ -172,7 +172,7 @@ function DashboardHR({ user, onLogout }) {
             <div className="list-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '20px', flexWrap: 'wrap', padding: '24px', background: 'white', borderRadius: '16px', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-md)' }}>
               <div className="filter-nav" style={{ marginBottom: 0, flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button className={filter === 'all' ? 'btn-confirm-pro' : 'btn-cancel-pro'} onClick={() => setFilter('all')} style={{ padding: '10px 24px', fontSize: '13px' }}>{t('common.all')}</button>
-                <button className={filter === 'direction' ? 'btn-confirm-pro' : 'btn-cancel-pro'} onClick={() => setFilter('direction')} style={{ padding: '10px 24px', fontSize: '13px' }}>{t('hr.direction') || 'Direction'}</button>
+                <button className={filter === 'direction' ? 'btn-confirm-pro' : 'btn-cancel-pro'} onClick={() => setFilter('direction')} style={{ padding: '10px 24px', fontSize: '13px' }}>{t('hr.direction')}</button>
                 <button className={filter === 'DEPARTMENT_HEAD' ? 'btn-confirm-pro' : 'btn-cancel-pro'} onClick={() => setFilter('DEPARTMENT_HEAD')} style={{ padding: '10px 24px', fontSize: '13px' }}>{t('roles.DEPARTMENT_HEAD')}</button>
 
                 <div style={{ height: '24px', width: '1px', background: '#e2e8f0', margin: '0 8px' }}></div>
@@ -192,7 +192,14 @@ function DashboardHR({ user, onLogout }) {
                 >
                   <option value="" hidden>{t('sidebar.departments')}</option>
                   {departments.map(dept => (
-                    <option key={dept.id} value={`dept_${dept.id}`} style={{ color: 'black' }}>{dept.name}</option>
+                    <option key={dept.id} value={`dept_${dept.id}`} style={{ color: 'black' }}>
+                      {dept.name && dept.name !== 'null' ? (
+                        (() => {
+                          const translated = t('departments.' + dept.name);
+                          return translated.includes('.') ? dept.name : translated;
+                        })()
+                      ) : '-'}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -257,7 +264,7 @@ function DashboardHR({ user, onLogout }) {
                             </div>
                           </td>
                           <td>{u.email}</td>
-                          <td>{u.department_name || '-'}</td>
+                          <td>{u.department_name && u.department_name !== 'null' ? (t('departments.' + u.department_name) === 'departments.' + u.department_name ? u.department_name : t('departments.' + u.department_name)) : '-'}</td>
                           <td><span className={`role-tag role-${u.role.toLowerCase()}`}>{t('roles.' + u.role) || u.role}</span></td>
                           <td>
                             {u.role !== 'RH_MANAGER' && (

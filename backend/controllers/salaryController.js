@@ -45,13 +45,13 @@ exports.recalculateSalary = (req, res) => {
   res.json({ message: "Salary recalculated successfully" });
 };
 
-// RH: Update Base Salary and Extra Hours
+// RH: Update Salary Components
 exports.updateSalary = (req, res) => {
   const teacherId = req.params.id;
-  const { base_salary, extra_hours } = req.body;
+  const { base_salary, extra_hours, hourly_rate, absence_penalty } = req.body;
 
-  const query = "UPDATE users SET base_salary = ?, extra_hours = ? WHERE id = ?";
-  db.query(query, [base_salary, extra_hours, teacherId], (err, result) => {
+  const query = "UPDATE users SET base_salary = ?, extra_hours = ?, hourly_rate = ?, absence_penalty = ? WHERE id = ?";
+  db.query(query, [base_salary, extra_hours, hourly_rate, absence_penalty, teacherId], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: "Salary information updated successfully" });
   });

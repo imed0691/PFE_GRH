@@ -102,13 +102,13 @@ function ManagePromotions({ user }) {
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case 'Approved': return { bg: '#dcfce7', color: '#166534', label: 'Completed' };
-      case 'Rejected': return { bg: '#fee2e2', color: '#991b1b', label: 'Rejected by HR' };
-      case 'Rejected_Dean': return { bg: '#fee2e2', color: '#991b1b', label: 'Rejected by Dean' };
-      case 'Pending_Dept': return { bg: '#fef3c7', color: '#92400e', label: 'Pending Dept' };
-      case 'Pending_Dean': return { bg: '#dbeafe', color: '#1e40af', label: 'With Dean' };
-      case 'Pending_Rector': return { bg: '#e0e7ff', color: '#3730a3', label: 'With Rector' };
-      case 'Pending_HR': return { bg: '#f3e8ff', color: '#6b21a8', label: 'With HR (Signed)' };
+      case 'Approved': return { bg: '#dcfce7', color: '#166534', label: t('common.completed') || 'Completed' };
+      case 'Rejected': return { bg: '#fee2e2', color: '#991b1b', label: t('promotions.rejectedByHR') || 'Rejected by HR' };
+      case 'Rejected_Dean': return { bg: '#fee2e2', color: '#991b1b', label: t('promotions.rejectedByDean') || 'Rejected by Dean' };
+      case 'Pending_Dept': return { bg: '#fef3c7', color: '#92400e', label: t('promotions.pendingDept') || 'Pending Dept' };
+      case 'Pending_Dean': return { bg: '#dbeafe', color: '#1e40af', label: t('promotions.withDean') || 'With Dean' };
+      case 'Pending_Rector': return { bg: '#e0e7ff', color: '#3730a3', label: t('promotions.withRector') || 'With Rector' };
+      case 'Pending_HR': return { bg: '#f3e8ff', color: '#6b21a8', label: t('promotions.withHR') || 'With HR (Signed)' };
       default: return { bg: '#f1f5f9', color: '#475569' };
     }
   };
@@ -163,7 +163,20 @@ function ManagePromotions({ user }) {
                     </td>
                     <td data-label={t('common.status')}>
                       <span className={`badge-pro ${badgeClass}`}>
-                         {style.label || p.status}
+                        {pStatus.startsWith('Pending_') && (
+                          <span style={{ 
+                            background: '#ef4444', 
+                            color: 'white', 
+                            padding: '2px 8px', 
+                            borderRadius: '6px', 
+                            fontSize: '9px', 
+                            fontWeight: '900', 
+                            textTransform: 'uppercase',
+                            marginRight: '8px',
+                            animation: 'badgePulse 2s infinite'
+                          }}>NEW</span>
+                        )}
+                        {style.label || p.status}
                       </span>
                     </td>
                     <td data-label={t('common.actions')}>

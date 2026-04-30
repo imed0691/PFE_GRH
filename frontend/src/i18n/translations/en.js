@@ -36,6 +36,7 @@ const en = {
     currency: 'DA',
     regular: 'Regular',
     confirmDelete: 'Are you sure you want to delete this item?',
+    completed: 'Completed',
   },
 
   // ── Login ──
@@ -187,14 +188,17 @@ const en = {
   // ── Manage Classes & Pedagogy ──
   classes: {
     title: 'Pedagogical Structure & Modules',
-    tabStructure: 'Manage Classes & Modules',
+    tabStructure: 'Manage Classes',
+    tabStructureSubtitle: 'Levels, Sections, Groups',
+    tabModules: 'Academic Curriculum',
+    tabModulesSubtitle: 'Manage Modules by Level',
     tabTeachers: 'Assign Modules to Teachers',
     chooseDept: 'Choose Department:',
     selectDept: '-- Select a department --',
     levels: '1. Study Levels',
-    modules: '2. Modules by Level',
-    sections: '3. Sections',
-    groups: '4. Groups',
+    modules: '2. Academic Curriculum',
+    sections: '2. Sections',
+    groups: '3. Groups',
     addLevelPlaceholder: 'E.g. L1, M1...',
     addModulePlaceholder: 'E.g. Algorithmics...',
     addSectionPlaceholder: 'E.g. Section A...',
@@ -431,6 +435,8 @@ const en = {
     'Mathématiques': 'Mathematics',
     'Sciences de la Matière': 'Physics',
     'Sciences de la Nature et de la Vie': 'Biology',
+    'Computer Science': 'Computer Science',
+    'null': '-',
   },
 
   // ── Manage Documents ──
@@ -501,6 +507,12 @@ const en = {
     promotionApproved: 'Promotion approved',
     errorStatus: 'Error updating status',
     noRecords: 'No promotion records found.',
+    rejectedByHR: 'Rejected by HR',
+    rejectedByDean: 'Rejected by Dean',
+    pendingDept: 'Pending Dept',
+    withDean: 'With Dean',
+    withRector: 'With Rector',
+    withHR: 'With HR (Signed)',
     finalize: 'Finalize Promotion',
     gradeUpdated: 'Grade updated successfully',
     promotionRejected: 'Promotion request rejected',
@@ -612,6 +624,8 @@ const en = {
     calculating: 'Calculating salaries...',
     noTeachers: 'No teachers found.',
     adjustFor: 'Adjust salary for',
+    hourlyRate: 'Extra Hourly Rate (DA/h)',
+    absencePenalty: 'Absence Penalty (DA)',
   },
 
   // ── Manage Sessions ──

@@ -73,7 +73,17 @@ function ManageDocuments({ user }) {
                           {t('documents.ready')}
                         </span>
                       ) : d.status === 'Processing' ? (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ 
+                            background: '#ef4444', 
+                            color: 'white', 
+                            padding: '2px 8px', 
+                            borderRadius: '6px', 
+                            fontSize: '9px', 
+                            fontWeight: '900', 
+                            textTransform: 'uppercase',
+                            marginRight: '8px',
+                            animation: 'badgePulse 2s infinite'
+                          }}>NEW</span>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                           {d.status}
                         </span>

@@ -5,14 +5,10 @@ import ConfirmModal from '../components/ConfirmModal';
 
 function ManageClasses({ user }) {
   const { t } = useLanguage();
-  const initialTab = user.role === 'RH_MANAGER' ? 'structure' : 'teachers';
-  const [activeTab, setActiveTabRaw] = useState(localStorage.getItem('manage_classes_tab') || initialTab); // 'structure' or 'teachers'
-  
-  const setActiveTab = (tab) => {
-    setActiveTabRaw(tab);
-    localStorage.setItem('manage_classes_tab', tab);
-  };
+  // Role-based view selection (no state needed for tabs)
 
+
+  const [activeTab, setActiveTab] = useState('structure');
   const [departments, setDepartments] = useState([]);
   const [selectedDeptId, setSelectedDeptId] = useState(user.role === 'RH_MANAGER' ? '' : user.department_id);
   
@@ -130,7 +126,12 @@ function ManageClasses({ user }) {
 
   // Filter teachers to only show those in the selected department AND match search
   const filteredTeachers = teachers.filter(t => {
-    const matchesDept = !selectedDeptId || t.department_id === parseInt(selectedDeptId);
+    // For Dept Head, strictly match their department. For HR Manager, match selected or show all if none selected.
+    const isDeptHead = user.role === 'CHEF_DEPARTEMENT' || user.role === 'DEPARTMENT_HEAD';
+    const matchesDept = isDeptHead 
+      ? t.department_id === parseInt(selectedDeptId)
+      : (!selectedDeptId || t.department_id === parseInt(selectedDeptId));
+      
     const fullName = `${t.nom} ${t.prenom}`.toLowerCase();
     const matchesSearch = fullName.includes(teacherSearch.toLowerCase());
     return matchesDept && matchesSearch;
@@ -222,7 +223,10 @@ function ManageClasses({ user }) {
         body: JSON.stringify({ teacher_id: selectedTeacherId, module_id: moduleId })
       });
       if (res.ok) { toast.success(t('classes.moduleAssigned')); fetchTeacherModules(); }
-      else toast.error(t('classes.alreadyAssigned'));
+      else {
+        const errorData = await res.json().catch(() => ({}));
+        toast.error(errorData.message || t('classes.alreadyAssigned'));
+      }
     } catch (error) {}
   };
 
@@ -243,113 +247,199 @@ function ManageClasses({ user }) {
         {t('classes.title')}
       </h2>
 
-      {/* TABS - Only show if Admin (has 2 tabs) */}
+      {/* Direct role-based rendering (no tabs needed) */}
       {user.role === 'RH_MANAGER' && (
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
-          <button onClick={() => setActiveTab('structure')} className={activeTab === 'structure' ? 'btn-confirm-pro' : 'btn-cancel-pro'} style={{ padding: '10px 24px', fontSize: '13px' }}>
-            {t('classes.tabStructure')}
-          </button>
-          <button onClick={() => setActiveTab('teachers')} className={activeTab === 'teachers' ? 'btn-confirm-pro' : 'btn-cancel-pro'} style={{ padding: '10px 24px', fontSize: '13px' }}>
-            {t('classes.tabTeachers')}
-          </button>
-        </div>
-      )}
-
-      {activeTab === 'structure' && user.role === 'RH_MANAGER' && (
         <>
-          {user.role === 'RH_MANAGER' && (
-            <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              <label className="mnadm-label">{t('classes.chooseDept')}</label>
-              <select className="mnadm-input" value={selectedDeptId} onChange={e => setSelectedDeptId(e.target.value)} style={{ maxWidth: '400px' }}>
-                <option value="">{t('classes.selectDept')}</option>
-                {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
-            </div>
-          )}
-
-          <div className="grid-responsive">
+          {/* PREMIUM HEADER AREA */}
+          <div style={{ marginBottom: '30px', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
             
-            {/* LEVELS */}
-            <div style={{ opacity: selectedDeptId ? 1 : 0.5, pointerEvents: selectedDeptId ? 'auto' : 'none', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>{t('classes.levels')}</h3>
-              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '15px' }}>
+            {/* DEPT SELECTION CARD */}
+            <div className="card-academic" style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '24px' }}>
+              <div style={{ padding: '12px', background: '#eff6ff', borderRadius: '16px', color: 'var(--p-indigo)' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="mnadm-label" style={{ marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('classes.chooseDept')}</label>
+                <select className="mnadm-input" value={selectedDeptId} onChange={e => setSelectedDeptId(e.target.value)} style={{ fontWeight: '800', border: 'none', background: '#f8fafc', padding: '10px 14px' }}>
+                  <option value="">{t('classes.selectDept')}</option>
+                  {departments.map(d => {
+                    const translated = t('departments.' + d.name);
+                    return (
+                      <option key={d.id} value={d.id}>
+                        {translated.includes('.') ? d.name : translated}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </div>
+
+            {/* PREMIUM SUB-TABS */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div 
+                className={`card-academic ${activeTab === 'structure' ? 'active-tab-card' : ''}`} 
+                onClick={() => setActiveTab('structure')}
+                style={{ 
+                  cursor: 'pointer', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '16px', 
+                  padding: '20px 24px',
+                  border: activeTab === 'structure' ? '2px solid var(--p-indigo)' : '1px solid var(--border-soft)',
+                  background: activeTab === 'structure' ? '#f5f7ff' : 'white',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                <div style={{ padding: '10px', background: activeTab === 'structure' ? 'var(--p-indigo)' : '#f1f5f9', color: activeTab === 'structure' ? 'white' : '#64748b', borderRadius: '12px', transition: 'all 0.3s ease' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: activeTab === 'structure' ? 'var(--p-indigo)' : '#1e293b' }}>{t('classes.tabStructure')}</h4>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#64748b', fontWeight: '500' }}>{t('classes.tabStructureSubtitle')}</p>
+                </div>
+              </div>
+
+              <div 
+                className={`card-academic ${activeTab === 'modules' ? 'active-tab-card' : ''}`} 
+                onClick={() => setActiveTab('modules')}
+                style={{ 
+                  cursor: 'pointer', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '16px', 
+                  padding: '20px 24px',
+                  border: activeTab === 'modules' ? '2px solid var(--p-indigo)' : '1px solid var(--border-soft)',
+                  background: activeTab === 'modules' ? '#f5f7ff' : 'white',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                <div style={{ padding: '10px', background: activeTab === 'modules' ? 'var(--p-indigo)' : '#f1f5f9', color: activeTab === 'modules' ? 'white' : '#64748b', borderRadius: '12px', transition: 'all 0.3s ease' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: activeTab === 'modules' ? 'var(--p-indigo)' : '#1e293b' }}>{t('classes.tabModules')}</h4>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#64748b', fontWeight: '500' }}>{t('classes.tabModulesSubtitle')}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="explorer-container" style={{ gridTemplateColumns: activeTab === 'modules' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)' }}>
+            
+            {/* COLUMN 1: LEVELS (Universal) */}
+            <div className={`explorer-column ${!selectedDeptId ? 'disabled' : ''}`}>
+              <div className="explorer-header">
+                <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> {t('classes.levels')}</h3>
+              </div>
+              <div className="explorer-list">
                 {levels.map(l => (
-                  <li key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', marginBottom: '5px', borderRadius: '6px', background: selectedLevelId == l.id ? '#eff6ff' : '#f8fafc', border: selectedLevelId == l.id ? '1px solid #bfdbfe' : '1px solid transparent', cursor: 'pointer' }} onClick={() => setSelectedLevelId(l.id)}>
-                    <span>{l.name}</span>
-                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('levels', l.id); }} className="btn-delete-pro">
+                  <div key={l.id} className={`explorer-item ${selectedLevelId == l.id ? 'active' : ''}`} onClick={() => setSelectedLevelId(l.id)}>
+                    <strong>{l.name}</strong>
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('levels', l.id); }} className="btn-delete-pro" style={{ padding: '4px 8px', fontSize: '10px' }}>
                       {t('common.delete')}
                     </button>
-                  </li>
+                  </div>
                 ))}
-              </ul>
-              <form onSubmit={handleAddLevel} style={{ display: 'flex', gap: '10px' }}>
-                <input type="text" className="mnadm-input" value={newLevelName} onChange={e => setNewLevelName(e.target.value)} placeholder={t('classes.addLevelPlaceholder')} required />
-                <button type="submit" className="btn-confirm-pro" style={{ padding: '8px 15px', fontSize: '12px' }}>{t('classes.addBtn')}</button>
-              </form>
+              </div>
+              <div className="explorer-footer">
+                <form onSubmit={handleAddLevel} style={{ display: 'flex', gap: '8px', position: 'relative' }}>
+                  <input type="text" className="mnadm-input" value={newLevelName} onChange={e => setNewLevelName(e.target.value)} placeholder={t('classes.addLevelPlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required />
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  </span>
+                  <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }}>{t('classes.addBtn')}</button>
+                </form>
+              </div>
             </div>
 
-            {/* MODULES (Attached to Level) */}
-            <div style={{ opacity: selectedLevelId ? 1 : 0.5, pointerEvents: selectedLevelId ? 'auto' : 'none', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px', color: 'var(--p-indigo)' }}>{t('classes.modules')}</h3>
-              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '15px' }}>
-                {modules.map(m => (
-                  <li key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', marginBottom: '5px', borderRadius: '6px', background: '#f8fafc' }}>
-                    <span>{m.name}</span>
-                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('modules', m.id); }} className="btn-delete-pro">
-                      {t('common.delete')}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <form onSubmit={handleAddModule} style={{ display: 'flex', gap: '10px' }}>
-                <input type="text" className="mnadm-input" value={newModuleName} onChange={e => setNewModuleName(e.target.value)} placeholder={t('classes.addModulePlaceholder')} required />
-                <button type="submit" className="btn-confirm-pro" style={{ padding: '8px 15px', fontSize: '12px' }}>{t('classes.addBtn')}</button>
-              </form>
-            </div>
+            {(!activeTab || activeTab === 'structure') ? (
+              <>
+                {/* COLUMN 2: SECTIONS */}
+                <div className={`explorer-column ${!selectedLevelId ? 'disabled' : ''}`}>
+                  <div className="explorer-header">
+                    <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg> {t('classes.sections')}</h3>
+                  </div>
+                  <div className="explorer-list">
+                    {sections.map(s => (
+                      <div key={s.id} className={`explorer-item ${selectedSectionId == s.id ? 'active' : ''}`} onClick={() => setSelectedSectionId(s.id)}>
+                        <strong>{s.name}</strong>
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('sections', s.id); }} className="btn-delete-pro" style={{ padding: '4px 8px', fontSize: '10px' }}>
+                          {t('common.delete')}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="explorer-footer">
+                    <form onSubmit={handleAddSection} style={{ display: 'flex', gap: '8px', position: 'relative' }}>
+                      <input type="text" className="mnadm-input" value={newSectionName} onChange={e => setNewSectionName(e.target.value)} placeholder={t('classes.addSectionPlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required />
+                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                      </span>
+                      <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }}>{t('classes.addBtn')}</button>
+                    </form>
+                  </div>
+                </div>
 
-            {/* SECTIONS */}
-            <div style={{ opacity: selectedLevelId ? 1 : 0.5, pointerEvents: selectedLevelId ? 'auto' : 'none', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>{t('classes.sections')}</h3>
-              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '15px' }}>
-                {sections.map(s => (
-                  <li key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', marginBottom: '5px', borderRadius: '6px', background: selectedSectionId == s.id ? '#eff6ff' : '#f8fafc', border: selectedSectionId == s.id ? '1px solid #bfdbfe' : '1px solid transparent', cursor: 'pointer' }} onClick={() => setSelectedSectionId(s.id)}>
-                    <span>{s.name}</span>
-                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('sections', s.id); }} className="btn-delete-pro">
-                      {t('common.delete')}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <form onSubmit={handleAddSection} style={{ display: 'flex', gap: '10px' }}>
-                <input type="text" className="mnadm-input" value={newSectionName} onChange={e => setNewSectionName(e.target.value)} placeholder={t('classes.addSectionPlaceholder')} required />
-                <button type="submit" className="btn-confirm-pro" style={{ padding: '8px 15px', fontSize: '12px' }}>{t('classes.addBtn')}</button>
-              </form>
-            </div>
-
-            {/* GROUPS */}
-            <div style={{ opacity: selectedSectionId ? 1 : 0.5, pointerEvents: selectedSectionId ? 'auto' : 'none', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>{t('classes.groups')}</h3>
-              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '15px' }}>
-                {groups.map(g => (
-                  <li key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', marginBottom: '5px', borderRadius: '6px', background: '#f8fafc' }}>
-                    <span>{g.name}</span>
-                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('groups', g.id); }} className="btn-delete-pro">
-                      {t('common.delete')}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <form onSubmit={handleAddGroup} style={{ display: 'flex', gap: '10px' }}>
-                <input type="text" className="mnadm-input" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t('classes.addGroupPlaceholder')} required />
-                <button type="submit" className="btn-confirm-pro" style={{ padding: '8px 15px', fontSize: '12px' }}>{t('classes.addBtn')}</button>
-              </form>
-            </div>
+                {/* COLUMN 3: GROUPS */}
+                <div className={`explorer-column ${!selectedSectionId ? 'disabled' : ''}`}>
+                  <div className="explorer-header">
+                    <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> {t('classes.groups')}</h3>
+                  </div>
+                  <div className="explorer-list">
+                    {groups.map(g => (
+                      <div key={g.id} className="explorer-item">
+                        <strong>{g.name}</strong>
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('groups', g.id); }} className="btn-delete-pro" style={{ padding: '4px 8px', fontSize: '10px' }}>
+                          {t('common.delete')}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="explorer-footer">
+                    <form onSubmit={handleAddGroup} style={{ display: 'flex', gap: '8px', position: 'relative' }}>
+                      <input type="text" className="mnadm-input" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t('classes.addGroupPlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required />
+                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                      </span>
+                      <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }}>{t('classes.addBtn')}</button>
+                    </form>
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* COLUMN 2: MODULES (CURRICULUM VIEW) */
+              <div className={`explorer-column ${!selectedLevelId ? 'disabled' : ''}`} style={{ flex: '2' }}>
+                <div className="explorer-header">
+                  <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> {t('classes.modules')}</h3>
+                </div>
+                <div className="explorer-list">
+                  {modules.map(m => (
+                    <div key={m.id} className="explorer-item">
+                      <strong>{m.name}</strong>
+                      <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('modules', m.id); }} className="btn-delete-pro" style={{ padding: '4px 8px', fontSize: '10px' }}>
+                        {t('common.delete')}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="explorer-footer">
+                  <form onSubmit={handleAddModule} style={{ display: 'flex', gap: '8px', position: 'relative' }}>
+                    <input type="text" className="mnadm-input" value={newModuleName} onChange={e => setNewModuleName(e.target.value)} placeholder={t('classes.addModulePlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required />
+                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </span>
+                    <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }}>{t('classes.addBtn')}</button>
+                  </form>
+                </div>
+              </div>
+            )}
 
           </div>
         </>
       )}
 
-      {activeTab === 'teachers' && (user.role === 'CHEF_DEPARTEMENT' || user.role === 'DEPARTMENT_HEAD') && (
+
+      {(user.role === 'CHEF_DEPARTEMENT' || user.role === 'DEPARTMENT_HEAD') && (
         <div className="grid-responsive" style={{ gridTemplateColumns: 'minmax(250px, 300px) 1fr' }}>
           
           <div style={{ padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>

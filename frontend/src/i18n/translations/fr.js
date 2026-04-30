@@ -38,6 +38,7 @@ const fr = {
     currency: 'DA',
     regular: 'Régulier',
     confirmDelete: 'Êtes-vous sûr de vouloir supprimer cet élément ?',
+    completed: 'Terminé',
   },
 
   // ── Connexion ──
@@ -175,14 +176,17 @@ const fr = {
   // ── Gérer les Classes & Pédagogie ──
   classes: {
     title: 'Structure Pédagogique & Modules',
-    tabStructure: 'Gérer les Classes & Modules',
+    tabStructure: 'Gérer les Classes',
+    tabStructureSubtitle: 'Niveaux, Sections, Groupes',
+    tabModules: 'Curriculum Académique',
+    tabModulesSubtitle: 'Gérer les Modules par Niveau',
     tabTeachers: 'Assigner Modules aux Profs',
     chooseDept: 'Choisir le Département :',
     selectDept: '-- Sélectionnez un département --',
     levels: '1. Niveaux d\'Étude',
-    modules: '2. Modules par Niveau',
-    sections: '3. Sections',
-    groups: '4. Groupes',
+    modules: '2. Curriculum Académique',
+    sections: '2. Sections',
+    groups: '3. Groupes',
     addLevelPlaceholder: 'Ex: L1, M1...',
     addModulePlaceholder: 'Ex: Algorithmique...',
     addSectionPlaceholder: 'Ex: Section A...',
@@ -414,6 +418,8 @@ const fr = {
     physics: 'Sciences de la Matière',
     biology: 'Sciences de la Nature et de la Vie',
     architecture: 'Architecture',
+    'Computer Science': 'Informatique',
+    'null': '-',
   },
 
   // ── Gestion des documents ──
@@ -484,6 +490,12 @@ const fr = {
     promotionApproved: 'Promotion approuvée',
     errorStatus: 'Erreur lors de la mise à jour',
     noRecords: 'Aucun dossier de promotion trouvé.',
+    rejectedByHR: 'Refusé par les RH',
+    rejectedByDean: 'Refusé par le Doyen',
+    pendingDept: 'En attente Dept',
+    withDean: 'Chez le Doyen',
+    withRector: 'Chez le Recteur',
+    withHR: 'Chez les RH (Signé)',
     finalize: 'Finaliser la Promotion',
     gradeUpdated: 'Grade mis à jour avec succès',
     promotionRejected: 'Demande de promotion rejetée',
@@ -593,6 +605,8 @@ const fr = {
     calculating: 'Calcul des salaires...',
     noTeachers: 'Aucun enseignant trouvé.',
     adjustFor: 'Ajuster le salaire pour',
+    hourlyRate: 'Taux horaire supplémentaire (DA/h)',
+    absencePenalty: 'Pénalité d\'absence (DA)',
   },
 
   // ── Gestion des séances ──
