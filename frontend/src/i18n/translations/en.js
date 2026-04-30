@@ -34,6 +34,8 @@ const en = {
     backToList: 'Back to List',
     select: 'Select...',
     currency: 'DA',
+    regular: 'Regular',
+    confirmDelete: 'Are you sure you want to delete this item?',
   },
 
   // ── Login ──
@@ -74,7 +76,7 @@ const en = {
   // ── App / Fallback ──
   app: {
     personalSpace: 'Personal Space',
-    welcomeUser: 'Welcome,!!',
+    welcomeUser: 'Welcome !',
     loggedInAs: 'Logged in as:',
   },
 
@@ -240,6 +242,11 @@ const en = {
     failedLoadDashboard: 'Failed to load dashboard data',
     remainingHours: 'Remaining Hours',
     completedHours: 'Completed Hours',
+    sessionsToDo: 'Sessions to do',
+    sessionsDone: 'Sessions Done',
+    absences: 'Absences',
+    extraSessions: 'Extra Sessions',
+    noSessionsShort: 'No sessions',
     weeklySchedule: 'Weekly Schedule',
     noSessions: 'No sessions scheduled. Enjoy your free time!',
     day: 'Day',
@@ -272,7 +279,7 @@ const en = {
     unreadNotif: 'You have {count} unread notification(s)',
     adminMessages: '{count} message(s) from administration',
     absenceUpdates: '{count} absence update(s)',
-    lecture: 'Lecture',
+    lecture: 'Cours',
     tutorial: 'Tutorial (TD)',
     practical: 'Practical (TP)',
     loadingDashboard: 'Loading your dashboard...',
@@ -491,7 +498,7 @@ const en = {
     recommendationSubmitted: 'Recommendation submitted.',
     enterRecommendation: 'Please enter a recommendation first.',
     errorRecommendation: 'Error saving recommendation',
-    promotionApproved: 'Promotion officially',
+    promotionApproved: 'Promotion approved',
     errorStatus: 'Error updating status',
     noRecords: 'No promotion records found.',
     finalize: 'Finalize Promotion',
@@ -640,7 +647,7 @@ const en = {
     friday: 'Friday',
     saturday: 'Saturday',
     sunday: 'Sunday',
-    lecture: 'Lecture',
+    lecture: 'Cours',
     tutorialTD: 'Tutorial (TD)',
     practicalTP: 'Practical (TP)',
     failedFetch: 'Failed to fetch some dashboard data from server.',
@@ -657,6 +664,7 @@ const en = {
     chooseTeacherFirst: 'Choose teacher first',
     subtitle: 'Manage academic schedules',
     activeSchedule: 'Active Schedule',
+    isExtra: 'Extra Session',
   },
 
   // ── Notification Feed ──

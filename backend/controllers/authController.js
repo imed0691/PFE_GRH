@@ -1,6 +1,8 @@
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
 
 // Signup logic
 exports.signup = async (req, res) => {
@@ -105,7 +107,8 @@ exports.login = (req, res) => {
         prenom: user.prenom, 
         role: user.role, 
         department_id: user.department_id,
-        must_change_password: user.must_change_password 
+        must_change_password: user.must_change_password,
+        profile_image: user.profile_image
       } 
     });
   });
@@ -224,4 +227,47 @@ exports.getTeachers = (req, res) => {
       res.json(results);
     });
   }
+};
+
+// Upload profile image
+exports.uploadProfileImage = (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+  const userId = req.user.id;
+  const imagePath = `/uploads/profiles/${req.file.filename}`;
+
+  // 1. Delete old image if exists
+  db.query('SELECT profile_image FROM users WHERE id = ?', [userId], (err, results) => {
+    if (!err && results.length > 0 && results[0].profile_image) {
+      const oldPath = path.join(__dirname, '..', results[0].profile_image);
+      if (fs.existsSync(oldPath)) {
+        try { fs.unlinkSync(oldPath); } catch(e) {}
+      }
+    }
+
+    // 2. Update DB
+    db.query('UPDATE users SET profile_image = ? WHERE id = ?', [imagePath, userId], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: "Profile image updated", profile_image: imagePath });
+    });
+  });
+};
+
+// Delete profile image
+exports.deleteProfileImage = (req, res) => {
+  const userId = req.user.id;
+
+  db.query('SELECT profile_image FROM users WHERE id = ?', [userId], (err, results) => {
+    if (!err && results.length > 0 && results[0].profile_image) {
+      const oldPath = path.join(__dirname, '..', results[0].profile_image);
+      if (fs.existsSync(oldPath)) {
+        try { fs.unlinkSync(oldPath); } catch(e) {}
+      }
+    }
+
+    db.query('UPDATE users SET profile_image = NULL WHERE id = ?', [userId], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: "Profile image removed" });
+    });
+  });
 };

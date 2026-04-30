@@ -154,7 +154,7 @@ function DashboardHR({ user, onLogout }) {
         ) : view === 'departments' ? (
           <ManageDepartments />
         ) : view === 'classes' ? (
-          <ManageClasses />
+          <ManageClasses user={user} />
         ) : view === 'salaries' ? (
           <ManageSalaries />
         ) : view === 'absences' ? (

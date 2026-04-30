@@ -27,5 +27,6 @@ router.put('/absences/:id/justify', verifyToken, upload.single('justification_fi
 router.put('/absences/:id/catchup', verifyToken, absenceController.submitCatchup);
 
 router.put('/absences/:id', verifyToken, absenceController.updateAbsenceStatus);
+router.put('/absences/:id/archive', verifyToken, absenceController.archiveAbsence);
 
 module.exports = router;

@@ -32,9 +32,10 @@ exports.getAllAbsences = (req, res) => {
            a.justification_text, a.justification_file, a.catchup_date, a.catchup_start_time, a.catchup_end_time,
            a.created_at, a.is_read_by_admin, a.is_read_by_teacher, 
            u.nom, u.prenom, u.department_id 
-    FROM absences a
-    JOIN users u ON a.teacher_id = u.id
-    ORDER BY a.created_at DESC
+     FROM absences a
+     JOIN users u ON a.teacher_id = u.id
+     WHERE a.is_archived_by_dept = FALSE
+     ORDER BY a.created_at DESC
   `;
   db.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -152,5 +153,20 @@ exports.markAsReadTeacher = (req, res) => {
   db.query(query, [teacherId], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: "Absences marquées comme lues par l'enseignant" });
+  });
+};
+// Chef Département: Archiver une absence (masquer de sa vue)
+exports.archiveAbsence = (req, res) => {
+  const { id } = req.params;
+  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  
+  if (userRole !== 'DEPARTMENT_HEAD' && userRole !== 'CHEF_DEPARTEMENT') {
+    return res.status(403).json({ message: "Seul le chef de département peut archiver ses absences." });
+  }
+
+  const query = "UPDATE absences SET is_archived_by_dept = TRUE WHERE id = ?";
+  db.query(query, [id], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: "Absence archivée." });
   });
 };

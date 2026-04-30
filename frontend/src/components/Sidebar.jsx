@@ -6,12 +6,12 @@ function Sidebar({ user, activeView, setView, menuItems, onLogout }) {
 
   return (
     <aside className="sidebar-academic">
-      <div className="sidebar-header">
-        <h2 className="outfit">HRM PRO</h2>
+      <div className="sidebar-header" style={{ padding: '40px 24px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <img src="/logo_univ.png" alt="Logo" style={{ width: '190px', height: 'auto' }} />
       </div>
 
       <nav className="sidebar-nav-academic">
-        {menuItems.map((item) => (
+        {menuItems.filter(item => item.id !== 'settings').map((item) => (
           <button
             key={item.id}
             className={`nav-item-academic ${activeView === item.id ? "active" : ""}`}
@@ -41,6 +41,18 @@ function Sidebar({ user, activeView, setView, menuItems, onLogout }) {
             <p>{t('roles.' + user.role) || user.role}</p>
           </div>
         </div>
+        
+        {/* Settings button moved here */}
+        {menuItems.find(item => item.id === 'settings') && (
+          <button 
+            className={`nav-item-academic ${activeView === 'settings' ? "active" : ""}`}
+            onClick={() => setView('settings')}
+            style={{ marginBottom: '8px', borderRadius: '8px' }}
+          >
+            {menuItems.find(item => item.id === 'settings').label}
+          </button>
+        )}
+
         <button onClick={onLogout} className="btn-logout-sidebar">
           {t('common.logout')}
         </button>

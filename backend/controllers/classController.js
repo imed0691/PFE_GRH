@@ -2,7 +2,13 @@ const db = require('../config/db');
 
 // --- STUDY LEVELS ---
 exports.getStudyLevels = (req, res) => {
-    const { department_id } = req.query;
+    let { department_id } = req.query;
+    
+    // Security: Chef de Departement can only see his own
+    if (req.user.role === 'CHEF_DEPARTEMENT' || req.user.role === 'DEPARTMENT_HEAD') {
+        department_id = req.user.department_id;
+    }
+
     let query = 'SELECT * FROM study_levels';
     let params = [];
 
@@ -18,7 +24,13 @@ exports.getStudyLevels = (req, res) => {
 };
 
 exports.createStudyLevel = (req, res) => {
-    const { name, department_id } = req.body;
+    let { name, department_id } = req.body;
+    
+    // Security: Forced department for Dept Head
+    if (req.user.role === 'CHEF_DEPARTEMENT' || req.user.role === 'DEPARTMENT_HEAD') {
+        department_id = req.user.department_id;
+    }
+
     if (!name || !department_id) return res.status(400).json({ message: "Le nom et le département sont requis." });
 
     const query = 'INSERT INTO study_levels (name, department_id) VALUES (?, ?)';
@@ -30,10 +42,26 @@ exports.createStudyLevel = (req, res) => {
 
 exports.deleteStudyLevel = (req, res) => {
     const { id } = req.params;
-    db.query('DELETE FROM study_levels WHERE id = ?', [id], (err) => {
-        if (err) return res.status(500).json({ message: err.message });
-        res.json({ message: "Niveau d'étude supprimé avec succès." });
-    });
+    
+    // Check ownership before delete if Dept Head
+    if (req.user.role === 'CHEF_DEPARTEMENT' || req.user.role === 'DEPARTMENT_HEAD') {
+        const checkQuery = 'SELECT department_id FROM study_levels WHERE id = ?';
+        db.query(checkQuery, [id], (err, results) => {
+            if (results.length > 0 && results[0].department_id !== req.user.department_id) {
+                return res.status(403).json({ message: "Accès refusé : Ce niveau ne vous appartient pas." });
+            }
+            performDelete();
+        });
+    } else {
+        performDelete();
+    }
+
+    function performDelete() {
+        db.query('DELETE FROM study_levels WHERE id = ?', [id], (err) => {
+            if (err) return res.status(500).json({ message: err.message });
+            res.json({ message: "Niveau d'étude supprimé avec succès." });
+        });
+    }
 };
 
 // --- SECTIONS ---
@@ -110,7 +138,12 @@ exports.deleteStudentGroup = (req, res) => {
 
 // --- MODULES ---
 exports.getModules = (req, res) => {
-    const { department_id, study_level_id } = req.query;
+    let { department_id, study_level_id } = req.query;
+    
+    if (req.user.role === 'CHEF_DEPARTEMENT' || req.user.role === 'DEPARTMENT_HEAD') {
+        department_id = req.user.department_id;
+    }
+
     let query = 'SELECT * FROM modules WHERE 1=1';
     let params = [];
 
@@ -130,7 +163,12 @@ exports.getModules = (req, res) => {
 };
 
 exports.createModule = (req, res) => {
-    const { name, study_level_id, department_id } = req.body;
+    let { name, study_level_id, department_id } = req.body;
+    
+    if (req.user.role === 'CHEF_DEPARTEMENT' || req.user.role === 'DEPARTMENT_HEAD') {
+        department_id = req.user.department_id;
+    }
+
     if (!name || !study_level_id || !department_id) return res.status(400).json({ message: "Champs requis manquants." });
 
     const query = 'INSERT INTO modules (name, study_level_id, department_id) VALUES (?, ?, ?)';
@@ -142,10 +180,25 @@ exports.createModule = (req, res) => {
 
 exports.deleteModule = (req, res) => {
     const { id } = req.params;
-    db.query('DELETE FROM modules WHERE id = ?', [id], (err) => {
-        if (err) return res.status(500).json({ message: err.message });
-        res.json({ message: "Module supprimé." });
-    });
+
+    if (req.user.role === 'CHEF_DEPARTEMENT' || req.user.role === 'DEPARTMENT_HEAD') {
+        const checkQuery = 'SELECT department_id FROM modules WHERE id = ?';
+        db.query(checkQuery, [id], (err, results) => {
+            if (results.length > 0 && results[0].department_id !== req.user.department_id) {
+                return res.status(403).json({ message: "Accès refusé : Ce module ne vous appartient pas." });
+            }
+            performDelete();
+        });
+    } else {
+        performDelete();
+    }
+
+    function performDelete() {
+        db.query('DELETE FROM modules WHERE id = ?', [id], (err) => {
+            if (err) return res.status(500).json({ message: err.message });
+            res.json({ message: "Module supprimé." });
+        });
+    }
 };
 
 // --- TEACHER MODULES ---
@@ -167,14 +220,35 @@ exports.getTeacherModules = (req, res) => {
 
 exports.assignModule = (req, res) => {
     const { teacher_id, module_id } = req.body;
-    const query = 'INSERT INTO teacher_modules (teacher_id, module_id) VALUES (?, ?)';
-    db.query(query, [teacher_id, module_id], (err, results) => {
-        if (err) {
-            if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: "Déjà assigné." });
-            return res.status(500).json({ message: err.message });
-        }
-        res.status(201).json({ message: "Module assigné." });
-    });
+
+    // Security: Check if both teacher and module belong to the same department as the Chef
+    if (req.user.role === 'CHEF_DEPARTEMENT' || req.user.role === 'DEPARTMENT_HEAD') {
+        const checkQuery = `
+            SELECT 
+                (SELECT department_id FROM users WHERE id = ?) as teacher_dept,
+                (SELECT department_id FROM modules WHERE id = ?) as module_dept
+        `;
+        db.query(checkQuery, [teacher_id, module_id], (err, results) => {
+            const { teacher_dept, module_dept } = results[0];
+            if (teacher_dept !== req.user.department_id || module_dept !== req.user.department_id) {
+                return res.status(403).json({ message: "Accès refusé : Vous ne pouvez assigner que des profs/modules de votre département." });
+            }
+            performAssign();
+        });
+    } else {
+        performAssign();
+    }
+
+    function performAssign() {
+        const query = 'INSERT INTO teacher_modules (teacher_id, module_id) VALUES (?, ?)';
+        db.query(query, [teacher_id, module_id], (err, results) => {
+            if (err) {
+                if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: "Déjà assigné." });
+                return res.status(500).json({ message: err.message });
+            }
+            res.status(201).json({ message: "Module assigné." });
+        });
+    }
 };
 
 exports.unassignModule = (req, res) => {

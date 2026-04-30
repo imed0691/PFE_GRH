@@ -36,7 +36,7 @@ app.use('/api', classRoutes);
 
 // Route de test pour vérifier la liaison avec le frontend
 app.get('/api/hello', (req, res) => {
-  res.json({ message: 'Hello depuis le serveur Node.js !' });
+  res.json({ message: 'ANTIGRAVITY BACKEND V2 - LOGS ACTIVE' });
 });
 
 const PORT = process.env.PORT || 5000;

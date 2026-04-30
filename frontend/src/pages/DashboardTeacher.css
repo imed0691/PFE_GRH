@@ -75,31 +75,76 @@
 }
 
 /* Schedule Table Specifics */
-.day-badge-pro {
-  padding: 4px 10px;
-  background: var(--bg-sidebar);
-  color: white;
-  border-radius: 6px;
+.table-academic-wrapper {
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+.table-academic {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table-academic th {
+  text-align: left;
+  padding: 16px 20px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--border-soft);
+}
+
+.table-academic td {
+  padding: 20px;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 14px;
+  color: var(--text-secondary);
+  vertical-align: middle;
+  transition: var(--transition);
+}
+
+.table-academic tr:last-child td {
+  border-bottom: none;
+}
+
+.table-academic tr:hover td {
+  background: var(--p-indigo-light);
+  color: var(--text-main);
+}
+
+.day-badge-pro {
+  padding: 6px 12px;
+  background: var(--p-indigo-light);
+  color: var(--p-indigo);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-block;
+  min-width: 100px;
+  text-align: center;
 }
 
 .time-text-pro {
   font-family: 'Outfit', sans-serif;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-weight: 700;
+  color: var(--text-main);
 }
 
 .session-type-pro {
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.type-lecture { background: #eff6ff; color: #2563eb; }
-.type-tutorial { background: #fdf4ff; color: #a21caf; }
-.type-practical { background: #f0fdf4; color: #15803d; }
+.type-lecture { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
+.type-tutorial { background: #fdf4ff; color: #a21caf; border: 1px solid #fae8ff; }
+.type-practical { background: #f0fdf4; color: #15803d; border: 1px solid #dcfce7; }
 
 /* Absences List */
 .absence-card-pro {

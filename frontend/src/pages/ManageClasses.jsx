@@ -3,9 +3,10 @@ import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
 import ConfirmModal from '../components/ConfirmModal';
 
-function ManageClasses() {
+function ManageClasses({ user }) {
   const { t } = useLanguage();
-  const [activeTab, setActiveTabRaw] = useState(localStorage.getItem('manage_classes_tab') || 'structure'); // 'structure' or 'teachers'
+  const initialTab = user.role === 'RH_MANAGER' ? 'structure' : 'teachers';
+  const [activeTab, setActiveTabRaw] = useState(localStorage.getItem('manage_classes_tab') || initialTab); // 'structure' or 'teachers'
   
   const setActiveTab = (tab) => {
     setActiveTabRaw(tab);
@@ -13,7 +14,7 @@ function ManageClasses() {
   };
 
   const [departments, setDepartments] = useState([]);
-  const [selectedDeptId, setSelectedDeptId] = useState('');
+  const [selectedDeptId, setSelectedDeptId] = useState(user.role === 'RH_MANAGER' ? '' : user.department_id);
   
   // Tab 1: Structure (Levels, Sections, Groups, Modules)
   const [levels, setLevels] = useState([]);
@@ -34,6 +35,7 @@ function ManageClasses() {
   const [teachers, setTeachers] = useState([]);
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [teacherModules, setTeacherModules] = useState([]);
+  const [teacherSearch, setTeacherSearch] = useState('');
 
   // Fetch departments on load
   useEffect(() => {
@@ -62,7 +64,7 @@ function ManageClasses() {
       } catch (error) {}
     };
     fetchTeachers();
-  }, []);
+  }, [selectedDeptId]);
 
   // --- FETCHING DATA ---
   useEffect(() => {
@@ -125,6 +127,14 @@ function ManageClasses() {
       if (res.ok) setTeacherModules(await res.json());
     } catch (error) {}
   };
+
+  // Filter teachers to only show those in the selected department AND match search
+  const filteredTeachers = teachers.filter(t => {
+    const matchesDept = !selectedDeptId || t.department_id === parseInt(selectedDeptId);
+    const fullName = `${t.nom} ${t.prenom}`.toLowerCase();
+    const matchesSearch = fullName.includes(teacherSearch.toLowerCase());
+    return matchesDept && matchesSearch;
+  });
 
   // --- HANDLERS ---
   const handleAddLevel = async (e) => {
@@ -233,25 +243,29 @@ function ManageClasses() {
         {t('classes.title')}
       </h2>
 
-      {/* TABS */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
-        <button onClick={() => setActiveTab('structure')} className={activeTab === 'structure' ? 'btn-confirm-pro' : 'btn-cancel-pro'} style={{ padding: '10px 24px', fontSize: '13px' }}>
-          {t('classes.tabStructure')}
-        </button>
-        <button onClick={() => setActiveTab('teachers')} className={activeTab === 'teachers' ? 'btn-confirm-pro' : 'btn-cancel-pro'} style={{ padding: '10px 24px', fontSize: '13px' }}>
-          {t('classes.tabTeachers')}
-        </button>
-      </div>
+      {/* TABS - Only show if Admin (has 2 tabs) */}
+      {user.role === 'RH_MANAGER' && (
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+          <button onClick={() => setActiveTab('structure')} className={activeTab === 'structure' ? 'btn-confirm-pro' : 'btn-cancel-pro'} style={{ padding: '10px 24px', fontSize: '13px' }}>
+            {t('classes.tabStructure')}
+          </button>
+          <button onClick={() => setActiveTab('teachers')} className={activeTab === 'teachers' ? 'btn-confirm-pro' : 'btn-cancel-pro'} style={{ padding: '10px 24px', fontSize: '13px' }}>
+            {t('classes.tabTeachers')}
+          </button>
+        </div>
+      )}
 
-      {activeTab === 'structure' && (
+      {activeTab === 'structure' && user.role === 'RH_MANAGER' && (
         <>
-          <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-            <label className="mnadm-label">{t('classes.chooseDept')}</label>
-            <select className="mnadm-input" value={selectedDeptId} onChange={e => setSelectedDeptId(e.target.value)} style={{ maxWidth: '400px' }}>
-              <option value="">{t('classes.selectDept')}</option>
-              {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-            </select>
-          </div>
+          {user.role === 'RH_MANAGER' && (
+            <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <label className="mnadm-label">{t('classes.chooseDept')}</label>
+              <select className="mnadm-input" value={selectedDeptId} onChange={e => setSelectedDeptId(e.target.value)} style={{ maxWidth: '400px' }}>
+                <option value="">{t('classes.selectDept')}</option>
+                {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </div>
+          )}
 
           <div className="grid-responsive">
             
@@ -335,16 +349,32 @@ function ManageClasses() {
         </>
       )}
 
-      {activeTab === 'teachers' && (
+      {activeTab === 'teachers' && (user.role === 'CHEF_DEPARTEMENT' || user.role === 'DEPARTMENT_HEAD') && (
         <div className="grid-responsive" style={{ gridTemplateColumns: 'minmax(250px, 300px) 1fr' }}>
           
           <div style={{ padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>{t('classes.chooseTeacher')}</h3>
-            <div style={{ paddingRight: '10px' }}>
-              {teachers.map(t => (
+            
+            {/* Search Bar for Teachers */}
+            <div className="mnadm-search-wrapper" style={{ marginBottom: '15px' }}>
+              <span className="search-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              </span>
+              <input 
+                type="text" 
+                className="mnadm-input" 
+                placeholder={t('common.search') || 'Rechercher...'} 
+                value={teacherSearch}
+                onChange={(e) => setTeacherSearch(e.target.value)}
+                style={{ fontSize: '13px', padding: '8px 12px 8px 35px' }}
+              />
+            </div>
+
+            <div style={{ paddingRight: '10px', maxHeight: '500px', overflowY: 'auto' }}>
+              {filteredTeachers.map(t => (
                 <div key={t.id} onClick={() => setSelectedTeacherId(t.id)} style={{ padding: '12px', marginBottom: '8px', borderRadius: '8px', cursor: 'pointer', background: selectedTeacherId === t.id ? '#eff6ff' : '#f8fafc', border: selectedTeacherId === t.id ? '1px solid #bfdbfe' : '1px solid transparent' }}>
                   <div style={{ fontWeight: 'bold', color: '#1e293b' }}>{t.nom} {t.prenom}</div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>{t.department_name}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--p-gold)', fontWeight: '700' }}>{t.grade || 'Enseignant'}</div>
                 </div>
               ))}
             </div>
@@ -362,7 +392,24 @@ function ManageClasses() {
               
               {modules.length > 0 && (
                 <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>{t('classes.availableModules')}</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <label style={{ margin: 0, fontWeight: '600' }}>{t('classes.availableModules')}</label>
+                    <input 
+                      type="text" 
+                      placeholder={t('common.search')} 
+                      className="mnadm-input" 
+                      style={{ maxWidth: '180px', padding: '4px 10px', fontSize: '12px', height: '30px' }}
+                      onChange={(e) => {
+                        const term = e.target.value.toLowerCase();
+                        const container = e.target.parentElement.nextSibling;
+                        const buttons = container.querySelectorAll('button');
+                        buttons.forEach(btn => {
+                          const text = btn.textContent.toLowerCase();
+                          btn.style.display = text.includes(term) ? 'inline-block' : 'none';
+                        });
+                      }}
+                    />
+                  </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                     {modules.map(m => {
                       const isAssigned = teacherModules.some(tm => tm.id === m.id);

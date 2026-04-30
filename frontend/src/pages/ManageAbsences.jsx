@@ -140,6 +140,39 @@ function ManageAbsences({ user: propUser }) {
     } catch (error) { toast.error(t('common.serverError')); }
   };
 
+  const handleArchiveAbsence = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/absences/${id}/archive`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        toast.success(t('common.deleted') || 'Retiré de la liste');
+        fetchAbsences();
+      }
+    } catch (error) { toast.error(t('common.serverError')); }
+  };
+
+  const handleArchiveAllProcessed = async () => {
+    const processed = absences.filter(a => a.justification_status !== 'Pending');
+    if (processed.length === 0) return;
+    
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      for (const a of processed) {
+        await fetch(`http://localhost:5000/api/absences/${a.id}/archive`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      }
+      toast.success(t('common.actions') || 'Liste nettoyée');
+      fetchAbsences();
+    } catch (error) { toast.error(t('common.serverError')); }
+    finally { setLoading(false); }
+  };
+
   const teacherOptions = teachers.map(t => ({ value: t.id, label: `${t.prenom} ${t.nom}` }));
 
   if (loading) return <div className="loading-spinner">{t('common.loading')}</div>;
@@ -191,7 +224,6 @@ function ManageAbsences({ user: propUser }) {
           )}
         </div>
       )}
-
       <div className="card-academic">
         <h3 style={{ marginBottom: '24px' }}>{isTeacher ? t('teacher.myAbsenceHistory') : t('absences.personnelAbsences')}</h3>
         <div className="modern-table-wrapper">
@@ -287,7 +319,7 @@ function ManageAbsences({ user: propUser }) {
                     </span>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                       {isTeacher && a.justification_status !== 'Accepted' && (
                         <button onClick={() => setActiveJustifyId(a.id)} className="btn-confirm-pro" style={{ padding: '8px 16px', fontSize: '12px' }}>{t('absences.justify')}</button>
                       )}
@@ -296,6 +328,16 @@ function ManageAbsences({ user: propUser }) {
                           <button onClick={() => handleJustificationStatus(a.id, 'Accepted')} className="btn-confirm-pro" style={{ padding: '8px 14px', fontSize: '11px', flex: '1' }}>{t('common.approve').toUpperCase()}</button>
                           <button onClick={() => handleJustificationStatus(a.id, 'Rejected')} className="btn-cancel-pro" style={{ padding: '8px 14px', fontSize: '11px', flex: '1' }}>{t('common.reject').toUpperCase()}</button>
                         </>
+                      )}
+                      {isDeptHead && a.justification_status !== 'Pending' && (
+                         <button 
+                           onClick={() => handleArchiveAbsence(a.id)} 
+                           className="btn-delete-pro" 
+                           title="Retirer de la liste"
+                           style={{ padding: '8px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                         >
+                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                         </button>
                       )}
                     </div>
                   </td>

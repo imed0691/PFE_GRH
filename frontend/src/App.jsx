@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useLanguage } from './i18n/LanguageContext'
 import './App.css'
@@ -22,13 +22,18 @@ function App() {
     const storedToken = localStorage.getItem('token');
 
     if (storedUser && storedToken) {
-      const parsedUser = JSON.parse(storedUser);
-      // Si c'est une vieille session sans r├┤le, on force la d├رconnexion
-      if (!parsedUser.role) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        if (!parsedUser || !parsedUser.role) {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        } else {
+          setUser(parsedUser);
+        }
+      } catch (e) {
+        console.error("Error parsing stored user:", e);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
-      } else {
-        setUser(parsedUser);
       }
     }
   }, []);

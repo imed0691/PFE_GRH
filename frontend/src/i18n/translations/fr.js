@@ -36,6 +36,8 @@ const fr = {
     backToList: 'Retour à la liste',
     select: 'Sélectionner...',
     currency: 'DA',
+    regular: 'Régulier',
+    confirmDelete: 'Êtes-vous sûr de vouloir supprimer cet élément ?',
   },
 
   // ── Connexion ──
@@ -76,7 +78,7 @@ const fr = {
   // ── App / Secours ──
   app: {
     personalSpace: 'Espace Personnel',
-    welcomeUser: 'Bienvenue,!!',
+    welcomeUser: 'Bienvenue !',
     loggedInAs: 'Connecté en tant que :',
   },
 
@@ -228,6 +230,11 @@ const fr = {
     failedLoadDashboard: 'Échec du chargement des données',
     remainingHours: 'Heures restantes',
     completedHours: 'Heures effectuées',
+    sessionsToDo: 'Séances à faire',
+    sessionsDone: 'Séances faites',
+    absences: 'Absences',
+    extraSessions: 'Séances supp',
+    noSessionsShort: 'Pas de séance',
     weeklySchedule: 'Emploi du temps hebdomadaire',
     noSessions: 'Aucune séance programmée. Profitez de votre temps libre !',
     day: 'Jour',
@@ -237,7 +244,7 @@ const fr = {
     type: 'Type',
     sectionGroup: 'Section/Groupe',
     sec: 'Sec',
-    grp: 'Gr',
+    grp: 'Grp',
     totalApprovedAbsences: 'Total des absences injustifiées (Impact Salaire)',
     reportAbsence: 'Signaler une absence',
     reason: 'Motif / Justification',
@@ -260,7 +267,7 @@ const fr = {
     unreadNotif: 'Vous avez {count} notification(s) non lue(s)',
     adminMessages: '{count} message(s) de l\'administration',
     absenceUpdates: '{count} mise(s) à jour d\'absence',
-    lecture: 'Cours magistral',
+    lecture: 'Cours',
     tutorial: 'TD',
     practical: 'TP',
     loadingDashboard: 'Chargement de votre tableau de bord...',
@@ -474,7 +481,7 @@ const fr = {
     recommendationSubmitted: 'Recommandation soumise.',
     enterRecommendation: 'Veuillez entrer une recommandation.',
     errorRecommendation: 'Erreur lors de la sauvegarde',
-    promotionApproved: 'Promotion officiellement',
+    promotionApproved: 'Promotion approuvée',
     errorStatus: 'Erreur lors de la mise à jour',
     noRecords: 'Aucun dossier de promotion trouvé.',
     finalize: 'Finaliser la Promotion',
@@ -621,7 +628,7 @@ const fr = {
     friday: 'Vendredi',
     saturday: 'Samedi',
     sunday: 'Dimanche',
-    lecture: 'Cours magistral',
+    lecture: 'Cours',
     tutorialTD: 'TD',
     practicalTP: 'TP',
     failedFetch: 'Échec de la récupération des données du serveur.',
@@ -638,6 +645,8 @@ const fr = {
     chooseTeacherFirst: 'Choisir l\'enseignant d\'abord',
     subtitle: 'Gérez les horaires académiques',
     activeSchedule: 'Emploi du temps actif',
+    isExtra: 'Séance supplémentaire',
+    failedDelete: 'Échec de la suppression de la séance',
   },
 
   // ── Fil de notifications ──

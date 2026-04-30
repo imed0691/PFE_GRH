@@ -15,16 +15,28 @@ function ManageSessions({ user }) {
   const [groupId, setGroupId] = useState('');
   
   // Lists
+  const [sessions, setSessions] = useState([]);
   const [teacherModules, setTeacherModules] = useState([]);
   const [sectionsList, setSectionsList] = useState([]);
   const [groupsList, setGroupsList] = useState([]);
   
   const [selectedDeptId, setSelectedDeptId] = useState(user?.department_id || null);
-  const [dayOfWeek, setDayOfWeek] = useState('Monday');
+   const [dayOfWeek, setDayOfWeek] = useState('Monday');
+  const [sessionDate, setSessionDate] = useState('');
+  const [isRecurring, setIsRecurring] = useState(true);
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [sessionType, setSessionType] = useState('Lecture');
+  const [isExtra, setIsExtra] = useState(false);
   const { t } = useLanguage();
+
+  const fetchSessions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/sessions', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) setSessions(await res.json());
+    } catch (error) { console.error('Error fetching sessions:', error); }
+  };
 
   const fetchTeachers = async () => {
     setLoading(true);
@@ -38,7 +50,10 @@ function ManageSessions({ user }) {
     } catch (error) { toast.error(t('sessions.failedFetch')); } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchTeachers(); }, []);
+  useEffect(() => { 
+    fetchTeachers(); 
+    fetchSessions();
+  }, []);
 
   // Fetch Teacher Modules when Teacher changes
   useEffect(() => {
@@ -121,18 +136,26 @@ function ManageSessions({ user }) {
                 session_type: sessionType, 
                 study_level_id: studyLevelId, 
                 section_id: sectionId, 
-                group_id: groupId 
+                group_id: groupId,
+                is_extra: !isRecurring, // Automatic logic: One-time = Extra
+                session_date: isRecurring ? null : (sessionDate || null)
             }) 
         });
       toast.dismiss(loadToast);
       if (res.ok) { 
-        toast.success(`${moduleName} ظ¤ ${dayOfWeek} ${startTime}-${endTime}`); 
+        toast.success(`${moduleName} - ${dayOfWeek} ${startTime}-${endTime}`); 
         setModuleName(''); 
         setStudyLevelId('');
         setSectionId('');
         setGroupId('');
         setStartTime('');
         setEndTime('');
+        setSessionDate('');
+        setIsRecurring(true);
+        fetchSessions();
+      } else {
+        const errorData = await res.json();
+        toast.error(errorData.message || t('sessions.failedCreate'));
       }
     } catch (error) {
       toast.dismiss(loadToast);
@@ -157,10 +180,17 @@ function ManageSessions({ user }) {
     }
   };
 
-  const handleCancelSession = async (id) => {
-    const token = localStorage.getItem('token');
-    await fetch(`http://localhost:5000/api/sessions/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-    toast.success(t('sessions.cancelled'));
+  const handleDateChange = (e) => {
+    const dateVal = e.target.value;
+    setSessionDate(dateVal);
+    if (dateVal) {
+      const d = new Date(dateVal);
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const selectedDay = dayNames[d.getDay()];
+      if (['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Saturday'].includes(selectedDay)) {
+        setDayOfWeek(selectedDay);
+      }
+    }
   };
 
   return (
@@ -223,15 +253,59 @@ function ManageSessions({ user }) {
             </div>
           </div>
 
+          <div className="mnadm-form-row" style={{ marginBottom: '24px' }}>
+             <div className="mnadm-form-group" style={{ flex: 'none', width: 'auto' }}>
+                <div 
+                  onClick={() => setIsRecurring(!isRecurring)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '10px 20px',
+                    background: isRecurring ? 'rgba(16, 185, 129, 0.08)' : 'rgba(99, 102, 241, 0.08)',
+                    border: isRecurring ? '2px solid #10b981' : '2px solid var(--p-indigo)',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontWeight: '700',
+                    fontSize: '13px'
+                  }}
+                >
+                  <div style={{ 
+                    width: '12px', 
+                    height: '12px', 
+                    borderRadius: '50%', 
+                    background: isRecurring ? '#10b981' : 'var(--p-indigo)',
+                    boxShadow: isRecurring ? '0 0 10px rgba(16, 185, 129, 0.4)' : '0 0 10px rgba(99, 102, 241, 0.4)'
+                  }} />
+                  {isRecurring ? 'Séance Hebdomadaire (Toutes les semaines)' : 'Séance Ponctuelle (Date unique)'}
+                </div>
+             </div>
+          </div>
+
           <div className="mnadm-form-row">
-            <div className="mnadm-form-group">
-              <label className="mnadm-label">{t('sessions.day')}</label>
-              <select className="mnadm-input" value={dayOfWeek} onChange={e => setDayOfWeek(e.target.value)}>
-                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
-                  <option key={day} value={day}>{t(`days.${day}`)}</option>
-                ))}
-              </select>
-            </div>
+            {!isRecurring ? (
+              <div className="mnadm-form-group">
+                <label className="mnadm-label">{t('common.date')}</label>
+                <input 
+                  type="date" 
+                  className="mnadm-input" 
+                  value={sessionDate} 
+                  onChange={handleDateChange} 
+                  min={new Date().toISOString().split('T')[0]}
+                  required={!isRecurring}
+                />
+              </div>
+            ) : (
+              <div className="mnadm-form-group">
+                <label className="mnadm-label">{t('sessions.day')}</label>
+                <select className="mnadm-input" value={dayOfWeek} onChange={e => setDayOfWeek(e.target.value)} required={isRecurring}>
+                  {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Saturday'].map(day => (
+                    <option key={day} value={day}>{t(`days.${day}`)}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="mnadm-form-group">
               <label className="mnadm-label">{t('sessions.startTime')}</label>
               <select className="mnadm-input" value={startTime} onChange={handleTimeChange} required>
@@ -256,42 +330,6 @@ function ManageSessions({ user }) {
         </form>
       </div>
 
-      <div className="table-card">
-        <div className="card-header">
-          <h3>{t('sessions.activeSchedule')}</h3>
-        </div>
-        <div className="table-responsive">
-          <table className="modern-table">
-            <thead>
-              <tr>
-                <th>{t('sessions.day')}</th>
-                <th>{t('teacher.time')}</th>
-                <th>{t('sessions.moduleSubjectCol')}</th>
-                <th>{t('teacher.level')}</th>
-                <th>{t('teacher.type')}</th>
-                <th>{t('sessions.secGrp')}</th>
-                <th>{t('common.teacher')}</th>
-                <th>{t('common.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sessions?.map(s => (
-                <tr key={s.id}>
-                  <td><strong>{s.day_of_week}</strong></td>
-                  <td>{s.start_time?.substring(0,5)} - {s.end_time?.substring(0,5)}</td>
-                  <td>{s.module_name}</td>
-                  <td><span className="role-tag" style={{ background: '#dbeafe', color: '#1e40af' }}>{s.study_level || '-'}</span></td>
-                  <td><span className="role-tag" style={{ background: '#f1f5f9', color: '#475569' }}>{s.session_type === 'Lecture' ? t('sessions.lecture') : s.session_type === 'Tutorial' ? t('sessions.tutorialTD') : t('sessions.practicalTP')}</span></td>
-                  <td>{(s.section || s.groupe) ? <span style={{ fontSize: '13px', color: '#64748b' }}>{s.section && `${s.section}`} {s.groupe && `/ ${s.groupe}`}</span> : '-'}</td>
-                  <td>{s.teacher_nom} {s.teacher_prenom}</td>
-                  <td><button onClick={() => handleCancelSession(s.id)} className="btn-cancel-pro" style={{ padding: '6px 12px', fontSize: '11px' }}>{t('common.cancel')}</button></td>
-                </tr>
-              ))}
-              {(!sessions || sessions.length === 0) && <tr><td colSpan="8" className="empty-state">{t('sessions.noSessions')}</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 }
