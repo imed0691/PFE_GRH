@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import Select from 'react-select';
 import { useLanguage } from '../i18n/LanguageContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 function ManageAbsences({ user: propUser }) {
   const [absences, setAbsences] = useState([]);
@@ -21,6 +22,7 @@ function ManageAbsences({ user: propUser }) {
   const [justificationText, setJustificationText] = useState('');
   const [justificationFile, setJustificationFile] = useState(null);
   const [absenceDate, setAbsenceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem('user'));
@@ -28,7 +30,7 @@ function ManageAbsences({ user: propUser }) {
       setUserRole(propUser.role);
       setUserId(propUser.id);
     } else if (storedUser) {
-      setUserRole(storedUser.role);
+      setUserRole(storedUser.role ? storedUser.role.toUpperCase().replace(/[\s-]/g, '_') : '');
       setUserId(storedUser.id);
     }
   }, [propUser]);
@@ -40,8 +42,24 @@ function ManageAbsences({ user: propUser }) {
       const res = await fetch('http://localhost:5000/api/absences', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) setAbsences(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setAbsences(data);
+        if (isTeacher && data.some(a => !a.is_read_by_teacher)) {
+          markAsReadTeacher();
+        }
+      }
     } catch (error) { toast.error(t('absences.errorLoading')); } finally { setLoading(false); }
+  };
+
+  const markAsReadTeacher = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('http://localhost:5000/api/absences/read-teacher', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+    } catch (e) {}
   };
 
   const fetchTeachers = async () => {
@@ -52,14 +70,20 @@ function ManageAbsences({ user: propUser }) {
       });
       if (res.ok) {
         const users = await res.json();
-        setTeachers(users.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT'));
+        setTeachers(users.filter(u => {
+          const r = u.role ? u.role.toUpperCase().replace(/[\s-]/g, '_') : '';
+          return r === 'TEACHER' || r === 'ENSEIGNANT';
+        }));
       }
     } catch (error) { console.error('Error fetching teachers:', error); }
   };
 
   useEffect(() => {
     fetchAbsences();
-    if (userRole && userRole !== 'TEACHER' && userRole !== 'ENSEIGNANT') fetchTeachers();
+    if (userRole) {
+      const r = userRole.toUpperCase().replace(/[\s-]/g, '_');
+      if (r !== 'TEACHER' && r !== 'ENSEIGNANT') fetchTeachers();
+    }
   }, [userRole]);
 
   const handleMarkAbsence = async (e) => {
@@ -140,35 +164,42 @@ function ManageAbsences({ user: propUser }) {
     } catch (error) { toast.error(t('common.serverError')); }
   };
 
-  const handleArchiveAbsence = async (id) => {
+  const handleDeleteAbsence = async () => {
+    const { id } = confirmModal;
+    setConfirmModal({ ...confirmModal, isOpen: false });
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/absences/${id}/archive`, {
-        method: 'PUT',
+      const res = await fetch(`http://localhost:5000/api/absences/${id}`, {
+        method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        toast.success(t('common.deleted') || 'Retiré de la liste');
+        toast.success(t('common.deleted') || 'Absence supprimée');
         fetchAbsences();
       }
     } catch (error) { toast.error(t('common.serverError')); }
   };
 
-  const handleArchiveAllProcessed = async () => {
+  const handleClearHistory = () => {
     const processed = absences.filter(a => a.justification_status !== 'Pending');
-    if (processed.length === 0) return;
-    
+    if (processed.length === 0) return toast.info(t('common.noData') || 'Aucune donnée à nettoyer');
+    setConfirmModal({ isOpen: true, id: 'all_processed', isBulk: true });
+  };
+
+  const performBulkDelete = async () => {
+    setConfirmModal({ ...confirmModal, isOpen: false });
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      for (const a of processed) {
-        await fetch(`http://localhost:5000/api/absences/${a.id}/archive`, {
-          method: 'PUT',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+      // For simplicity and safety, we delete all non-pending ones
+      const res = await fetch(`http://localhost:5000/api/absences/bulk-delete`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        toast.success(t('common.historyCleared') || 'Historique supprimé');
+        fetchAbsences();
       }
-      toast.success(t('common.actions') || 'Liste nettoyée');
-      fetchAbsences();
     } catch (error) { toast.error(t('common.serverError')); }
     finally { setLoading(false); }
   };
@@ -183,12 +214,14 @@ function ManageAbsences({ user: propUser }) {
         <div className="card-academic" style={{ marginBottom: '32px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ margin: 0 }}>{t('absences.recordNew')}</h3>
-            <button 
-              className={showForm ? "btn-cancel-pro" : "btn-confirm-pro"} 
-              onClick={() => setShowForm(!showForm)}
-            >
-              {showForm ? t('common.cancel') : t('absences.recordNew')}
-            </button>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                className={showForm ? "btn-cancel-pro" : "btn-confirm-pro"} 
+                onClick={() => setShowForm(!showForm)}
+              >
+                {showForm ? t('common.cancel') : t('absences.recordNew')}
+              </button>
+            </div>
           </div>
           {showForm && (
             <form onSubmit={handleMarkAbsence} style={{ marginTop: '24px' }}>
@@ -225,7 +258,19 @@ function ManageAbsences({ user: propUser }) {
         </div>
       )}
       <div className="card-academic">
-        <h3 style={{ marginBottom: '24px' }}>{isTeacher ? t('teacher.myAbsenceHistory') : t('absences.personnelAbsences')}</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h3 style={{ margin: 0 }}>{isTeacher ? t('teacher.myAbsenceHistory') : t('absences.personnelAbsences')}</h3>
+          {!isTeacher && isDeptHead && absences.some(a => a.justification_status !== 'Pending') && (
+            <button 
+              onClick={handleClearHistory}
+              className="btn-delete-pro"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', fontSize: '13px' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              {t('common.clearHistory')}
+            </button>
+          )}
+        </div>
         <div className="modern-table-wrapper">
           <table className="modern-table">
             <thead>
@@ -342,9 +387,9 @@ function ManageAbsences({ user: propUser }) {
                       )}
                       {isDeptHead && a.justification_status !== 'Pending' && (
                          <button 
-                           onClick={() => handleArchiveAbsence(a.id)} 
+                           onClick={() => setConfirmModal({ isOpen: true, id: a.id })} 
                            className="btn-delete-pro" 
-                           title="Retirer de la liste"
+                           title={t('common.delete')}
                            style={{ padding: '8px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                          >
                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -384,6 +429,12 @@ function ManageAbsences({ user: propUser }) {
           </div>
         </div>
       )}
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        message={confirmModal.isBulk ? (t('common.confirmClearAll') || 'Voulez-vous supprimer tout l\'historique traité ?') : t('common.confirmDelete')}
+        onConfirm={confirmModal.isBulk ? performBulkDelete : handleDeleteAbsence}
+        onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+      />
     </div>
   );
 }

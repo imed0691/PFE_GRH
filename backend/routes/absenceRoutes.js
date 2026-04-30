@@ -26,7 +26,8 @@ router.put('/absences/read-teacher', verifyToken, absenceController.markAsReadTe
 router.put('/absences/:id/justify', verifyToken, upload.single('justification_file'), absenceController.submitJustification);
 router.put('/absences/:id/catchup', verifyToken, absenceController.submitCatchup);
 
+router.delete('/absences/bulk-delete', verifyToken, absenceController.bulkDeleteAbsences);
 router.put('/absences/:id', verifyToken, absenceController.updateAbsenceStatus);
-router.put('/absences/:id/archive', verifyToken, absenceController.archiveAbsence);
+router.delete('/absences/:id', verifyToken, absenceController.deleteAbsence);
 
 module.exports = router;

@@ -33,6 +33,24 @@ function ManageDocuments({ user }) {
   const isTeacher = user.role === 'TEACHER' || user.role === 'ENSEIGNANT';
   const isAdmin = ['HR','RH','DEAN','DOYEN','VICE_DEAN','VICE_DOYEN','DEPARTMENT_HEAD','CHEF_DEPARTEMENT'].includes(user.role);
 
+  const translateDocType = (type) => {
+    if (!type) return '-';
+    const tLower = type.toLowerCase();
+    if (tLower.includes('work certificate') || tLower.includes('travail')) return t('documents.workCert');
+    if (tLower.includes('salary slip') || tLower.includes('paie')) return t('documents.salarySlip');
+    if (tLower.includes('teaching load')) return t('documents.teachingLoad');
+    if (tLower.includes('mission order') || tLower.includes('mission')) return t('documents.missionOrder');
+    return type;
+  };
+
+  const translateStatus = (status) => {
+    if (status === 'Ready') return t('documents.ready');
+    if (status === 'Processing') return t('documents.processing') || 'Processing';
+    if (status === 'Rejected') return t('absences.rejected') || status;
+    if (status === 'Pending') return t('absences.pending') || status;
+    return status;
+  };
+
   return (
     <div className="card-academic" style={{ padding: '32px' }}>
       <h3 style={{ marginBottom: '24px', fontSize: '24px' }}>{t('documents.title')}</h3>
@@ -64,31 +82,14 @@ function ManageDocuments({ user }) {
                   <td>{index + 1}</td>
                   <td>{new Date(d.request_date).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-GB')}</td>
                   {!isTeacher && <td><strong>{d.nom}</strong> {d.prenom}<br/><small style={{color: 'var(--text-muted)'}}>{d.department_name || '-'}</small></td>}
-                  <td><strong>{d.type}</strong></td>
+                  <td><strong>{translateDocType(d.type)}</strong></td>
                   <td>
                     <span className={`badge-pro ${d.status === 'Ready' ? 'badge-pro-success' : d.status === 'Rejected' ? 'badge-pro-danger' : 'badge-pro-warning'}`}>
-                      {d.status === 'Ready' ? (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                          {t('documents.ready')}
-                        </span>
-                      ) : d.status === 'Processing' ? (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ 
-                            background: '#ef4444', 
-                            color: 'white', 
-                            padding: '2px 8px', 
-                            borderRadius: '6px', 
-                            fontSize: '9px', 
-                            fontWeight: '900', 
-                            textTransform: 'uppercase',
-                            marginRight: '8px',
-                            animation: 'badgePulse 2s infinite'
-                          }}>{t('common.new') || 'NEW'}</span>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                          {d.status}
-                        </span>
-                      ) : d.status}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {d.status === 'Ready' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                        {d.status === 'Processing' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>}
+                        {translateStatus(d.status)}
+                      </span>
                     </span>
                   </td>
                   {!isTeacher && (

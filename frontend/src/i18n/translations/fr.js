@@ -11,6 +11,8 @@ const fr = {
     loading: 'Chargement...',
     loadingData: 'Chargement des données...',
     actions: 'Actions',
+    clearHistory: "Nettoyer l'historique",
+    historyCleared: "Historique supprimé",
     date: 'Date',
     status: 'Statut',
     id: 'ID',
@@ -40,6 +42,10 @@ const fr = {
     confirmDelete: 'Êtes-vous sûr de vouloir supprimer cet élément ?',
     completed: 'Terminé',
     new: 'Nouveau',
+    deleted: 'Supprimé',
+    clearHistory: "Nettoyer l'historique",
+    historyCleared: "Historique supprimé",
+    confirmClearAll: "Voulez-vous vraiment supprimer tout l'historique traité ?",
   },
 
   // ── Connexion ──

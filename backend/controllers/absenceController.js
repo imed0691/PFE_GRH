@@ -10,21 +10,26 @@ exports.markAbsence = (req, res) => {
   }
 
   // Seul le Chef de Département, Admin, RH ou l'Enseignant lui-même peut marquer une absence
-  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  const userRole = req.user.role ? req.user.role.toUpperCase().replace(/[\s-]/g, '_') : '';
   const isSelfReporting = (userRole === 'TEACHER' || userRole === 'ENSEIGNANT') && Number(teacher_id) === Number(sender_id);
   
-  if (!isSelfReporting && userRole !== 'DEPARTMENT_HEAD' && userRole !== 'CHEF_DEPARTEMENT' && userRole !== 'RH_MANAGER' && userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
-    return res.status(403).json({ message: "Accès refusé." });
+  const isManager = ['DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT', 'RH_MANAGER', 'HR_MANAGER', 'ADMIN', 'RECTOR', 'RECTEUR', 'DEAN', 'DOYEN'].includes(userRole);
+
+  if (!isSelfReporting && !isManager) {
+    return res.status(403).json({ message: "Accès refusé. Rôle insuffisant." });
   }
 
-  const query = "INSERT INTO absences (teacher_id, date, reason, status, justification_status, is_read_by_teacher) VALUES (?, ?, ?, 'Approved', 'None', FALSE)";
+  const query = `
+    INSERT INTO absences 
+    (teacher_id, date, reason, status, justification_status, has_justification, is_caught_up, is_read_by_teacher, is_read_by_admin, created_at) 
+    VALUES (?, ?, ?, 'Approved', 'None', FALSE, FALSE, FALSE, FALSE, NOW())
+  `;
+  
   db.query(query, [teacher_id, date, reason], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-
-    // Notification pour l'enseignant
-    const msg = `Une absence a été enregistrée pour vous le ${new Date(date).toLocaleDateString()}. Raison: ${reason}`;
-    db.query('INSERT INTO reminders (teacher_id, sender_id, message, type) VALUES (?, ?, ?, ?)', 
-      [teacher_id, sender_id, msg, 'warning']);
+    if (err) {
+      console.error("Error marking absence:", err);
+      return res.status(500).json({ error: err.message });
+    }
 
     res.status(201).json({ message: "Absence enregistrée." });
   });
@@ -32,7 +37,7 @@ exports.markAbsence = (req, res) => {
 
 // RH: Voir toutes les absences
 exports.getAllAbsences = (req, res) => {
-  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  const userRole = req.user.role ? req.user.role.toUpperCase().replace(/[\s-]/g, '_') : '';
   const userId = req.user.id;
 
   let query = `
@@ -55,7 +60,7 @@ exports.getAllAbsences = (req, res) => {
   }
 
   // Managers view (HR, Dept Head, Admin)
-  query += " AND a.is_archived_by_dept = FALSE ORDER BY a.created_at DESC";
+  query += " ORDER BY a.created_at DESC";
   db.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     
@@ -63,7 +68,8 @@ exports.getAllAbsences = (req, res) => {
       db.query('SELECT department_id FROM users WHERE id = ?', [userId], (err, deptRes) => {
           if (err || deptRes.length === 0) return res.json([]);
           const headDeptId = deptRes[0].department_id;
-          return res.json(results.filter(a => a.department_id === headDeptId));
+          // Filter in JS to avoid SQL errors on potentially missing department_id column in absences table
+          return res.json(results.filter(a => Number(a.department_id) === Number(headDeptId)));
       });
       return;
     }
@@ -174,18 +180,32 @@ exports.markAsReadTeacher = (req, res) => {
     res.json({ message: "Absences marquées comme lues par l'enseignant" });
   });
 };
-// Chef Département: Archiver une absence (masquer de sa vue)
-exports.archiveAbsence = (req, res) => {
+// Chef Département/RH/Admin: Supprimer définitivement une absence
+exports.deleteAbsence = (req, res) => {
   const { id } = req.params;
-  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  const userRole = req.user.role ? req.user.role.toUpperCase().replace(/[\s-]/g, '_') : '';
   
-  if (userRole !== 'DEPARTMENT_HEAD' && userRole !== 'CHEF_DEPARTEMENT') {
-    return res.status(403).json({ message: "Seul le chef de département peut archiver ses absences." });
+  const isManager = ['DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT', 'RH_MANAGER', 'HR_MANAGER', 'ADMIN'].includes(userRole);
+  
+  if (!isManager) {
+    return res.status(403).json({ message: "Accès refusé. Seul un gestionnaire peut supprimer une absence." });
   }
 
-  const query = "UPDATE absences SET is_archived_by_dept = TRUE WHERE id = ?";
+  const query = "DELETE FROM absences WHERE id = ?";
   db.query(query, [id], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Absence archivée." });
+    res.json({ message: "Absence supprimée définitivement." });
+  });
+};
+
+exports.bulkDeleteAbsences = (req, res) => {
+  const userRole = req.user.role ? req.user.role.toUpperCase().replace(/[\s-]/g, '_') : '';
+  const isManager = ['DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT', 'RH_MANAGER', 'HR_MANAGER', 'ADMIN'].includes(userRole);
+  if (!isManager) return res.status(403).json({ message: "Accès refusé." });
+
+  const query = "DELETE FROM absences WHERE justification_status != 'Pending'";
+  db.query(query, (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: "Historique supprimé." });
   });
 };

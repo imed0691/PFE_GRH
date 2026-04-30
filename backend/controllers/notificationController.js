@@ -3,7 +3,7 @@ const db = require('../config/db');
 // Get counts of new items per section for the current user
 exports.getCounts = (req, res) => {
   const userId = req.user.id;
-  const userRole = req.user.role.toUpperCase();
+  const userRole = req.user.role ? req.user.role.toUpperCase().replace(/[\s-]/g, '_') : '';
 
   // Build queries based on role
   const sections = [];
@@ -47,18 +47,31 @@ exports.getCounts = (req, res) => {
     params: [userId]
   });
 
-  // Absences - for admins
+  // Absences - for managers (Dept Head / HR sees new justifications)
   if (['DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT', 'DEAN', 'DOYEN', 'RECTOR', 'RECTEUR',
        'VICE_DEAN', 'VICE_DOYEN', 'VICE_RECTOR', 'VICE_RECTEUR',
        'HR', 'RH', 'HR_MANAGER', 'RH_MANAGER'].includes(userRole)) {
     sections.push({
       name: 'absences',
       query: `SELECT COUNT(*) as count FROM absences a 
-              WHERE a.created_at > COALESCE(
+              WHERE a.justification_status = 'Pending' AND a.created_at > COALESCE(
                 (SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'absences'),
                 '2000-01-01'
               )`,
       params: [userId]
+    });
+  }
+
+  // Absences - for teachers (see new absences recorded for them)
+  if (userRole === 'TEACHER' || userRole === 'ENSEIGNANT') {
+    sections.push({
+      name: 'absences',
+      query: `SELECT COUNT(*) as count FROM absences a 
+              WHERE a.teacher_id = ? AND a.created_at > COALESCE(
+                (SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'absences'),
+                '2000-01-01'
+              )`,
+      params: [userId, userId]
     });
   }
 
