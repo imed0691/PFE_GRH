@@ -5,6 +5,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 
 function ManageSessions({ user }) {
   const [teachers, setTeachers] = useState([]);
+  const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Selections
@@ -15,7 +16,6 @@ function ManageSessions({ user }) {
   const [groupId, setGroupId] = useState('');
   
   // Lists
-  const [sessions, setSessions] = useState([]);
   const [teacherModules, setTeacherModules] = useState([]);
   const [sectionsList, setSectionsList] = useState([]);
   const [groupsList, setGroupsList] = useState([]);
@@ -330,6 +330,42 @@ function ManageSessions({ user }) {
         </form>
       </div>
 
+      <div className="table-card">
+        <div className="card-header">
+          <h3>{t('sessions.activeSchedule')}</h3>
+        </div>
+        <div className="table-responsive">
+          <table className="modern-table">
+            <thead>
+              <tr>
+                <th>{t('sessions.day')}</th>
+                <th>{t('teacher.time')}</th>
+                <th>{t('sessions.moduleSubjectCol')}</th>
+                <th>{t('teacher.level')}</th>
+                <th>{t('teacher.type')}</th>
+                <th>{t('sessions.secGrp')}</th>
+                <th>{t('common.teacher')}</th>
+                <th>{t('common.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sessions?.map(s => (
+                <tr key={s.id}>
+                  <td><strong>{s.day_of_week}</strong></td>
+                  <td>{s.start_time?.substring(0,5)} - {s.end_time?.substring(0,5)}</td>
+                  <td>{s.module_name}</td>
+                  <td><span className="role-tag" style={{ background: '#dbeafe', color: '#1e40af' }}>{s.study_level || '-'}</span></td>
+                  <td><span className="role-tag" style={{ background: '#f1f5f9', color: '#475569' }}>{s.session_type === 'Lecture' ? t('sessions.lecture') : s.session_type === 'Tutorial' ? t('sessions.tutorialTD') : t('sessions.practicalTP')}</span></td>
+                  <td>{(s.section || s.groupe) ? <span style={{ fontSize: '13px', color: '#64748b' }}>{s.section && `${s.section}`} {s.groupe && `/ ${s.groupe}`}</span> : '-'}</td>
+                  <td>{s.teacher_nom} {s.teacher_prenom}</td>
+                  <td><button onClick={() => handleCancelSession(s.id)} className="btn-cancel-pro" style={{ padding: '6px 12px', fontSize: '11px' }}>{t('common.cancel')}</button></td>
+                </tr>
+              ))}
+              {(!sessions || sessions.length === 0) && <tr><td colSpan="8" className="empty-state">{t('sessions.noSessions')}</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
