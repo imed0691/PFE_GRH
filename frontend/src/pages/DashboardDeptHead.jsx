@@ -198,7 +198,7 @@ function DashboardDeptHead({ user, onLogout }) {
                          <th>{t('teacher.level')}</th>
                          <th>{t('teacher.type')}</th>
                          <th>{t('teacher.sectionGroup')}</th>
-                         <th>{t('teacher.extraSessions')}</th>
+                         <th>SUPP</th>
                          <th style={{ textAlign: 'right' }}>{t('common.actions')}</th>
                        </tr>
                      </thead>

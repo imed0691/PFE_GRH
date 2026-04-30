@@ -150,7 +150,7 @@ function DashboardTeacher({ user, onLogout }) {
                             </span>
                             {s.is_extra ? (
                               <span style={{ marginLeft: '8px', padding: '2px 6px', borderRadius: '4px', background: '#fff7ed', color: '#c2410c', fontSize: '10px', fontWeight: 'bold', border: '1px solid #fdba74' }}>
-                                EXTRA
+                                SUPP
                               </span>
                             ) : null}
                           </td>
