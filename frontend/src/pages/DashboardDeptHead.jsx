@@ -220,9 +220,9 @@ function DashboardDeptHead({ user, onLogout }) {
                            <td style={{ fontWeight: '700' }}>{s.module_name}</td>
                            <td><span className="badge-academic">{s.study_level}</span></td>
                            <td>
-                             <span className={`badge-academic ${s.session_type === 'Lecture' ? 'badge-blue' : s.session_type === 'Tutorial' ? 'badge-purple' : 'badge-gold'}`}>
-                               {s.session_type === 'Lecture' ? 'COURS' : s.session_type === 'Tutorial' ? 'TD' : 'TP'}
-                             </span>
+                              <span className={`badge-academic ${s.session_type === 'Lecture' ? 'badge-blue' : s.session_type === 'Tutorial' ? 'badge-purple' : 'badge-gold'}`}>
+                                {s.session_type === 'Lecture' ? t('sessions.lecture').toUpperCase() : s.session_type === 'Tutorial' ? t('sessions.tutorialTD').toUpperCase() : t('sessions.practicalTP').toUpperCase()}
+                              </span>
                            </td>
                            <td>{s.section || s.groupe ? `${t('teacher.sec')}: ${s.section} ${t('teacher.grp')}: ${s.groupe}` : '-'}</td>
                            <td>
@@ -300,7 +300,7 @@ function DashboardDeptHead({ user, onLogout }) {
                              </td>
                            <td>{u.prenom}</td>
                            <td>{u.email}</td>
-                           <td><span className="badge-academic badge-gold">{u.grade || 'Teacher'}</span></td>
+                            <td><span className="badge-academic badge-gold">{t('grades.' + (u.grade || 'Teacher'))}</span></td>
                            <td style={{ textAlign: 'right' }}>
                              <button 
                                className="btn-confirm-pro" 
@@ -343,7 +343,7 @@ function DashboardDeptHead({ user, onLogout }) {
               </div>
               <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '12px' }}>{t('common.confirmDelete')}</h3>
               <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '14px', lineHeight: '1.6' }}>
-                Cette action est irréversible. La séance sera définitivement supprimée de l'emploi du temps de l'enseignant.
+                {t('common.confirmDelete')}
               </p>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button 

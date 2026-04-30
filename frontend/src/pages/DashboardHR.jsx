@@ -270,7 +270,15 @@ function DashboardHR({ user, onLogout }) {
                             </div>
                           </td>
                           <td className="hide-mobile">{u.email}</td>
-                          <td className="hide-tablet">{u.department_name && u.department_name !== 'null' ? (t('departments.' + u.department_name) === 'departments.' + u.department_name ? u.department_name : t('departments.' + u.department_name)) : '-'}</td>
+                          <td className="hide-tablet">
+                            {u.department_name && u.department_name !== 'null' ? (
+                              (() => {
+                                const dept = u.department_name.trim();
+                                const translated = t('departments.' + dept);
+                                return translated === 'departments.' + dept ? dept : translated;
+                              })()
+                            ) : '-'}
+                          </td>
                           <td><span className={`role-tag role-${u.role.toLowerCase()}`}>{t('roles.' + u.role) || u.role}</span></td>
                           <td>
                             <div style={{ display: 'flex', justifyContent: 'center' }}>

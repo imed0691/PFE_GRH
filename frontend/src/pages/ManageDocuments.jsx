@@ -152,7 +152,20 @@ function ManageDocuments({ user }) {
                   <tr key={d.id}>
                     <td>{index + 1}</td>
                     <td>{new Date(d.request_date).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-GB')}</td>
-                    {!isTeacher && <td><strong>{d.nom}</strong> {d.prenom}<br/><small style={{color: 'var(--text-muted)'}}>{d.department_name || '-'}</small></td>}
+                    {!isTeacher && (
+                      <td>
+                        <strong>{d.nom}</strong> {d.prenom}<br/>
+                        <small style={{color: 'var(--text-muted)'}}>
+                          {d.department_name && d.department_name !== 'null' ? (
+                            (() => {
+                              const dept = d.department_name.trim();
+                              const translated = t('departments.' + dept);
+                              return translated === 'departments.' + dept ? dept : translated;
+                            })()
+                          ) : '-'}
+                        </small>
+                      </td>
+                    )}
                     <td><strong>{translateDocType(d.type)}</strong></td>
                     <td>
                       <span className={`badge-pro ${d.status === 'Ready' || d.status === 'Delivered' ? 'badge-pro-success' : d.status === 'Rejected' ? 'badge-pro-danger' : 'badge-pro-warning'}`}>

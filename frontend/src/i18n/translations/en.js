@@ -447,6 +447,9 @@ const en = {
     'Sciences de la Matière': 'Physics',
     'Sciences de la Nature et de la Vie': 'Biology',
     'Computer Science': 'Computer Science',
+    'Computer Sciences': 'Computer Science',
+    'Mathematics': 'Mathematics',
+    'Physics': 'Physics',
     'null': '-',
   },
 
@@ -476,6 +479,8 @@ const en = {
     errorUpdating: 'Error updating status',
     noRequests: 'No document requests found.',
     ready: 'Ready',
+    allRequests: 'All Document Requests',
+    myRequests: 'My Document Requests',
   },
 
   // ── Manage Evaluations ──
@@ -693,6 +698,10 @@ const en = {
     subtitle: 'Manage academic schedules',
     activeSchedule: 'Active Schedule',
     isExtra: 'Extra Session',
+    weekly: 'Weekly Session (Every week)',
+    once: 'One-time Session (Unique date)',
+    extraBadge: 'EXTRA',
+    ends: 'Ends',
   },
 
   // ── Notification Feed ──

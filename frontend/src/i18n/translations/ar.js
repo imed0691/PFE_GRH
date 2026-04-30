@@ -387,6 +387,9 @@ const ar = {
     'Sciences de la Matière': 'علوم المادة',
     'Sciences de la Nature et de la Vie': 'علوم الطبيعة والحياة',
     'Computer Science': 'الإعلام الآلي',
+    'Computer Sciences': 'الإعلام الآلي',
+    'Mathematics': 'الرياضيات',
+    'Physics': 'علوم المادة',
     'null': '-',
   },
   documents: {
@@ -414,6 +417,8 @@ const ar = {
     errorUpdating: 'خطأ في التحديث',
     noRequests: 'لا توجد طلبات وثائق.',
     ready: 'جاهز',
+    allRequests: 'جميع طلبات الوثائق',
+    myRequests: 'طلباتي الخاصة بالوثائق',
   },
   evaluations: {
     title: 'تقييم الأداء',
@@ -612,6 +617,10 @@ const ar = {
     subtitle: 'إدارة الجداول الأكاديمية',
     activeSchedule: 'الجدول الزمني النشط',
     isExtra: 'حصة إضافية',
+    weekly: 'حصة أسبوعية (كل أسبوع)',
+    once: 'حصة لمرة واحدة (تاريخ محدد)',
+    extraBadge: 'إضافي',
+    ends: 'نهاية',
   },
   feed: {
     evaluation: 'تقييم',

@@ -144,7 +144,7 @@ function ManageAbsences({ user: propUser }) {
         body: JSON.stringify({ justification_status: status })
       });
       if (res.ok) {
-        toast.success(`Justification ${status === 'Accepted' ? 'approved' : 'rejected'}`);
+        toast.success(status === 'Accepted' ? t('common.approved') : t('common.rejected'));
         fetchAbsences();
       }
     } catch (error) { toast.error(t('common.serverError')); }
@@ -285,7 +285,7 @@ function ManageAbsences({ user: propUser }) {
                       <span className={`badge-pro ${a.justification_status === 'Accepted' ? 'badge-pro-success' : a.justification_status === 'Pending' ? 'badge-pro-warning' : 'badge-pro-danger'}`}>
                         {a.justification_status === 'Pending' ? (
                           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '6px', fontSize: '9px', fontWeight: '900', animation: 'badgePulse 2s infinite' }}>NEW</span>
+                            <span style={{ background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '6px', fontSize: '9px', fontWeight: '900', animation: 'badgePulse 2s infinite' }}>{t('common.new').toUpperCase()}</span>
                             {t('absences.pending')}
                           </span>
                         ) : a.justification_status === 'Accepted' ? t('absences.accepted') : t('absences.rejected')}

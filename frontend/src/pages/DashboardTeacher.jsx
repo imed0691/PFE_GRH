@@ -79,7 +79,7 @@ function DashboardTeacher({ user, onLogout }) {
       setView={setView}
       menuItems={menuItems}
       onLogout={onLogout}
-      title={view === 'overview' ? 'Academic Workspace' : getPageTitle()}
+      title={getPageTitle(view, t)}
     >
       <div className="animate-float">
         {view === 'absences' ? <ManageAbsences user={user} /> : 
@@ -144,13 +144,13 @@ function DashboardTeacher({ user, onLogout }) {
                           <td>{s.study_level}</td>
                           <td>
                             <span className={`session-type-pro type-${s.session_type?.toLowerCase() || 'other'}`}>
-                              {s.session_type === 'Lecture' ? 'COURS' : 
-                               s.session_type === 'Tutorial' ? 'TD' : 
-                               s.session_type === 'Practical' ? 'TP' : s.session_type}
+                              {s.session_type === 'Lecture' ? t('sessions.lecture').toUpperCase() : 
+                               s.session_type === 'Tutorial' ? t('sessions.tutorialTD').toUpperCase() : 
+                               s.session_type === 'Practical' ? t('sessions.practicalTP').toUpperCase() : s.session_type}
                             </span>
                             {s.is_extra ? (
                               <span style={{ marginLeft: '8px', padding: '2px 6px', borderRadius: '4px', background: '#fff7ed', color: '#c2410c', fontSize: '10px', fontWeight: 'bold', border: '1px solid #fdba74' }}>
-                                SUPP
+                                {t('sessions.extraBadge')}
                               </span>
                             ) : null}
                           </td>
@@ -172,6 +172,17 @@ function DashboardTeacher({ user, onLogout }) {
   );
 }
 
-const getPageTitle = () => 'Dashboard'; // Helper function if needed
+const getPageTitle = (view, t) => {
+  switch(view) {
+    case 'overview': return t('sidebar.mySchedule');
+    case 'absences': return t('sidebar.absences');
+    case 'reminders': return t('sidebar.reminders');
+    case 'promotions': return t('sidebar.promotions');
+    case 'documents': return t('sidebar.documents');
+    case 'evaluations': return t('sidebar.evaluations');
+    case 'settings': return t('settings.title');
+    default: return 'Dashboard';
+  }
+};
 
 export default DashboardTeacher;

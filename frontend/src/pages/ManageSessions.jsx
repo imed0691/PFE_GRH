@@ -278,7 +278,7 @@ function ManageSessions({ user }) {
                     background: isRecurring ? '#10b981' : 'var(--p-indigo)',
                     boxShadow: isRecurring ? '0 0 10px rgba(16, 185, 129, 0.4)' : '0 0 10px rgba(99, 102, 241, 0.4)'
                   }} />
-                  {isRecurring ? 'Séance Hebdomadaire (Toutes les semaines)' : 'Séance Ponctuelle (Date unique)'}
+                  {isRecurring ? t('sessions.weekly') : t('sessions.once')}
                 </div>
              </div>
           </div>
@@ -310,12 +310,12 @@ function ManageSessions({ user }) {
               <label className="mnadm-label">{t('sessions.startTime')}</label>
               <select className="mnadm-input" value={startTime} onChange={handleTimeChange} required>
                 <option value="">{t('common.search')}...</option>
-                <option value="08:00">08:00 (Fin: 09:30)</option>
-                <option value="09:35">09:35 (Fin: 11:05)</option>
-                <option value="11:10">11:10 (Fin: 12:40)</option>
-                <option value="12:45">12:45 (Fin: 14:15)</option>
-                <option value="14:20">14:20 (Fin: 15:50)</option>
-                <option value="15:55">15:55 (Fin: 17:25)</option>
+                <option value="08:00">08:00 ({t('sessions.ends')}: 09:30)</option>
+                <option value="09:35">09:35 ({t('sessions.ends')}: 11:05)</option>
+                <option value="11:10">11:10 ({t('sessions.ends')}: 12:40)</option>
+                <option value="12:45">12:45 ({t('sessions.ends')}: 14:15)</option>
+                <option value="14:20">14:20 ({t('sessions.ends')}: 15:50)</option>
+                <option value="15:55">15:55 ({t('sessions.ends')}: 17:25)</option>
               </select>
             </div>
             <div className="mnadm-form-group">
@@ -351,7 +351,7 @@ function ManageSessions({ user }) {
             <tbody>
               {sessions?.map(s => (
                 <tr key={s.id}>
-                  <td><strong>{s.day_of_week}</strong></td>
+                  <td><strong>{t(`days.${s.day_of_week}`)}</strong></td>
                   <td>{s.start_time?.substring(0,5)} - {s.end_time?.substring(0,5)}</td>
                   <td>{s.module_name}</td>
                   <td><span className="role-tag" style={{ background: '#dbeafe', color: '#1e40af' }}>{s.study_level || '-'}</span></td>

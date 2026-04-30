@@ -59,7 +59,7 @@ function ManagePromotions({ user }) {
         body: JSON.stringify({ recommendation, action }) 
       });
       if (res.ok) { 
-        toast.success(action === 'reject' ? 'Demande refusée et transmise' : t('promotions.recommendationSubmitted')); 
+        toast.success(action === 'reject' ? t('common.rejected') : t('promotions.recommendationSubmitted')); 
         setRecommendation(''); 
         setActivePromoId(null); 
         fetchPromotions(); 
@@ -122,13 +122,13 @@ function ManagePromotions({ user }) {
           <div className="mnadm-form-row">
             <div className="mnadm-form-group">
               <label className="mnadm-label">{t('promotions.currentGrade')}</label>
-              <input type="text" className="mnadm-input" value={user.grade || 'Teacher'} disabled />
+              <input type="text" className="mnadm-input" value={t('grades.' + (user.grade || 'Teacher'))} disabled />
             </div>
             <div className="mnadm-form-group">
               <label className="mnadm-label">{t('promotions.requestedGrade')}</label>
               <select className="mnadm-input" value={requestedGrade} onChange={e => setRequestedGrade(e.target.value)} required>
                 <option value="">{t('promotions.selectNextGrade')}</option>
-                {availableGrades.map(g => <option key={g} value={g}>{g}</option>)}
+                {availableGrades.map(g => <option key={g} value={g}>{t('grades.' + g) || g}</option>)}
               </select>
             </div>
           </div>
@@ -155,11 +155,22 @@ function ManagePromotions({ user }) {
                 return (
                   <tr key={p.id}>
                     <td data-label="#">{index + 1}</td>
-                    <td data-label={t('promotions.candidate')}><strong>{p.nom} {p.prenom}</strong><br /><small style={{ color: 'var(--text-muted)' }}>{p.department_name || '-'}</small></td>
+                    <td data-label={t('promotions.candidate')}>
+                      <strong>{p.nom} {p.prenom}</strong><br />
+                      <small style={{ color: 'var(--text-muted)' }}>
+                        {p.department_name && p.department_name !== 'null' ? (
+                          (() => {
+                            const dept = p.department_name.trim();
+                            const translated = t('departments.' + dept);
+                            return translated === 'departments.' + dept ? dept : translated;
+                          })()
+                        ) : '-'}
+                      </small>
+                    </td>
                     <td data-label={t('promotions.transition')}>
                       <span className="role-tag">{p.current_grade}</span> 
                       <span style={{ margin: '0 8px', color: 'var(--text-muted)' }}>→</span> 
-                      <span className="role-tag" style={{ background: 'var(--p-indigo-light)', color: 'var(--p-indigo)' }}>{p.requested_grade}</span>
+                      <span className="role-tag" style={{ background: 'var(--p-indigo-light)', color: 'var(--p-indigo)' }}>{t('grades.' + p.requested_grade) || p.requested_grade}</span>
                     </td>
                     <td data-label={t('common.status')}>
                       <span className={`badge-pro ${badgeClass}`}>
@@ -174,7 +185,7 @@ function ManagePromotions({ user }) {
                             textTransform: 'uppercase',
                             marginRight: '8px',
                             animation: 'badgePulse 2s infinite'
-                          }}>NEW</span>
+                          }}>{t('common.new').toUpperCase()}</span>
                         )}
                         {style.label || p.status}
                       </span>
@@ -210,7 +221,7 @@ function ManagePromotions({ user }) {
                               defaultValue={p.requested_grade}
                               style={{ flex: '2' }}
                             >
-                              {gradeHierarchy.map(g => <option key={g} value={g}>{g}</option>)}
+                              {gradeHierarchy.map(g => <option key={g} value={g}>{t('grades.' + g) || g}</option>)}
                             </select>
                             <button 
                               onClick={() => {

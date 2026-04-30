@@ -430,6 +430,13 @@ const fr = {
     biology: 'Sciences de la Nature et de la Vie',
     architecture: 'Architecture',
     'Computer Science': 'Informatique',
+    'Computer Sciences': 'Informatique',
+    'Mathematics': 'Mathématiques',
+    'Physics': 'Sciences de la Matière',
+    'Informatique': 'Informatique',
+    'Mathématiques': 'Mathématiques',
+    'Sciences de la Matière': 'Sciences de la Matière',
+    'Sciences de la Nature et de la Vie': 'Sciences de la Nature et de la Vie',
     'null': '-',
   },
 
@@ -459,6 +466,8 @@ const fr = {
     errorUpdating: 'Erreur lors de la mise à jour',
     noRequests: 'Aucune demande de document trouvée.',
     ready: 'Prêt',
+    allRequests: 'Toutes les demandes de documents',
+    myRequests: 'Mes demandes de documents',
   },
 
   // ── Gestion des évaluations ──
@@ -674,6 +683,10 @@ const fr = {
     subtitle: 'Gérez les horaires académiques',
     activeSchedule: 'Emploi du temps actif',
     isExtra: 'Séance supplémentaire',
+    weekly: 'Séance Hebdomadaire (Toutes les semaines)',
+    once: 'Séance Ponctuelle (Date unique)',
+    extraBadge: 'SUPP',
+    ends: 'Fin',
     failedDelete: 'Échec de la suppression de la séance',
   },
 
