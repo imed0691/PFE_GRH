@@ -148,7 +148,7 @@ function ManageSessions({ user }) {
                 study_level_id: studyLevelId, 
                 section_id: sectionId, 
                 group_id: groupId,
-                is_extra: !isRecurring, // Automatic logic: One-time = Extra
+                is_extra: isExtra, // Explicitly use the checkbox state
                 session_date: isRecurring ? null : (sessionDate || null)
             }) 
         });
@@ -163,6 +163,7 @@ function ManageSessions({ user }) {
         setEndTime('');
         setSessionDate('');
         setIsRecurring(true);
+        setIsExtra(false); // Reset
         fetchSessions();
       } else {
         const errorData = await res.json();
@@ -299,7 +300,7 @@ function ManageSessions({ user }) {
             </div>
           </div>
 
-          <div className="mnadm-form-row" style={{ marginBottom: '24px' }}>
+          <div className="mnadm-form-row" style={{ marginBottom: '24px', display: 'flex', gap: '16px' }}>
              <div className="mnadm-form-group" style={{ flex: 'none', width: 'auto' }}>
                 <div 
                   onClick={() => setIsRecurring(!isRecurring)}
@@ -325,6 +326,36 @@ function ManageSessions({ user }) {
                     boxShadow: isRecurring ? '0 0 10px rgba(16, 185, 129, 0.4)' : '0 0 10px rgba(99, 102, 241, 0.4)'
                   }} />
                   {isRecurring ? t('sessions.weekly') : t('sessions.once')}
+                </div>
+             </div>
+
+             <div className="mnadm-form-group" style={{ flex: 'none', width: 'auto' }}>
+                <div 
+                  onClick={() => setIsExtra(!isExtra)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '10px 20px',
+                    background: isExtra ? 'rgba(245, 158, 11, 0.08)' : 'transparent',
+                    border: isExtra ? '2px solid #f59e0b' : '2px solid #e2e8f0',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontWeight: '700',
+                    fontSize: '13px',
+                    color: isExtra ? '#f59e0b' : '#64748b'
+                  }}
+                >
+                  <div style={{ 
+                    width: '12px', 
+                    height: '12px', 
+                    borderRadius: '3px', 
+                    background: isExtra ? '#f59e0b' : '#cbd5e1',
+                    transform: isExtra ? 'rotate(0deg)' : 'rotate(45deg)',
+                    transition: 'all 0.3s ease'
+                  }} />
+                  {t('teacher.extraSessions') || 'Séance Supplémentaire (SUPP)'}
                 </div>
              </div>
           </div>

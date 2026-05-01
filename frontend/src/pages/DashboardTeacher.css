@@ -201,3 +201,54 @@
   font-size: 14px;
   line-height: 1.6;
 }
+
+/* --- Schedule Grid Styles --- */
+.schedule-grid-container {
+  margin-top: 24px;
+  background: white !important; /* Overriding for better readability in light mode if needed, or keeping glass */
+}
+
+.grid-header-cell {
+  background: #f8fafc;
+  padding: 15px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  border: 1px solid #e2e8f0;
+}
+
+.schedule-card {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  cursor: default;
+  position: relative;
+  z-index: 1;
+}
+
+.schedule-card:hover {
+  transform: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+
+.schedule-grid-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.schedule-grid-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.schedule-grid-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.schedule-grid-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

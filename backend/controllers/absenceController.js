@@ -22,13 +22,23 @@ exports.markAbsence = (req, res) => {
   const query = `
     INSERT INTO absences 
     (teacher_id, date, reason, status, justification_status, has_justification, is_caught_up, is_read_by_teacher, is_read_by_admin, created_at) 
-    VALUES (?, ?, ?, 'Approved', 'None', FALSE, FALSE, FALSE, FALSE, NOW())
+    VALUES (?, ?, ?, 'Approved', 'None', FALSE, FALSE, FALSE, TRUE, NOW())
   `;
   
   db.query(query, [teacher_id, date, reason], (err, result) => {
     if (err) {
       console.error("Error marking absence:", err);
       return res.status(500).json({ error: err.message });
+    }
+
+    // AUTOMATED NOTIFICATION TO TEACHER
+    if (!isSelfReporting) {
+      const formattedDate = new Date(date).toLocaleDateString();
+      const notificationMsg = `Absence signalée le ${formattedDate} : ${reason}`;
+      const reminderQuery = "INSERT INTO reminders (teacher_id, sender_id, message, type) VALUES (?, ?, ?, ?)";
+      db.query(reminderQuery, [teacher_id, sender_id, notificationMsg, 'warning'], (remErr) => {
+        if (remErr) console.error("Error creating automated absence reminder:", remErr);
+      });
     }
 
     res.status(201).json({ message: "Absence enregistrée." });
@@ -134,6 +144,17 @@ exports.submitJustification = (req, res) => {
     const query = `UPDATE absences SET justification_text = ?, justification_file = ?, has_justification = TRUE, justification_status = 'Pending', is_read_by_admin = FALSE WHERE id = ?`;
     db.query(query, [justification_text.trim(), justificationFile, id], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
+
+      // Notify Dept Head
+      db.query('SELECT u.nom, u.prenom, u.department_id, a.date FROM users u JOIN absences a ON u.id = a.teacher_id WHERE a.id = ?', [id], (err, rows) => {
+        if (!err && rows.length > 0) {
+          const { nom, prenom, department_id, date } = rows[0];
+          const msg = `Nouvelle justification de ${prenom} ${nom} pour l'absence du ${new Date(date).toLocaleDateString()}`;
+          db.query('INSERT INTO reminders (department_id, sender_id, message, type) VALUES (?, ?, ?, ?)', 
+            [department_id, teacherId, msg, 'info']);
+        }
+      });
+
       res.json({ message: "Justification envoyée avec succès." });
     });
   });
@@ -157,6 +178,17 @@ exports.submitCatchup = (req, res) => {
     const query = `UPDATE absences SET catchup_date = ?, catchup_start_time = ?, catchup_end_time = ?, is_caught_up = TRUE, is_read_by_admin = FALSE WHERE id = ?`;
     db.query(query, [catchup_date, catchup_start_time, catchup_end_time, id], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
+
+      // Notify Dept Head
+      db.query('SELECT u.nom, u.prenom, u.department_id, a.date FROM users u JOIN absences a ON u.id = a.teacher_id WHERE a.id = ?', [id], (err, rows) => {
+        if (!err && rows.length > 0) {
+          const { nom, prenom, department_id, date } = rows[0];
+          const msg = `Rattrapage programmé par ${prenom} ${nom} pour l'absence du ${new Date(date).toLocaleDateString()}`;
+          db.query('INSERT INTO reminders (department_id, sender_id, message, type) VALUES (?, ?, ?, ?)', 
+            [department_id, teacherId, msg, 'info']);
+        }
+      });
+
       res.json({ message: "Rattrapage programmé avec succès." });
     });
   });

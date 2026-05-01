@@ -40,6 +40,14 @@ function DashboardDeptHead({ user, onLogout }) {
     if (badges[newView] && badges[newView] > 0) markSeen(newView); 
   };
 
+  const getSessionColor = (type) => {
+    const t = type?.toLowerCase() || '';
+    if (t.includes('lecture') || t.includes('cours')) return 'linear-gradient(135deg, #60a5fa, #3b82f6)';
+    if (t.includes('tutorial') || t.includes('td')) return 'linear-gradient(135deg, #a78bfa, #8b5cf6)';
+    if (t.includes('practical') || t.includes('tp')) return 'linear-gradient(135deg, #34d399, #10b981)';
+    return 'linear-gradient(135deg, #94a3b8, #64748b)';
+  };
+
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -128,7 +136,6 @@ function DashboardDeptHead({ user, onLogout }) {
 
   const menuItems = [
     { id: 'list', label: t('sidebar.teachers') },
-    { id: 'sessions', label: t('sidebar.schedules') },
     { id: 'classes', label: t('classes.tabTeachers') || 'Assigner Modules' },
     { id: 'absences', label: t('sidebar.absences'), badge: badges.absences },
     { id: 'reminders', label: t('sidebar.notifications'), badge: badges.reminders },
@@ -138,10 +145,108 @@ function DashboardDeptHead({ user, onLogout }) {
     { id: 'settings', label: t('settings.title') },
   ];
 
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addSlotDay, setAddSlotDay] = useState('');
+  const [addSlotTime, setAddSlotTime] = useState('');
+  const [quickAddForm, setQuickAddForm] = useState({
+    module_name: '',
+    study_level_id: '',
+    section_id: '',
+    group_id: '',
+    session_type: 'Lecture',
+    is_extra: false
+  });
+  const [teacherModules, setTeacherModules] = useState([]);
+  const [sectionsList, setSectionsList] = useState([]);
+  const [groupsList, setGroupsList] = useState([]);
+
+  const openQuickAdd = (day, time) => {
+    setAddSlotDay(day);
+    setAddSlotTime(time);
+    setShowAddModal(true);
+  };
+
+  useEffect(() => {
+    if (showAddModal && selectedTeacher) {
+      const fetchModules = async () => {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`http://localhost:5000/api/classes/teacher-modules?teacher_id=${selectedTeacher.id}`, { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) setTeacherModules(await res.json());
+      };
+      fetchModules();
+    }
+  }, [showAddModal, selectedTeacher]);
+
+  useEffect(() => {
+    if (quickAddForm.study_level_id) {
+      const fetchSections = async () => {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`http://localhost:5000/api/classes/sections?study_level_id=${quickAddForm.study_level_id}`, { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) setSectionsList(await res.json());
+      };
+      fetchSections();
+    } else {
+      setSectionsList([]);
+    }
+  }, [quickAddForm.study_level_id]);
+
+  useEffect(() => {
+    if (quickAddForm.section_id) {
+      const fetchGroups = async () => {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`http://localhost:5000/api/classes/groups?section_id=${quickAddForm.section_id}`, { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) setGroupsList(await res.json());
+      };
+      fetchGroups();
+    } else {
+      setGroupsList([]);
+    }
+  }, [quickAddForm.section_id]);
+
+  const handleQuickAddSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    
+    // Calculate end time (90 mins after start)
+    const [h, m] = addSlotTime.split(':').map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0);
+    d.setMinutes(d.getMinutes() + 90);
+    const endTimeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+    try {
+      const res = await fetch('http://localhost:5000/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          teacher_id: selectedTeacher.id,
+          department_id: user.department_id,
+          module_name: quickAddForm.module_name,
+          day_of_week: addSlotDay,
+          start_time: addSlotTime,
+          end_time: endTimeStr,
+          session_type: quickAddForm.session_type,
+          study_level_id: quickAddForm.study_level_id,
+          section_id: quickAddForm.section_id,
+          group_id: quickAddForm.group_id,
+          is_extra: quickAddForm.is_extra
+        })
+      });
+
+      if (res.ok) {
+        toast.success(t('sessions.successAdd') || 'Séance ajoutée');
+        setShowAddModal(false);
+        fetchTeacherSchedule(selectedTeacher); // Refresh
+      } else {
+        const err = await res.json();
+        toast.error(err.message || 'Error');
+      }
+    } catch (e) { toast.error('Error'); }
+  };
+
   const getPageTitle = () => {
     switch(view) {
       case 'list': return t('topbar.teachersDirectory');
-      case 'sessions': return t('topbar.departmentSchedules');
       case 'classes': return t('classes.title');
       case 'absences': return t('topbar.absenceValidations');
       case 'promotions': return t('topbar.careerAdvancements');
@@ -171,8 +276,7 @@ function DashboardDeptHead({ user, onLogout }) {
           </div>
         ) : (
           <>
-            {view === 'sessions' ? <ManageSessions user={user} /> : 
-             view === 'classes' ? <ManageClasses user={user} /> :
+            {view === 'classes' ? <ManageClasses user={user} /> :
              view === 'absences' ? <ManageAbsences user={user} /> : 
              view === 'promotions' ? <ManagePromotions user={user} /> : 
              view === 'documents' ? <ManageDocuments user={user} /> : 
@@ -180,73 +284,156 @@ function DashboardDeptHead({ user, onLogout }) {
              view === 'reminders' ? <ManageReminders user={user} /> : 
              view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : 
              view === 'teacher-schedule' ? (
-              <div className="card-academic">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
-                    <h3 className="academic-title" style={{ margin: 0 }}>{selectedTeacherName}</h3>
-                   <button onClick={() => setView('list')} className="btn-cancel-pro" style={{ padding: '8px 20px', fontSize: '13px' }}>
-                     {t('common.backToList')}
-                   </button>
+              <div className="card-academic" style={{ padding: '0', border: 'none', background: 'transparent' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', padding: '0 10px' }}>
+                  <div>
+                    <h3 className="academic-title" style={{ margin: 0, fontSize: '24px' }}>{selectedTeacherName}</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '4px 0 0 0' }}>{t('topbar.teacherSchedule')}</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button onClick={() => setView('list')} className="btn-cancel-pro" style={{ padding: '10px 24px', fontSize: '14px', borderRadius: '12px' }}>
+                      {t('common.backToList')}
+                    </button>
+                  </div>
                 </div>
-                <div className="table-academic-wrapper">
-                   <table className="table-academic">
-                     <thead>
-                       <tr>
-                         <th>{t('teacher.day')}</th>
-                         <th>{t('common.date')}</th>
-                         <th>{t('teacher.time')}</th>
-                         <th>{t('teacher.module')}</th>
-                         <th>{t('teacher.level')}</th>
-                         <th>{t('teacher.type')}</th>
-                         <th>{t('teacher.sectionGroup')}</th>
-                         <th>SUPP</th>
-                         <th style={{ textAlign: 'right' }}>{t('common.actions')}</th>
-                       </tr>
-                     </thead>
-                     <tbody>
-                       {teacherSchedule.length > 0 ? teacherSchedule.map(s => (
-                         <tr key={s.id}>
-                           <td style={{ fontWeight: '800', color: 'var(--p-indigo)' }}>{t(`days.${s.day_of_week}`)}</td>
-                           <td style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-                             {s.session_date 
-                               ? new Date(s.session_date).toLocaleDateString() 
-                               : getNextOccurrence(s.day_of_week, s.start_time).toLocaleDateString()
-                             }
-                           </td>
-                           <td>
-                             {s.start_time && s.end_time 
-                               ? `${s.start_time.substring(0, 5)} - ${s.end_time.substring(0, 5)}`
-                               : '-'}
-                           </td>
-                           <td style={{ fontWeight: '700' }}>{s.module_name}</td>
-                           <td><span className="badge-academic">{s.study_level}</span></td>
-                           <td>
-                              <span className={`badge-academic ${s.session_type === 'Lecture' ? 'badge-blue' : s.session_type === 'Tutorial' ? 'badge-purple' : 'badge-gold'}`}>
-                                {s.session_type === 'Lecture' ? t('sessions.lecture').toUpperCase() : s.session_type === 'Tutorial' ? t('sessions.tutorialTD').toUpperCase() : t('sessions.practicalTP').toUpperCase()}
-                              </span>
-                           </td>
-                           <td>{s.section || s.groupe ? `${t('teacher.sec')}: ${s.section} ${t('teacher.grp')}: ${s.groupe}` : '-'}</td>
-                           <td>
-                             {s.is_extra ? (
-                               <span className="badge-pro badge-pro-warning" style={{ fontSize: '10px', padding: '4px 10px' }}>{t('common.yes') || 'Oui'}</span>
-                             ) : (
-                               <span className="badge-pro badge-pro-success" style={{ fontSize: '10px', padding: '4px 10px' }}>{t('common.no') || 'Non'}</span>
-                             )}
-                           </td>
-                           <td style={{ textAlign: 'right' }}>
-                             <button onClick={() => triggerCancelSession(s.id)} className="btn-cancel-pro" style={{ padding: '6px 12px', fontSize: '11px' }}>
-                               {t('common.cancel')}
-                             </button>
-                           </td>
-                         </tr>
-                       )) : (
-                         <tr>
-                           <td colSpan="9" style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)', fontWeight: '600', fontSize: '15px' }}>
-                             {t('teacher.noSessionsShort') || 'Pas de séance'}
-                           </td>
-                         </tr>
-                       )}
-                     </tbody>
-                   </table>
+
+                <div className="schedule-grid-container" style={{ background: 'white', borderRadius: '24px', padding: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.05)', overflowX: 'auto' }}>
+                  <div className="schedule-grid" style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: '100px repeat(7, 1fr)', 
+                    gap: '12px',
+                    minWidth: '1000px'
+                  }}>
+                    {/* Header: Days */}
+                    <div className="grid-header-cell" style={{ background: '#f8fafc', padding: '15px 10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700', color: 'var(--text-main)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      Horaires
+                    </div>
+                    {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+                      <div key={day} className="grid-header-cell" style={{ textAlign: 'center', fontWeight: '700', textTransform: 'capitalize', background: '#f8fafc', padding: '15px 10px', borderRadius: '10px', fontSize: '13px', color: 'var(--text-main)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {t(`days.${day}`)}
+                      </div>
+                    ))}
+
+                    {/* Time Slots & Cells */}
+                    {[
+                      { start: '08:00', end: '09:30' },
+                      { start: '09:35', end: '11:05' },
+                      { start: '11:10', end: '12:40' },
+                      { start: '12:45', end: '14:15' },
+                      { start: '14:20', end: '15:50' },
+                      { start: '15:55', end: '17:25' }
+                    ].map(slot => (
+                      <div key={slot.start} style={{ display: 'contents' }}>
+                        {/* Time label */}
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: 'var(--text-muted)', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          borderRight: '1px solid #f1f5f9',
+                          padding: '10px 0',
+                          fontWeight: '700'
+                        }}>
+                          {slot.start} - {slot.end}
+                        </div>
+
+                        {/* Day cells for this slot */}
+                        {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => {
+                          const sessionsInSlot = teacherSchedule.filter(s => 
+                            s.day_of_week === day && 
+                            s.start_time?.startsWith(slot.start)
+                          );
+
+                          return (
+                            <div 
+                              key={`${day}-${slot.start}`} 
+                              onClick={() => sessionsInSlot.length === 0 && openQuickAdd(day, slot.start)}
+                              className={`grid-slot ${sessionsInSlot.length === 0 ? 'empty-clickable' : ''}`}
+                              style={{ 
+                                minHeight: '100px', 
+                                background: '#f8fafc', 
+                                borderRadius: '16px',
+                                padding: '8px',
+                                position: 'relative',
+                                border: '1px dashed #e2e8f0',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '6px',
+                                cursor: sessionsInSlot.length === 0 ? 'pointer' : 'default'
+                              }}
+                            >
+                              {sessionsInSlot.length === 0 && (
+                                <div className="add-indicator" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '24px', color: '#cbd5e1', opacity: 0, transition: 'all 0.2s ease', fontWeight: '300' }}>+</div>
+                              )}
+                              {sessionsInSlot.map(s => (
+                                <div 
+                                  key={s.id} 
+                                  className="schedule-card"
+                                  style={{ 
+                                    background: getSessionColor(s.session_type),
+                                    position: 'relative',
+                                    flex: 1,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                    padding: '10px',
+                                    borderRadius: '12px',
+                                    color: 'white',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                  }}
+                                >
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); triggerCancelSession(s.id); }}
+                                    style={{ 
+                                      position: 'absolute', top: '5px', right: '5px', 
+                                      background: 'rgba(0,0,0,0.1)', border: 'none', borderRadius: '50%', 
+                                      width: '18px', height: '18px', fontSize: '10px', 
+                                      color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      zIndex: 2
+                                    }}
+                                  >
+                                    ✕
+                                  </button>
+                                    {s.is_extra ? (
+                                      <div style={{ 
+                                        position: 'absolute',
+                                        top: '-8px',
+                                        left: '-4px',
+                                        fontSize: '8px', 
+                                        background: 'linear-gradient(135deg, #f59e0b, #d97706)', 
+                                        color: 'white', 
+                                        padding: '2px 8px', 
+                                        borderRadius: '6px', 
+                                        fontWeight: '900', 
+                                        boxShadow: '0 4px 10px rgba(217, 119, 6, 0.5)',
+                                        border: '1px solid rgba(255,255,255,0.4)',
+                                        zIndex: 3,
+                                        letterSpacing: '0.5px'
+                                      }}>
+                                        SUPP
+                                      </div>
+                                    ) : null}
+                                    <div style={{ fontWeight: '900', textTransform: 'uppercase', opacity: 0.9, fontSize: '10px', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                                      {s.session_type === 'Lecture' ? 'COURS' : s.session_type === 'Tutorial' ? 'TD' : 'TP'}
+                                    </div>
+                                    <div style={{ fontWeight: '800', fontSize: '12px', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {s.module_name}
+                                  </div>
+                                  <div style={{ fontSize: '10px', opacity: 0.8 }}>
+                                    {s.section && `Sec: ${s.section}`} {s.groupe && `Grp: ${s.groupe}`}
+                                  </div>
+                                  <div style={{ fontSize: '10px', fontWeight: '600', opacity: 0.9 }}>
+                                    {s.start_time.substring(0,5)} - {s.end_time.substring(0,5)}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -361,6 +548,82 @@ function DashboardDeptHead({ user, onLogout }) {
                   {t('common.delete')}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+        {/* QUICK ADD MODAL */}
+        {showAddModal && (
+          <div style={{ 
+            position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', 
+            background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', 
+            zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' 
+          }}>
+            <div className="card-academic" style={{ width: '100%', maxWidth: '500px', padding: '32px', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', borderRadius: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h3 className="academic-title" style={{ margin: 0 }}>{t('sessions.addSession')}</h3>
+                <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
+              </div>
+              
+              <div style={{ marginBottom: '20px', padding: '12px', background: 'var(--p-indigo-light)', borderRadius: '12px', border: '1px solid var(--p-indigo-soft)' }}>
+                <p style={{ margin: 0, fontSize: '13px', color: 'var(--p-indigo)', fontWeight: '700' }}>
+                   {t(`days.${addSlotDay}`)} @ {addSlotTime}
+                </p>
+              </div>
+
+              <form onSubmit={handleQuickAddSubmit}>
+                <div className="mnadm-form-group">
+                  <label className="mnadm-label" style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.moduleSubject')}</label>
+                  <select 
+                    className="mnadm-input" 
+                    style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}
+                    value={quickAddForm.module_name} 
+                    onChange={e => {
+                      const mod = teacherModules.find(m => m.name === e.target.value);
+                      setQuickAddForm({...quickAddForm, module_name: e.target.value, study_level_id: mod?.study_level_id || ''});
+                    }}
+                    required
+                  >
+                    <option value="">-- {t('common.select')} --</option>
+                    {teacherModules.map(m => <option key={m.id} value={m.name}>{m.name} ({m.study_level})</option>)}
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+                  <div className="mnadm-form-group" style={{ flex: 1 }}>
+                    <label className="mnadm-label" style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>{t('teacher.type')}</label>
+                    <select className="mnadm-input" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }} value={quickAddForm.session_type} onChange={e => setQuickAddForm({...quickAddForm, session_type: e.target.value})}>
+                      <option value="Lecture">{t('sessions.lecture')}</option>
+                      <option value="Tutorial">{t('sessions.tutorialTD')}</option>
+                      <option value="Practical">{t('sessions.practicalTP')}</option>
+                    </select>
+                  </div>
+                  <div className="mnadm-form-group" style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '32px' }}>
+                    <input type="checkbox" id="is_extra_quick" checked={quickAddForm.is_extra} onChange={e => setQuickAddForm({...quickAddForm, is_extra: e.target.checked})} />
+                    <label htmlFor="is_extra_quick" style={{ fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>SUPP</label>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+                  <div className="mnadm-form-group" style={{ flex: 1 }}>
+                    <label className="mnadm-label" style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.section')}</label>
+                    <select className="mnadm-input" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }} value={quickAddForm.section_id} onChange={e => setQuickAddForm({...quickAddForm, section_id: e.target.value, group_id: ''})} disabled={!quickAddForm.study_level_id}>
+                      <option value="">-- {t('common.select')} --</option>
+                      {sectionsList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="mnadm-form-group" style={{ flex: 1 }}>
+                    <label className="mnadm-label" style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.group')}</label>
+                    <select className="mnadm-input" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }} value={quickAddForm.group_id} onChange={e => setQuickAddForm({...quickAddForm, group_id: e.target.value})} disabled={!quickAddForm.section_id}>
+                      <option value="">-- {t('common.select')} --</option>
+                      {groupsList.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <button type="submit" className="btn-confirm-pro" style={{ width: '100%', marginTop: '24px', padding: '14px', borderRadius: '12px', fontWeight: '700' }}>
+                  {t('sessions.scheduleSession')}
+                </button>
+              </form>
             </div>
           </div>
         )}

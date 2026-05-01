@@ -30,6 +30,17 @@ exports.createSession = (req, res) => {
     return res.status(400).json({ message: "All fields are required." });
   }
 
+  // --- PAST DATE VALIDATION ---
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (session_date) {
+    const sDate = new Date(session_date);
+    sDate.setHours(0, 0, 0, 0);
+    if (sDate < today) {
+      return res.status(400).json({ message: "Impossible de créer une séance à une date passée." });
+    }
+  }
+
   // --- CONFLICT DETECTION LOGIC (TOTAL LOCKDOWN) ---
   const tId = Number(teacher_id);
   const sDate = session_date ? session_date : null;
@@ -120,7 +131,7 @@ exports.getTeacherDashboardData = (req, res) => {
 
   // 2. Get teacher stats (absences and target volume)
   const statsQuery = `
-    SELECT u.volume_horaire, 
+    SELECT u.volume_horaire, u.created_at,
            (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id) as total_absences,
            (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted')) as unjustified_count
     FROM users u WHERE u.id = ?
@@ -148,73 +159,86 @@ exports.getTeacherDashboardData = (req, res) => {
   const absencesQuery = "SELECT id, date, reason, status, has_justification, justification_status, justification_file, is_caught_up, is_read_by_teacher, justification_text, catchup_date, catchup_start_time, catchup_end_time FROM absences WHERE teacher_id = ? ORDER BY created_at DESC";
 
   db.query(sessionsQuery, [teacherId], (err, sessions) => {
-    if (err) return res.status(500).json({ error: err.message });
-
-    // Calculate session stats immediately
-    const totalSessions = sessions.length;
-    const extraSessionsCount = sessions.filter(s => s.is_extra).length;
-    
-    let completedSessionsCount = 0;
-    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const today = new Date();
-    const todayIndex = today.getDay();
-    const currentHour = today.getHours() + today.getMinutes() / 60;
-
-    sessions.forEach(s => {
-      // Only count normal sessions toward the annual target
-      if (!s.is_extra) {
-        const [eh, em] = s.end_time.split(':').map(Number);
-        const sessionEndHour = eh + em/60;
-
-        if (s.session_date) {
-          const sDate = new Date(s.session_date);
-          const todayNoTime = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-          const sessionDateNoTime = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
-
-          if (sessionDateNoTime < todayNoTime) {
-            completedSessionsCount++;
-          } else if (sessionDateNoTime.getTime() === todayNoTime.getTime() && sessionEndHour <= currentHour) {
-            completedSessionsCount++;
-          }
-        } else {
-          const sessionDayIndex = daysOfWeek.indexOf(s.day_of_week);
-          if (sessionDayIndex < todayIndex) {
-            completedSessionsCount++;
-          } else if (sessionDayIndex === todayIndex && sessionEndHour <= currentHour) {
-            completedSessionsCount++;
-          }
-        }
-      }
-    });
+    if (err) {
+      console.error('[BACKEND ERROR] sessionsQuery failed:', err);
+      return res.status(500).json({ error: err.message });
+    }
 
     db.query(statsQuery, [teacherId], (err, statsResult) => {
-      if (err) return res.status(500).json({ error: err.message });
+      if (err) {
+        console.error('[BACKEND ERROR] statsQuery failed:', err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      const teacherStats = statsResult[0] || { total_absences: 0, created_at: new Date() };
+      const teacherCreatedAt = new Date(teacherStats.created_at);
+      teacherCreatedAt.setHours(0, 0, 0, 0); // Start of the joining day
+      
+      const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const today = new Date();
+      const currentHour = today.getHours() + today.getMinutes() / 60;
+      
+      let completedSessionsCount = 0;
+      const semesterStart = new Date(today.getFullYear(), 0, 1); 
+      const actualStart = teacherCreatedAt > semesterStart ? teacherCreatedAt : semesterStart;
+
+      sessions.forEach(s => {
+        if (!s.is_extra) {
+          const [eh, em] = s.end_time.split(':').map(Number);
+          const sessionEndHour = eh + em/60;
+
+          if (s.session_date) {
+            const sDate = new Date(s.session_date);
+            const todayNoTime = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const sessionDateNoTime = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
+
+            if (sessionDateNoTime < todayNoTime || (sessionDateNoTime.getTime() === todayNoTime.getTime() && sessionEndHour <= currentHour)) {
+              completedSessionsCount++;
+            }
+          } else {
+            const targetDayIndex = daysOfWeek.indexOf(s.day_of_week);
+            let tempDate = new Date(actualStart);
+            while (tempDate <= today) {
+              if (tempDate.getDay() === targetDayIndex) {
+                if (tempDate.toDateString() === today.toDateString()) {
+                  if (sessionEndHour <= currentHour) completedSessionsCount++;
+                } else {
+                  completedSessionsCount++;
+                }
+              }
+              tempDate.setDate(tempDate.getDate() + 1);
+            }
+          }
+        }
+      });
 
       db.query(remindersQuery, [teacherId, teacherId, teacherId, teacherId, teacherId], (err, remindersResult) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+          console.error('[BACKEND ERROR] remindersQuery failed:', err);
+          return res.status(500).json({ error: err.message });
+        }
 
         db.query(absencesQuery, [teacherId], (err, absencesResult) => {
-          if (err) return res.status(500).json({ error: err.message });
+          if (err) {
+            console.error('[BACKEND ERROR] absencesQuery failed:', err);
+            return res.status(500).json({ error: err.message });
+          }
 
-          const teacherStats = statsResult[0] || { total_absences: 0 };
           let actualDone = completedSessionsCount - (teacherStats.total_absences || 0);
           if (actualDone < 0) actualDone = 0;
 
           const annualTarget = teacherStats.volume_horaire || 0;
-          const remaining = annualTarget - actualDone;
-
           const dashboardStats = {
             annual_volume_target: annualTarget,
             sessions_done: actualDone,
             extra_sessions: sessions.filter(s => s.is_extra).length,
+            teacher_created_at: teacherStats.created_at,
             absences: {
               total: teacherStats.total_absences || 0,
               unjustified: teacherStats.unjustified_count || 0,
               justified: (teacherStats.total_absences || 0) - (teacherStats.unjustified_count || 0)
             }
           };
-
-          console.log('[BACKEND DEBUG] Sending Stats:', dashboardStats);
 
           res.json({
             all_sessions: sessions,

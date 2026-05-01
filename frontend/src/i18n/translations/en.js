@@ -695,13 +695,6 @@ const en = {
     extraNote: 'Outside annual target',
     justifiedShort: 'Justified',
     unjustifiedShort: 'Unjustified',
-    monday: 'Monday',
-    tuesday: 'Tuesday',
-    wednesday: 'Wednesday',
-    thursday: 'Thursday',
-    friday: 'Friday',
-    saturday: 'Saturday',
-    sunday: 'Sunday',
     lecture: 'Cours',
     tutorialTD: 'Tutorial (TD)',
     practicalTP: 'Practical (TP)',
@@ -724,8 +717,19 @@ const en = {
     ends: 'Ends',
   },
 
+  days: {
+    Monday: 'Monday',
+    Tuesday: 'Tuesday',
+    Wednesday: 'Wednesday',
+    Thursday: 'Thursday',
+    Friday: 'Friday',
+    Saturday: 'Saturday',
+    Sunday: 'Sunday'
+  },
+
   teacher: {
     label: 'Teacher',
+    weeklySchedule: 'Weekly Schedule',
     annualVolume: 'Annual Target',
     sessions: "sessions",
     completed: "completed",

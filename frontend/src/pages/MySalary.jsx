@@ -58,9 +58,9 @@ function MySalary({ user }) {
           </div>
           
           <div className="salary-card" style={{ padding: '20px', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-            <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '800', textTransform: 'uppercase' }}>{t('salary.extraPay') || 'Heures Supp.'}</span>
+            <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '800', textTransform: 'uppercase' }}>{t('salary.extraPay') || 'Séances Supp.'}</span>
             <div style={{ fontSize: '24px', fontWeight: '800', color: '#10b981', marginTop: '8px' }}>+{current.extra_pay.toLocaleString()} <small style={{ fontSize: '12px' }}>DA</small></div>
-            <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>{current.extra_hours}h x {current.hourly_rate} DA</div>
+            <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>{current.extra_hours} {t('teacher.sessions') || 'séances'} x {current.hourly_rate} DA</div>
           </div>
 
           <div className="salary-card" style={{ padding: '20px', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>

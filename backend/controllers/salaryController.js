@@ -1,13 +1,40 @@
 const db = require('../config/db');
 
-// Helper to count occurrences of a day of week in a specific month/year
-const countDayOccurrences = (dayName, month, year) => {
+// Helper to count occurrences of a day of week in a specific month/year up to a certain day/time, starting from a startDate
+const countPastDayOccurrences = (dayName, month, year, endTime = '23:59:00', now = new Date(), startDate = new Date(year, month, 1)) => {
   const dayIndex = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(dayName);
   let count = 0;
+  
+  // Normalize date to start of month
   let date = new Date(year, month, 1);
-  while (date.getMonth() === month) {
-    if (date.getDay() === dayIndex) count++;
-    date.setDate(date.getDate() + 1);
+  
+  // Normalize startDate to start of day for comparison
+  const sDate = new Date(startDate);
+  sDate.setHours(0,0,0,0);
+
+  const [eh, em] = endTime.split(':').map(Number);
+  const sessionEndHour = eh + em/60;
+  const currentHour = now.getHours() + now.getMinutes() / 60;
+
+  // Past month
+  if (year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth())) {
+    while (date.getMonth() === month) {
+      if (date.getDay() === dayIndex && date >= sDate) count++;
+      date.setDate(date.getDate() + 1);
+    }
+  } else if (year === now.getFullYear() && month === now.getMonth()) {
+    // Current month
+    while (date.getMonth() === month && date <= now) {
+      if (date.getDay() === dayIndex && date >= sDate) {
+        if (date.toDateString() === now.toDateString()) {
+          // If it's today, only count if it's finished
+          if (sessionEndHour <= currentHour) count++;
+        } else {
+          count++;
+        }
+      }
+      date.setDate(date.getDate() + 1);
+    }
   }
   return count;
 };
@@ -32,7 +59,7 @@ exports.calculateSalaries = (req, res) => {
     const salaryPromises = teachers.map(t => {
       return new Promise((resolve, reject) => {
         // 1. Get Extra Sessions scheduled
-        const sessionsQuery = "SELECT * FROM academic_sessions WHERE teacher_id = ? AND is_extra = TRUE";
+        const sessionsQuery = "SELECT *, created_at FROM academic_sessions WHERE teacher_id = ? AND is_extra = TRUE";
         db.query(sessionsQuery, [t.id], (err, sessions) => {
           if (err) return reject(err);
 
@@ -40,11 +67,24 @@ exports.calculateSalaries = (req, res) => {
           sessions.forEach(s => {
             if (s.session_date) {
               const sDate = new Date(s.session_date);
-              if (sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear) {
+              const sessionCreatedAt = new Date(s.created_at);
+              if (sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear && sDate <= now && sDate >= sessionCreatedAt) {
                 totalExtraSessionsThisMonth++;
               }
+              if (now.getDate() < 15) {
+                const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+                const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+                if (sDate.getMonth() === prevMonth && sDate.getFullYear() === prevYear && sDate >= sessionCreatedAt) {
+                  totalExtraSessionsThisMonth++;
+                }
+              }
             } else {
-              totalExtraSessionsThisMonth += countDayOccurrences(s.day_of_week, currentMonth, currentYear);
+              totalExtraSessionsThisMonth += countPastDayOccurrences(s.day_of_week, currentMonth, currentYear, s.end_time, now, s.created_at);
+              if (now.getDate() < 15) {
+                const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+                const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+                totalExtraSessionsThisMonth += countPastDayOccurrences(s.day_of_week, prevMonth, prevYear, s.end_time, new Date(prevYear, prevMonth + 1, 0), s.created_at);
+              }
             }
           });
 
@@ -53,11 +93,17 @@ exports.calculateSalaries = (req, res) => {
             SELECT COUNT(*) as count 
             FROM absences 
             WHERE teacher_id = ? 
-              AND MONTH(date) = ? AND YEAR(date) = ?
+              AND (
+                (MONTH(date) = ? AND YEAR(date) = ?)
+                OR (DAY(?) < 15 AND MONTH(date) = ? AND YEAR(date) = ?)
+              )
+              AND date <= DATE(?) -- Only count past or today's absences
               AND (justification_status IS NULL OR justification_status != 'Accepted')
               AND is_caught_up = FALSE
           `;
-          db.query(absQuery, [t.id, currentMonth + 1, currentYear], (err, absRes) => {
+          const prevM = currentMonth === 0 ? 12 : currentMonth;
+          const prevY = currentMonth === 0 ? currentYear - 1 : currentYear;
+          db.query(absQuery, [t.id, currentMonth + 1, currentYear, now, prevM, prevY, now], (err, absRes) => {
             if (err) return reject(err);
             
             const unjustifiedAbsences = absRes[0].count;
@@ -104,19 +150,35 @@ exports.getMySalary = (req, res) => {
     const t = users[0];
 
     // Calculate dynamic stats for current teacher
-    const sessionsQuery = "SELECT * FROM academic_sessions WHERE teacher_id = ? AND is_extra = TRUE";
+    const sessionsQuery = "SELECT *, created_at FROM academic_sessions WHERE teacher_id = ? AND is_extra = TRUE";
     db.query(sessionsQuery, [t.id], (err, sessions) => {
       if (err) return res.status(500).json({ error: err.message });
 
       let totalExtraSessionsThisMonth = 0;
+      
+      // We look at current month
       sessions.forEach(s => {
+        const sessionCreatedAt = new Date(s.created_at);
         if (s.session_date) {
           const sDate = new Date(s.session_date);
-          if (sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear) {
+          if (sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear && sDate <= now && sDate >= sessionCreatedAt) {
             totalExtraSessionsThisMonth++;
           }
+          // If beginning of month, also check previous month
+          if (now.getDate() < 15) {
+            const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+            const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+            if (sDate.getMonth() === prevMonth && sDate.getFullYear() === prevYear && sDate >= sessionCreatedAt) {
+              totalExtraSessionsThisMonth++;
+            }
+          }
         } else {
-          totalExtraSessionsThisMonth += countDayOccurrences(s.day_of_week, currentMonth, currentYear);
+          totalExtraSessionsThisMonth += countPastDayOccurrences(s.day_of_week, currentMonth, currentYear, s.end_time, now, s.created_at);
+          if (now.getDate() < 15) {
+            const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+            const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+            totalExtraSessionsThisMonth += countPastDayOccurrences(s.day_of_week, prevMonth, prevYear, s.end_time, new Date(prevYear, prevMonth + 1, 0), s.created_at);
+          }
         }
       });
 
@@ -124,11 +186,19 @@ exports.getMySalary = (req, res) => {
         SELECT COUNT(*) as count 
         FROM absences 
         WHERE teacher_id = ? 
-          AND MONTH(date) = ? AND YEAR(date) = ?
+          AND (
+            (MONTH(date) = ? AND YEAR(date) = ?)
+            OR (DAY(?) < 15 AND MONTH(date) = ? AND YEAR(date) = ?)
+          )
+          AND date <= DATE(?) -- Only count past or today's absences
           AND (justification_status IS NULL OR justification_status != 'Accepted')
           AND is_caught_up = FALSE
       `;
-      db.query(absQuery, [t.id, currentMonth + 1, currentYear], (err, absRes) => {
+      
+      const prevM = currentMonth === 0 ? 12 : currentMonth;
+      const prevY = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+      db.query(absQuery, [t.id, currentMonth + 1, currentYear, now, prevM, prevY, now], (err, absRes) => {
         if (err) return res.status(500).json({ error: err.message });
         
         const unjustifiedAbsences = absRes[0].count;
@@ -141,6 +211,7 @@ exports.getMySalary = (req, res) => {
           extra_hours: totalExtraSessionsThisMonth,
           hourly_rate: t.hourly_rate || 0,
           absences: unjustifiedAbsences,
+          absence_penalty: t.absence_penalty || 0, // Added this
           total_penalty: penaltyAmount,
           extra_pay: extraPay,
           net_salary: netSalary > 0 ? netSalary : 0,

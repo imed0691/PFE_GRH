@@ -100,7 +100,7 @@ function ManageSalaries() {
                   </td>
                   <td data-label={t('salaries.extraHours')} style={{ textAlign: 'center' }}>
                     <span style={{ background: '#f0fdf4', color: '#16a34a', padding: '4px 10px', borderRadius: '20px', fontWeight: '700', fontSize: '12px' }}>
-                      {s.extra_hours || 0}h
+                      {s.extra_hours || 0}
                     </span>
                   </td>
                   <td data-label={t('sidebar.absences')} style={{ textAlign: 'center' }}>

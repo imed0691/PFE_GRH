@@ -351,3 +351,129 @@
   background: var(--danger);
   color: white;
 }
+
+/* --- Schedule Grid Styles --- */
+.schedule-grid-container {
+  margin-top: 24px;
+}
+
+.schedule-grid {
+  display: grid;
+  grid-template-columns: 80px repeat(7, 1fr);
+  gap: 15px;
+  overflow-x: auto;
+}
+
+.time-column {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.day-column {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 140px;
+}
+
+.day-header {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--text-main);
+  border: 1px solid #f1f5f9;
+}
+
+.time-label {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.time-slot-header {
+  height: 40px;
+}
+
+.grid-slot {
+  min-height: 100px;
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 8px;
+  border: 1px dashed #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.grid-slot.empty-clickable:hover {
+  background: #f1f5f9 !important;
+  border-color: var(--p-indigo);
+}
+
+.grid-slot:hover .add-indicator {
+  opacity: 1 !important;
+  transform: translate(-50%, -50%) scale(1.2);
+}
+
+
+
+.schedule-card {
+  padding: 10px;
+  border-radius: 12px;
+  color: white;
+  font-size: 11px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.schedule-card:hover {
+  transform: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+
+.session-type-badge {
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  opacity: 0.9;
+  letter-spacing: 0.5px;
+}
+
+.session-module {
+  font-weight: 800;
+  font-size: 13px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-details {
+  font-size: 10px;
+  opacity: 0.8;
+  margin-bottom: 2px;
+}
+
+.session-time-sub {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
