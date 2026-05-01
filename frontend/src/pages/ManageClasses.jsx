@@ -477,10 +477,10 @@ function ManageClasses({ user }) {
             </div>
 
             <div style={{ paddingRight: '10px', maxHeight: '500px', overflowY: 'auto' }}>
-              {filteredTeachers.map(t => (
-                <div key={t.id} onClick={() => setSelectedTeacherId(t.id)} style={{ padding: '12px', marginBottom: '8px', borderRadius: '8px', cursor: 'pointer', background: selectedTeacherId === t.id ? '#eff6ff' : '#f8fafc', border: selectedTeacherId === t.id ? '1px solid #bfdbfe' : '1px solid transparent' }}>
-                  <div style={{ fontWeight: 'bold', color: '#1e293b' }}>{t.nom} {t.prenom}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--p-gold)', fontWeight: '700' }}>{t('grades.' + (t.grade || 'Teacher'))}</div>
+              {filteredTeachers.map(prof => (
+                <div key={prof.id} onClick={() => setSelectedTeacherId(prof.id)} style={{ padding: '12px', marginBottom: '8px', borderRadius: '8px', cursor: 'pointer', background: selectedTeacherId === prof.id ? '#eff6ff' : '#f8fafc', border: selectedTeacherId === prof.id ? '1px solid #bfdbfe' : '1px solid transparent' }}>
+                  <div style={{ fontWeight: 'bold', color: '#1e293b' }}>{prof.nom} {prof.prenom}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--p-gold)', fontWeight: '700' }}>{t('grades.' + (prof.grade || 'Teacher'))}</div>
                 </div>
               ))}
             </div>

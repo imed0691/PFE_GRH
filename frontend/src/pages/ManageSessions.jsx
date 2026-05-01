@@ -20,7 +20,8 @@ function ManageSessions({ user }) {
   const [sectionsList, setSectionsList] = useState([]);
   const [groupsList, setGroupsList] = useState([]);
   
-  const [selectedDeptId, setSelectedDeptId] = useState(user?.department_id || null);
+  const [selectedDeptId, setSelectedDeptId] = useState(user?.department_id || '');
+  const [departments, setDepartments] = useState([]);
    const [dayOfWeek, setDayOfWeek] = useState('Monday');
   const [sessionDate, setSessionDate] = useState('');
   const [isRecurring, setIsRecurring] = useState(true);
@@ -50,9 +51,18 @@ function ManageSessions({ user }) {
     } catch (error) { toast.error(t('sessions.failedFetch')); } finally { setLoading(false); }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/departments', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) setDepartments(await res.json());
+    } catch (e) {}
+  };
+
   useEffect(() => { 
     fetchTeachers(); 
     fetchSessions();
+    fetchDepartments();
   }, []);
 
   // Fetch Teacher Modules when Teacher changes
@@ -203,11 +213,29 @@ function ManageSessions({ user }) {
         <form onSubmit={handleCreateSession} className="card-academic" style={{ marginBottom: '32px' }}>
           <div className="mnadm-form-row">
             <div className="mnadm-form-group">
+              <label className="mnadm-label">{t('common.department')}</label>
+              <select 
+                className="mnadm-input" 
+                value={selectedDeptId} 
+                onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); }}
+                style={{ borderRadius: '12px', height: '42px' }}
+              >
+                <option value="">{t('common.all')}</option>
+                {departments.map(d => (
+                  <option key={d.id} value={d.id}>
+                    {t('departments.' + d.name).includes('.') ? d.name : t('departments.' + d.name)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mnadm-form-group">
               <label className="mnadm-label">{t('common.teacher')}</label>
               <Select
                 isLoading={loading}
                 isClearable
-                options={teachers.map(t => ({ value: t.id, label: `${t.nom} ${t.prenom}` }))}
+                options={teachers
+                  .filter(t => !selectedDeptId || t.department_id === parseInt(selectedDeptId))
+                  .map(t => ({ value: t.id, label: `${t.nom} ${t.prenom} (${t.department_name || '-'})` }))}
                 value={teachers.filter(t => t.id === selectedTeacherId).map(t => ({ value: t.id, label: `${t.nom} ${t.prenom}` }))[0] || null}
                 onChange={(o) => setSelectedTeacherId(o ? o.value : null)}
                 placeholder={t('sessions.selectTeacher')}

@@ -111,16 +111,16 @@ function DashboardRector({ user, onLogout }) {
               </div>
 
               <div className="card-academic">
-                <h3 className="academic-title">{t('hr.summaryTitle')}</h3>
+                <h3 className="academic-title">{t('rector.summaryTitle')}</h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '17px', lineHeight: '1.8' }}>
-                  {t('hr.summaryText')}
+                  {t('rector.summaryText')}
                 </p>
                 <div style={{ marginTop: '40px', borderTop: '1px solid #eee', paddingTop: '32px', display: 'flex', gap: '24px' }}>
                    <div style={{ flex: 1 }}>
-                      <h5 style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold)', marginBottom: '16px' }}>{t('hr.recentActivity')}</h5>
-                      <p style={{ fontSize: '14px', color: '#666' }}>{t('hr.noAlerts')}</p>
+                      <h5 style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold)', marginBottom: '16px' }}>{t('rector.recentActivity')}</h5>
+                      <p style={{ fontSize: '14px', color: '#666' }}>{t('rector.noAlerts')}</p>
                    </div>
-                   <button className="btn-confirm-pro" style={{ padding: '10px 24px' }}>{t('hr.reports')}</button>
+                   <button className="btn-confirm-pro" style={{ padding: '10px 24px' }}>{t('rector.reports')}</button>
                 </div>
               </div>
            </div>

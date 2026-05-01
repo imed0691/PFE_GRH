@@ -10,6 +10,8 @@ function ManageAbsences({ user: propUser }) {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState('');
   const [userId, setUserId] = useState(null);
+  const [departments, setDepartments] = useState([]);
+  const [selectedDept, setSelectedDept] = useState('all');
   const { t } = useLanguage();
 
   const [showForm, setShowForm] = useState(false);
@@ -78,8 +80,19 @@ function ManageAbsences({ user: propUser }) {
     } catch (error) { console.error('Error fetching teachers:', error); }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/departments', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) setDepartments(await res.json());
+    } catch (e) {}
+  };
+
   useEffect(() => {
     fetchAbsences();
+    fetchDepartments();
     if (userRole) {
       const r = userRole.toUpperCase().replace(/[\s-]/g, '_');
       if (r !== 'TEACHER' && r !== 'ENSEIGNANT') fetchTeachers();
@@ -188,7 +201,14 @@ function ManageAbsences({ user: propUser }) {
     } catch (error) { toast.error(t('common.serverError')); } finally { setLoading(false); }
   };
 
-  const teacherOptions = teachers.map(t => ({ value: t.id, label: `${t.prenom} ${t.nom}` }));
+  const filteredTeachers = selectedDept === 'all' 
+    ? teachers 
+    : teachers.filter(t => t.department_id === parseInt(selectedDept));
+
+  const teacherOptions = filteredTeachers.map(t => ({ 
+    value: t.id, 
+    label: `${t.prenom} ${t.nom} (${t.department_name || '-'})` 
+  }));
 
   if (loading) return <div className="loading-spinner">{t('common.loading')}</div>;
 
@@ -212,12 +232,32 @@ function ManageAbsences({ user: propUser }) {
               <form onSubmit={handleMarkAbsence} style={{ marginTop: '24px' }}>
                 <div className="mnadm-form-row">
                   <div className="mnadm-form-group">
+                    <label className="mnadm-label">{t('common.department')}</label>
+                    <select 
+                      className="mnadm-input" 
+                      value={selectedDept} 
+                      onChange={e => { setSelectedDept(e.target.value); setSelectedTeacher(''); }}
+                      style={{ borderRadius: '10px', height: '42px' }}
+                    >
+                      <option value="all">{t('common.all')}</option>
+                      {departments.map(d => (
+                        <option key={d.id} value={d.id}>
+                          {t('departments.' + d.name).includes('.') ? d.name : t('departments.' + d.name)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="mnadm-form-group">
                     <label className="mnadm-label">{t('absences.selectPersonnel')}</label>
                     <Select 
                       options={teacherOptions} 
                       value={teacherOptions.find(o => o.value === selectedTeacher)} 
                       onChange={o => setSelectedTeacher(o?.value || '')} 
-                      styles={{ control: (base) => ({ ...base, borderRadius: '10px', border: '1px solid #e2e8f0', padding: '4px', fontSize: '14px' }) }}
+                      placeholder={t('common.select') || 'Sélectionner...'}
+                      styles={{ 
+                        control: (base) => ({ ...base, borderRadius: '10px', border: '1px solid #e2e8f0', minHeight: '42px', fontSize: '14px' }),
+                        menu: (base) => ({ ...base, zIndex: 9999 })
+                      }}
                     />
                   </div>
                   <div className="mnadm-form-group">

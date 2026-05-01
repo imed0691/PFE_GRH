@@ -9,13 +9,124 @@
   justify-content: space-between;
   align-items: flex-end;
   gap: 20px;
-  margin-bottom: 8px;
+  margin-bottom: 24px;
 }
 
-.filter-controls {
+.list-controls-pro {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 16px 24px;
+  background: white;
+  border-radius: 20px;
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.filter-group-pro {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+}
+
+.role-filters {
+  display: flex;
+  gap: 8px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.btn-pill {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-pill:hover {
+  color: var(--primary);
+}
+
+.btn-pill.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.filter-divider {
+  height: 24px;
+  width: 1px;
+  background: #e2e8f0;
+}
+
+.dept-filter-wrapper {
+  flex: 0 1 250px;
+}
+
+.mnadm-input-select {
+  width: 100%;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.mnadm-input-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.search-box-pro {
+  flex: 0 1 350px;
+}
+
+.search-wrapper-pro {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-modern {
+  width: 100%;
+  height: 44px;
+  padding: 0 16px 0 44px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.search-input-modern:focus {
+  background: white;
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
+}
+
+.search-wrapper-pro .search-icon {
+  position: absolute;
+  left: 16px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
 }
 
 .filter-label {
@@ -153,4 +264,95 @@
   background: #fee2e2;
   color: var(--danger);
   border-color: var(--danger);
+}
+
+/* Sortable Headers */
+.sortable-th {
+  transition: background-color 0.2s ease;
+  user-select: none;
+}
+
+.sortable-th:hover {
+  background-color: #f8fafc !important;
+  color: var(--primary) !important;
+}
+
+.sortable-th:active {
+  background-color: #f1f5f9 !important;
+}
+
+.sort-icon-placeholder {
+  display: inline-flex;
+  align-items: center;
+  transition: opacity 0.2s ease;
+}
+
+.sortable-th:hover .sort-icon-placeholder svg {
+  opacity: 0.6 !important;
+}
+
+/* Enhanced Buttons */
+.btn-confirm-pro {
+  background: var(--p-indigo);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+}
+
+.btn-confirm-pro:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
+  filter: brightness(1.1);
+}
+
+.btn-cancel-pro {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel-pro:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+/* Role Badges */
+.role-badge {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: inline-block;
+}
+
+.role-rh_manager { background: #fff1f2; color: #e11d48; border: 1px solid #ffe4e6; }
+.role-rector, .role-recteur { background: #fdf4ff; color: #a21caf; border: 1px solid #fae8ff; }
+.role-dean, .role-doyen { background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; }
+.role-vice_rector, .role-vice_recteur { background: #f5f3ff; color: #6d28d9; border: 1px solid #ede9fe; }
+.role-department_head, .role-chef_departement { background: #f0fdf4; color: #15803d; border: 1px solid #dcfce7; }
+.role-teacher, .role-enseignant { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
+
+.user-profile-cell:hover .avatar-circle {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+
+.modern-table thead th {
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 16px 20px;
+  border-bottom: 2px solid #f1f5f9;
 }

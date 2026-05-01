@@ -5,7 +5,7 @@ import './DashboardHR.css';
 
 function AddEmployee({ onCancel, onSuccess }) {
   const { t } = useLanguage();
-  const [formData, setFormData] = useState({ nom: '', prenom: '', email: '', password: '', role: 'TEACHER', department_id: '', grade: 'Teacher', hourly_rate: '', absence_penalty: '', volume_horaire: '192' });
+  const [formData, setFormData] = useState({ nom: '', prenom: '', email: '', password: '', role: 'TEACHER', department_id: '', grade: 'Teacher', hourly_rate: '', absence_penalty: '', volume_horaire: '192', base_salary: '' });
   const [departments, setDepartments] = useState([]);
 
   useEffect(() => {
@@ -31,6 +31,10 @@ function AddEmployee({ onCancel, onSuccess }) {
     e.preventDefault();
     const token = localStorage.getItem('token');
     if (!token) { toast.error(t('addEmployee.sessionExpired')); return; }
+    
+    // Basic validation for numbers
+    if (parseFloat(formData.base_salary) < 0) { toast.error("Le salaire de base doit être positif"); return; }
+
     const loadToast = toast.loading(t('addEmployee.creatingAccount'));
     try {
       const response = await fetch('http://localhost:5000/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(formData) });
@@ -51,15 +55,34 @@ function AddEmployee({ onCancel, onSuccess }) {
           <div className="mnadm-form-group"><label className="mnadm-label">{t('addEmployee.lastName')}</label><input type="text" className="mnadm-input" name="nom" value={formData.nom} onChange={handleChange} required placeholder="Doe" /></div>
           <div className="mnadm-form-group"><label className="mnadm-label">{t('addEmployee.firstName')}</label><input type="text" className="mnadm-input" name="prenom" value={formData.prenom} onChange={handleChange} required placeholder="John" /></div>
         </div>
-        <div className="mnadm-form-group">
-          <label className="mnadm-label">{t('addEmployee.universityEmail')}</label>
-          <div style={{ display: 'flex' }}>
-            <input type="text" className="mnadm-input" value={formData.email.replace('@univ.dz', '')} onChange={(e) => { const cleanValue = e.target.value.replace(/@/g, ''); setFormData({ ...formData, email: cleanValue ? cleanValue + '@univ.dz' : '' }); }} required placeholder="john.doe" style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0, borderRight: 'none', flex: 1 }} />
-            <span style={{ padding: '0 16px', backgroundColor: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0', borderLeft: 'none', borderTopRightRadius: '10px', borderBottomRightRadius: '10px', fontWeight: '500', display: 'flex', alignItems: 'center', fontSize: '14px' }}>@univ.dz</span>
+        
+        <div className="mnadm-form-row">
+          <div className="mnadm-form-group">
+            <label className="mnadm-label">{t('addEmployee.universityEmail')}</label>
+            <div style={{ display: 'flex' }}>
+              <input type="text" className="mnadm-input" value={formData.email.replace('@univ.dz', '')} onChange={(e) => { const cleanValue = e.target.value.replace(/@/g, ''); setFormData({ ...formData, email: cleanValue ? cleanValue + '@univ.dz' : '' }); }} required placeholder="john.doe" style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0, borderRight: 'none', flex: 1 }} />
+              <span style={{ padding: '0 16px', backgroundColor: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0', borderLeft: 'none', borderTopRightRadius: '10px', borderBottomRightRadius: '10px', fontWeight: '500', display: 'flex', alignItems: 'center', fontSize: '14px' }}>@univ.dz</span>
+            </div>
+          </div>
+          <div className="mnadm-form-group">
+            <label className="mnadm-label">{t('salaries.baseSalary') || 'Salaire de Base'}</label>
+            <input type="number" className="mnadm-input" name="base_salary" value={formData.base_salary} onChange={handleChange} required placeholder="e.g. 65000" />
           </div>
         </div>
+
         <div className="mnadm-form-row">
           <div className="mnadm-form-group"><label className="mnadm-label">{t('addEmployee.initialPassword')}</label><input type="text" className="mnadm-input" name="password" value={formData.password} onChange={handleChange} required placeholder={t('addEmployee.tempPassword')} /></div>
+          <div className="mnadm-form-group">
+            <label className="mnadm-label">{t('addEmployee.role')}</label>
+            <select className="mnadm-input" name="role" value={formData.role} onChange={handleChange}>
+              <option value="TEACHER">{t('roles.TEACHER')}</option>
+              <option value="DEPARTMENT_HEAD">{t('addEmployee.headOfDept')}</option>
+              <option value="VICE_DEAN">{t('roles.VICE_DEAN')}</option>
+              <option value="DEAN">{t('roles.DEAN')}</option>
+              <option value="VICE_RECTOR">{t('roles.VICE_RECTOR')}</option>
+              <option value="RECTOR">{t('roles.RECTOR')}</option>
+            </select>
+          </div>
           {showDepartment && (
             <div className="mnadm-form-group">
               <label className="mnadm-label">{t('addEmployee.department')}</label>
@@ -76,17 +99,6 @@ function AddEmployee({ onCancel, onSuccess }) {
               </select>
             </div>
           )}
-          <div className="mnadm-form-group">
-            <label className="mnadm-label">{t('addEmployee.role')}</label>
-            <select className="mnadm-input" name="role" value={formData.role} onChange={handleChange}>
-              <option value="TEACHER">{t('roles.TEACHER')}</option>
-              <option value="DEPARTMENT_HEAD">{t('addEmployee.headOfDept')}</option>
-              <option value="VICE_DEAN">{t('roles.VICE_DEAN')}</option>
-              <option value="DEAN">{t('roles.DEAN')}</option>
-              <option value="VICE_RECTOR">{t('roles.VICE_RECTOR')}</option>
-              <option value="RECTOR">{t('roles.RECTOR')}</option>
-            </select>
-          </div>
         </div>
         {formData.role === 'TEACHER' && (
           <div className="mnadm-form-row">
@@ -103,8 +115,8 @@ function AddEmployee({ onCancel, onSuccess }) {
                 <option value="Professeur">{t('grades.Professeur')}</option>
               </select>
             </div>
-            <div className="mnadm-form-group"><label className="mnadm-label">{t('addEmployee.extraHourlyRate')}</label><input type="number" className="mnadm-input" name="hourly_rate" value={formData.hourly_rate} onChange={handleChange} placeholder="e.g. 600" /></div>
-            <div className="mnadm-form-group"><label className="mnadm-label">{t('addEmployee.absencePenalty')}</label><input type="number" className="mnadm-input" name="absence_penalty" value={formData.absence_penalty} onChange={handleChange} placeholder="e.g. 2000" /></div>
+            <div className="mnadm-form-group"><label className="mnadm-label">{t('addEmployee.extraHourlyRate')}</label><input type="number" className="mnadm-input" name="hourly_rate" value={formData.hourly_rate} onChange={handleChange} required placeholder="e.g. 600" /></div>
+            <div className="mnadm-form-group"><label className="mnadm-label">{t('addEmployee.absencePenalty')}</label><input type="number" className="mnadm-input" name="absence_penalty" value={formData.absence_penalty} onChange={handleChange} required placeholder="e.g. 2000" /></div>
             <div className="mnadm-form-group"><label className="mnadm-label">{t('addEmployee.volumeHoraire')}</label><input type="number" className="mnadm-input" name="volume_horaire" value={formData.volume_horaire} onChange={handleChange} required placeholder="192" /></div>
           </div>
         )}

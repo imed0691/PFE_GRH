@@ -20,6 +20,7 @@ const fr = {
     role: 'Rôle',
     department: 'Département',
     fullName: 'Nom complet',
+    grade: 'Grade',
     teacher: 'Enseignant',
     noData: 'Aucune donnée trouvée.',
     serverError: 'Erreur serveur',

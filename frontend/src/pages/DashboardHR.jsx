@@ -21,7 +21,8 @@ import './DashboardHR.css';
 function DashboardHR({ user, onLogout }) {
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [deptFilter, setDeptFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [view, setViewRaw] = useState('list');
   const [loading, setLoading] = useState(true);
@@ -123,7 +124,6 @@ function DashboardHR({ user, onLogout }) {
     { id: 'departments', label: t('sidebar.departments') },
     { id: 'classes', label: t('sidebar.classes') || 'Classes' },
     { id: 'salaries', label: t('sidebar.salaries') },
-    { id: 'absences', label: t('sidebar.absences'), badge: badges.absences },
     { id: 'reminders', label: t('sidebar.reminders'), badge: badges.reminders },
     { id: 'documents', label: t('sidebar.documents'), badge: badges.documents },
     { id: 'promotions', label: t('sidebar.promotions'), badge: badges.promotions },
@@ -163,8 +163,6 @@ function DashboardHR({ user, onLogout }) {
           <ManageClasses user={user} />
         ) : view === 'salaries' ? (
           <ManageSalaries />
-        ) : view === 'absences' ? (
-          <ManageAbsences user={user} />
         ) : view === 'documents' ? (
           <ManageDocuments user={user} />
         ) : view === 'promotions' ? (
@@ -175,51 +173,47 @@ function DashboardHR({ user, onLogout }) {
           <Settings user={user} onProfileUpdate={handleProfileUpdate} />
         ) : (
           <>
-            <div className="list-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '20px', flexWrap: 'wrap', padding: '24px', background: 'white', borderRadius: '16px', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-md)' }}>
-              <div className="filter-nav" style={{ marginBottom: 0, flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button className={filter === 'all' ? 'btn-confirm-pro' : 'btn-cancel-pro'} onClick={() => setFilter('all')} style={{ padding: '10px 24px', fontSize: '13px' }}>{t('common.all')}</button>
-                <button className={filter === 'direction' ? 'btn-confirm-pro' : 'btn-cancel-pro'} onClick={() => setFilter('direction')} style={{ padding: '10px 24px', fontSize: '13px' }}>{t('hr.direction')}</button>
-                <button className={filter === 'DEPARTMENT_HEAD' ? 'btn-confirm-pro' : 'btn-cancel-pro'} onClick={() => setFilter('DEPARTMENT_HEAD')} style={{ padding: '10px 24px', fontSize: '13px' }}>{t('roles.DEPARTMENT_HEAD')}</button>
+            <div className="list-controls-pro">
+              <div className="filter-group-pro">
+                <div className="role-filters">
+                  <button className={roleFilter === 'all' && deptFilter === 'all' ? 'btn-pill active' : 'btn-pill'} onClick={() => { setRoleFilter('all'); setDeptFilter('all'); }}>{t('common.all')}</button>
+                  <button className={roleFilter === 'DIRECTION' ? 'btn-pill active' : 'btn-pill'} onClick={() => { setRoleFilter('DIRECTION'); setDeptFilter('all'); }}>{t('hr.direction')}</button>
+                </div>
 
-                <div className="hide-mobile" style={{ height: '24px', width: '1px', background: '#e2e8f0', margin: '0 8px' }}></div>
+                <div className="filter-divider"></div>
 
-                <select
-                  className="mnadm-input"
-                  value={filter.startsWith('dept_') ? filter : ''}
-                  onChange={(e) => setFilter(e.target.value)}
-                  style={{
-                    width: 'auto',
-                    minWidth: '220px',
-                    height: '42px',
-                    background: filter.startsWith('dept_') ? 'var(--p-indigo)' : 'white',
-                    color: filter.startsWith('dept_') ? 'white' : 'var(--text-main)',
-                    fontWeight: '700'
-                  }}
-                >
-                  <option value="" hidden>{t('sidebar.departments')}</option>
-                  {departments.map(dept => (
-                    <option key={dept.id} value={`dept_${dept.id}`} style={{ color: 'black' }}>
-                      {dept.name && dept.name !== 'null' ? (
-                        (() => {
-                          const translated = t('departments.' + dept.name);
-                          return translated.includes('.') ? dept.name : translated;
-                        })()
-                      ) : '-'}
-                    </option>
-                  ))}
-                </select>
+                <div className="dept-filter-wrapper">
+                  <select
+                    className="mnadm-input-select"
+                    value={deptFilter}
+                    onChange={(e) => { setDeptFilter(e.target.value); setRoleFilter('all'); }}
+                  >
+                    <option value="all">{t('sidebar.departments')} ({t('common.all')})</option>
+                    {departments.map(dept => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name && dept.name !== 'null' ? (
+                          (() => {
+                            const translated = t('departments.' + dept.name);
+                            return translated.includes('.') ? dept.name : translated;
+                          })()
+                        ) : '-'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="search-box" style={{ flex: '0 1 350px' }}>
-                <div className="mnadm-search-wrapper">
+
+              <div className="search-box-pro">
+                <div className="search-wrapper-pro">
                   <span className="search-icon">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                   </span>
                   <input
                     type="text"
-                    placeholder={t('common.search') || 'Search...'}
+                    placeholder={t('common.search') || 'Rechercher...'}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="mnadm-input"
+                    className="search-input-modern"
                   />
                 </div>
               </div>
@@ -232,13 +226,12 @@ function DashboardHR({ user, onLogout }) {
                 <table className="modern-table">
                   <thead>
                     <tr>
-                      <th className="hide-mobile" style={{ width: '60px' }}>#</th>
-                      <th className="hide-mobile" style={{ width: '100px' }}>{t('common.id')}</th>
-                      <th style={{ width: '250px' }}>{t('common.fullName')}</th>
-                      <th className="hide-mobile" style={{ width: '250px' }}>{t('common.email')}</th>
-                      <th className="hide-tablet" style={{ width: '200px' }}>{t('common.department')}</th>
-                      <th style={{ width: '180px' }}>{t('common.role')}</th>
-                      <th style={{ width: '150px', textAlign: 'center' }}>{t('common.actions')}</th>
+                      <th style={{ width: '80px' }}>{t('common.id') || '#ID'}</th>
+                      <th>{t('common.fullName')}</th>
+                      <th>{t('common.department')}</th>
+                      <th>{t('common.role')}</th>
+                      <th>{t('common.grade')}</th>
+                      <th style={{ textAlign: 'center' }}>{t('common.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -248,38 +241,115 @@ function DashboardHR({ user, onLogout }) {
                         const matchesSearch = fullName.includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase());
                         if (!matchesSearch) return false;
 
-                        if (filter === 'all') return true;
-                        if (filter === 'direction') return ['DEAN', 'VICE_DEAN', 'RECTOR', 'VICE_RECTOR'].includes(u.role);
-                        if (filter === 'DEPARTMENT_HEAD') return u.role === 'DEPARTMENT_HEAD';
-                        if (filter.startsWith('dept_')) {
-                          const deptId = parseInt(filter.split('_')[1]);
-                          return u.department_id === deptId && (u.role === 'TEACHER' || u.role === 'ENSEIGNANT');
+                        // Role filter
+                        let matchesRole = true;
+                        if (roleFilter === 'DIRECTION') {
+                          matchesRole = ['DEAN', 'VICE_DEAN', 'RECTOR', 'VICE_RECTOR', 'DEPARTMENT_HEAD', 'DOYEN', 'CHEF_DEPARTEMENT', 'RECTEUR'].includes(u.role);
+                        } else if (roleFilter !== 'all') {
+                          matchesRole = u.role === roleFilter;
                         }
-                        return true;
+
+                        // Dept filter
+                        let matchesDept = true;
+                        if (deptFilter !== 'all') {
+                          matchesDept = u.department_id === parseInt(deptFilter);
+                        }
+
+                        return matchesRole && matchesDept;
                       })
-                      .map((u, index) => (
-                        <tr key={u.id}>
-                          <td className="hide-mobile">{index + 1}</td>
-                          <td className="hide-mobile" style={{ color: 'var(--text-muted)', fontWeight: '600' }}>#{u.id}</td>
+                      .sort((a, b) => {
+                        // 1. Role Hierarchy (Strict)
+                        const roleOrder = {
+                          'RECTOR': 1, 'RECTEUR': 1,
+                          'VICE_RECTOR': 2,
+                          'DEAN': 3, 'DOYEN': 3,
+                          'VICE_DEAN': 4,
+                          'DEPARTMENT_HEAD': 5, 'CHEF_DEPARTEMENT': 5,
+                          'TEACHER': 6, 'ENSEIGNANT': 6
+                        };
+
+                        const priorityA = roleOrder[a.role] || 99;
+                        const priorityB = roleOrder[b.role] || 99;
+
+                        if (priorityA !== priorityB) return priorityA - priorityB;
+
+                        // 2. Grade Seniority (for Teachers)
+                        if (priorityA === 6) {
+                          const gradeOrder = {
+                            'Professeur': 1,
+                            'Maître de Conférences A': 2,
+                            'Maître de Conférences B': 3,
+                            'Maître-Assistant A': 4,
+                            'Maître-Assistant B': 5,
+                            'Assistant': 6,
+                            'Vacataire': 7,
+                            'Teacher': 8
+                          };
+                          const gA = gradeOrder[a.grade] || 99;
+                          const gB = gradeOrder[b.grade] || 99;
+                          if (gA !== gB) return gA - gB;
+                        }
+
+                        // 3. Alphabetical (fallback)
+                        return (a.nom || '').localeCompare(b.nom || '');
+                      })
+                      .map((u) => (
+                        <tr key={u.id} className="table-row-animate">
+                          <td><span className="id-badge">#{u.id}</span></td>
                           <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <div className="user-avatar-mini" style={{ width: '32px', height: '32px' }}>
-                                {u.nom[0]}{u.prenom[0]}
+                            <div className="user-profile-cell" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div className="avatar-circle" style={{ 
+                                width: '40px', 
+                                height: '40px', 
+                                borderRadius: '12px', 
+                                background: 'linear-gradient(135deg, var(--p-indigo), #6366f1)', 
+                                color: 'white', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                fontWeight: '800', 
+                                fontSize: '14px',
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                              }}>
+                                {(u.nom?.[0] || '')+(u.prenom?.[0] || '')}
                               </div>
-                              <strong>{u.nom} {u.prenom}</strong>
+                              <div className="user-info" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <span className="user-name" style={{ fontWeight: '700', color: '#0f172a', fontSize: '14px' }}>
+                                  {u.nom} {u.prenom}
+                                </span>
+                                <span className="user-email" style={{ 
+                                  color: '#64748b', 
+                                  fontSize: '12px', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  gap: '4px' 
+                                }}>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                  {u.email}
+                                </span>
+                              </div>
                             </div>
                           </td>
-                          <td className="hide-mobile">{u.email}</td>
-                          <td className="hide-tablet">
-                            {u.department_name && u.department_name !== 'null' ? (
-                              (() => {
-                                const dept = u.department_name.trim();
-                                const translated = t('departments.' + dept);
-                                return translated === 'departments.' + dept ? dept : translated;
-                              })()
-                            ) : '-'}
+                          <td>
+                            <span className="dept-tag">
+                              {u.department_name && u.department_name !== 'null' ? (
+                                (() => {
+                                  const translated = t('departments.' + u.department_name);
+                                  return translated.includes('.') ? u.department_name : translated;
+                                })()
+                              ) : '-'}
+                            </span>
                           </td>
-                          <td><span className={`role-tag role-${u.role.toLowerCase()}`}>{t('roles.' + u.role) || u.role}</span></td>
+                          <td>
+                            <span className={`role-badge role-${(u.role || '').toLowerCase()}`}>
+                              {t('roles.' + u.role) || u.role}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="grade-tag" style={{ background: '#f8fafc', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', border: '1px solid #e2e8f0', color: '#64748b', fontWeight: '600' }}>
+                              {['TEACHER', 'ENSEIGNANT'].includes(u.role) ? (t('grades.' + u.grade) || u.grade) : '-'}
+                            </span>
+                          </td>
                           <td>
                             <div style={{ display: 'flex', justifyContent: 'center' }}>
                               {u.role !== 'RH_MANAGER' && (
