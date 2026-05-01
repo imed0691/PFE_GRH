@@ -137,6 +137,7 @@ const en = {
     notifications: 'Notifications',
     mySchedule: 'My Schedule',
     myAbsences: 'My Absences',
+    salary: 'My Salary',
   },
 
   // ── Topbar Titles ──
@@ -257,7 +258,9 @@ const en = {
   teacher: {
     failedLoadDashboard: 'Failed to load dashboard data',
     remainingHours: 'Remaining Hours',
-    completedHours: 'Completed Hours',
+    remainingSessions: 'Remaining Sessions',
+    completedHours: 'Sessions Completed',
+    annualVolume: 'Annual Target',
     sessionsToDo: 'Sessions to do',
     sessionsDone: 'Sessions Done',
     absences: 'Absences',
@@ -371,9 +374,9 @@ const en = {
     headOfDept: 'Head of Department',
     academicGrade: 'Academic Grade',
     teacherDefault: 'Teacher (Default)',
-    extraHourlyRate: 'Extra Hourly Rate (DA)',
+    extraHourlyRate: 'Rate per extra session (DA)',
     absencePenalty: 'Absence Penalty (DA)',
-    volumeHoraire: 'Annual Workload (h)',
+    volumeHoraire: 'Annual Number of Sessions',
     createAccount: 'Create Account',
     sessionExpired: 'Session expired',
     creatingAccount: 'Creating account...',
@@ -385,6 +388,10 @@ const en = {
   absences: {
     title: 'Absences & Catch-ups',
     errorLoading: 'Error loading absences',
+    recentSessions: 'Recent sessions to mark',
+    recentSessionsSub: 'Select a past session to record an absence.',
+    noRecentSessions: 'No recent sessions to mark.',
+    markAbsent: 'Mark Absent',
     statusUpdated: 'Status updated',
     errorUpdating: 'Error updating',
     recommendApproval: 'Recommend',
@@ -627,11 +634,11 @@ const en = {
     noActivities: 'No activities recorded yet.',
   },
 
-  // ── Manage Salaries ──
-  salaries: {
+  // ── Salary Management ──
+  salary: {
     title: 'Teacher Salaries',
     grade: 'Grade',
-    baseSalary: 'Base (DA)',
+    baseSalary: 'Base Salary',
     extraHours: 'Extra Hours',
     ratePenalty: 'Rate / Pen.',
     netSalary: 'Net Salary',
@@ -646,6 +653,15 @@ const en = {
     adjustFor: 'Adjust salary for',
     hourlyRate: 'Extra Hourly Rate (DA/h)',
     absencePenalty: 'Absence Penalty (DA)',
+    currentMonth: 'Current Salary Situation',
+    extraPay: 'Extra Hours Pay',
+    penalties: 'Deductions / Absences',
+    netToPay: 'Net to Pay',
+    history: 'Payslip History',
+    noHistory: 'No payment history available.',
+    errorLoad: 'Error loading salary data',
+    extraPayShort: 'Extra Gain',
+    finalizeMonth: 'Finalize Month',
   },
 
   // ── Manage Sessions ──
@@ -674,6 +690,11 @@ const en = {
     moduleSubjectCol: 'Module / Subject',
     secGrp: 'Sec/Grp',
     noSessions: 'No sessions scheduled at the moment.',
+    sessions: 'sessions',
+    completed: 'completed',
+    extraNote: 'Outside annual target',
+    justifiedShort: 'Justified',
+    unjustifiedShort: 'Unjustified',
     monday: 'Monday',
     tuesday: 'Tuesday',
     wednesday: 'Wednesday',
@@ -685,8 +706,6 @@ const en = {
     tutorialTD: 'Tutorial (TD)',
     practicalTP: 'Practical (TP)',
     failedFetch: 'Failed to fetch some dashboard data from server.',
-    failedCreate: 'Error creating session',
-    teacher: 'Teacher',
     sessionType: 'Session Type',
     tutorial: 'Tutorial (TD)',
     practical: 'Practical (TP)',
@@ -703,6 +722,20 @@ const en = {
     once: 'One-time Session (Unique date)',
     extraBadge: 'EXTRA',
     ends: 'Ends',
+  },
+
+  teacher: {
+    label: 'Teacher',
+    annualVolume: 'Annual Target',
+    sessions: "sessions",
+    completed: "completed",
+    extraSessions: 'Extra Sessions (SUPP)',
+    extraNote: "Outside annual target",
+    absences: 'Absence Status',
+    totalAbsences: 'Total Absences',
+    justifiedShort: "Justified",
+    unjustifiedShort: "Unjustified",
+    noSessions: "No sessions scheduled at the moment."
   },
 
   // ── Notification Feed ──

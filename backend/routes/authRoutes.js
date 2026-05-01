@@ -31,6 +31,7 @@ const upload = multer({
 // La création de compte est protégée : il faut être connecté (verifyToken) ET être RH_MANAGER (checkRole)
 router.post('/signup', verifyToken, checkRole(['RH_MANAGER']), authController.signup);
 router.post('/login', authController.login);
+router.get('/profile', verifyToken, authController.getProfile);
 
 // Nouvelles routes pour la gestion des utilisateurs (Réservées au RH et Chefs de département)
 router.get('/users', verifyToken, checkRole(['RH_MANAGER', 'DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT', 'DEAN', 'DOYEN', 'VICE_DEAN', 'VICE_DOYEN', 'RECTOR', 'RECTEUR', 'VICE_RECTOR', 'VICE_RECTEUR']), authController.getAllUsers);

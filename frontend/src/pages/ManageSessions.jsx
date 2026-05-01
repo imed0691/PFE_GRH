@@ -20,7 +20,8 @@ function ManageSessions({ user }) {
   const [sectionsList, setSectionsList] = useState([]);
   const [groupsList, setGroupsList] = useState([]);
   
-  const [selectedDeptId, setSelectedDeptId] = useState(user?.department_id || '');
+  const isDeptHead = user?.role === 'DEPARTMENT_HEAD' || user?.role === 'CHEF_DEPARTEMENT';
+  const [selectedDeptId, setSelectedDeptId] = useState(isDeptHead ? user.department_id : (user?.department_id || ''));
   const [departments, setDepartments] = useState([]);
    const [dayOfWeek, setDayOfWeek] = useState('Monday');
   const [sessionDate, setSessionDate] = useState('');
@@ -197,7 +198,7 @@ function ManageSessions({ user }) {
       const d = new Date(dateVal);
       const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const selectedDay = dayNames[d.getDay()];
-      if (['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Saturday'].includes(selectedDay)) {
+      if (['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].includes(selectedDay)) {
         setDayOfWeek(selectedDay);
       }
     }
@@ -214,19 +215,36 @@ function ManageSessions({ user }) {
           <div className="mnadm-form-row">
             <div className="mnadm-form-group">
               <label className="mnadm-label">{t('common.department')}</label>
-              <select 
-                className="mnadm-input" 
-                value={selectedDeptId} 
-                onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); }}
-                style={{ borderRadius: '12px', height: '42px' }}
-              >
-                <option value="">{t('common.all')}</option>
-                {departments.map(d => (
-                  <option key={d.id} value={d.id}>
-                    {t('departments.' + d.name).includes('.') ? d.name : t('departments.' + d.name)}
-                  </option>
-                ))}
-              </select>
+              {(user?.role === 'DEPARTMENT_HEAD' || user?.role === 'CHEF_DEPARTEMENT') ? (
+                <div style={{ 
+                  height: '42px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  padding: '0 16px', 
+                  backgroundColor: 'var(--p-indigo-light)', 
+                  color: 'var(--p-indigo)',
+                  borderRadius: '12px',
+                  fontWeight: '700',
+                  fontSize: '14px',
+                  border: '1px solid var(--p-indigo)'
+                }}>
+                  {departments.find(d => d.id === user.department_id)?.name || t('common.loading')}
+                </div>
+              ) : (
+                <select 
+                  className="mnadm-input" 
+                  value={selectedDeptId} 
+                  onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); }}
+                  style={{ borderRadius: '12px', height: '42px' }}
+                >
+                  <option value="">{t('common.all')}</option>
+                  {departments.map(d => (
+                    <option key={d.id} value={d.id}>
+                      {t('departments.' + d.name).includes('.') ? d.name : t('departments.' + d.name)}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
             <div className="mnadm-form-group">
               <label className="mnadm-label">{t('common.teacher')}</label>
@@ -328,7 +346,7 @@ function ManageSessions({ user }) {
               <div className="mnadm-form-group">
                 <label className="mnadm-label">{t('sessions.day')}</label>
                 <select className="mnadm-input" value={dayOfWeek} onChange={e => setDayOfWeek(e.target.value)} required={isRecurring}>
-                  {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Saturday'].map(day => (
+                  {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
                     <option key={day} value={day}>{t(`days.${day}`)}</option>
                   ))}
                 </select>

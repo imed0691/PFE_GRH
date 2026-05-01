@@ -7,13 +7,19 @@ import ReminderInbox from './ReminderInbox';
 import ManagePromotions from './ManagePromotions';
 import ManageDocuments from './ManageDocuments';
 import ManageEvaluations from './ManageEvaluations';
+import MySalary from './MySalary';
 import useNotificationBadges from '../hooks/useNotificationBadges';
 import Settings from './Settings';
 import { getNextOccurrence, formatShortDate } from '../utils/dateUtils';
 import './DashboardTeacher.css';
 
 function DashboardTeacher({ user, onLogout }) {
-  const [stats, setStats] = useState({ teaching_hours: 0, total_absences: 0 });
+  const [stats, setStats] = useState({ 
+    sessions_done: 0, 
+    annual_volume_target: 0, 
+    extra_sessions: 0, 
+    absences: { total: 0, justified: 0, unjustified: 0 } 
+  });
   const [schedule, setSchedule] = useState([]);
   const [view, setViewRaw] = useState(localStorage.getItem('teacher_dashboard_view') || 'overview');
   const [loading, setLoading] = useState(true);
@@ -67,6 +73,7 @@ function DashboardTeacher({ user, onLogout }) {
     { id: 'absences', label: t('sidebar.absences'), badge: badges.absences },
     { id: 'reminders', label: t('sidebar.reminders'), badge: badges.reminders },
     { id: 'promotions', label: t('sidebar.promotions'), badge: badges.promotions },
+    { id: 'salary', label: t('sidebar.salary') || 'Mon Salaire' },
     { id: 'documents', label: t('sidebar.documents'), badge: badges.documents },
     { id: 'evaluations', label: t('sidebar.evaluations'), badge: badges.evaluations },
     { id: 'settings', label: t('settings.title') },
@@ -85,27 +92,68 @@ function DashboardTeacher({ user, onLogout }) {
         {view === 'absences' ? <ManageAbsences user={user} /> : 
          view === 'reminders' ? <ReminderInbox user={user} /> : 
          view === 'promotions' ? <ManagePromotions user={user} /> :
+         view === 'salary' ? <MySalary user={user} /> :
          view === 'documents' ? <ManageDocuments user={user} /> :
          view === 'evaluations' ? <ManageEvaluations user={user} /> :
          view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : (
            <div className="teacher-view animate-mnadm">
-              <div className="stats-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px', marginBottom: '32px' }}>
-                <div className="card-academic">
-                  <h4 style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>{t('teacher.sessionsToDo') || 'Sessions to do'}</h4>
-                  <p style={{ fontSize: '32px', fontWeight: '800', color: 'var(--p-indigo)' }}>{stats.total_weekly_sessions || 0}</p>
+              <div className="stats-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+                
+                {/* PROGRESS CARD */}
+                <div className="card-academic" style={{ borderTop: '4px solid var(--p-indigo)', position: 'relative', overflow: 'hidden' }}>
+                  <h4 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                    {t('teacher.annualVolume') || 'Objectif Annuel'}
+                  </h4>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '32px', fontWeight: '900', color: 'var(--p-indigo)' }}>{stats.sessions_done || 0}</span>
+                    <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>/ {stats.annual_volume_target || 0} {t('teacher.sessions') || 'séances'}</span>
+                  </div>
+                  <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ 
+                      width: `${Math.min(100, ((stats.sessions_done || 0) / (stats.annual_volume_target || 1)) * 100)}%`, 
+                      height: '100%', 
+                      background: 'linear-gradient(90deg, var(--p-indigo), #818cf8)',
+                      borderRadius: '4px',
+                      transition: 'width 1s ease-out'
+                    }}></div>
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '12px', fontWeight: '500' }}>
+                    {Math.round(((stats.sessions_done || 0) / (stats.annual_volume_target || 1)) * 100)}% {t('teacher.completed') || 'complété'}
+                  </p>
                 </div>
-                <div className="card-academic">
-                  <h4 style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>{t('teacher.sessionsDone') || 'Sessions Done'}</h4>
-                  <p style={{ fontSize: '32px', fontWeight: '800', color: '#10b981' }}>{stats.completed_sessions || 0}</p>
+
+                {/* EXTRA SESSIONS */}
+                <div className="card-academic" style={{ borderTop: '4px solid #f59e0b' }}>
+                  <h4 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                    {t('teacher.extraSessions') || 'Séances Supplémentaires (SUPP)'}
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <p style={{ fontSize: '32px', fontWeight: '900', color: '#f59e0b', lineHeight: 1 }}>{stats.extra_sessions || 0}</p>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>{t('teacher.extraNote') || 'Hors objectif annuel'}</p>
+                  </div>
                 </div>
-                <div className="card-academic">
-                  <h4 style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>{t('teacher.absences') || 'Absences'}</h4>
-                  <p style={{ fontSize: '32px', fontWeight: '800', color: '#ef4444' }}>{stats.absences || 0}</p>
+
+                {/* ABSENCES CARD */}
+                <div className="card-academic" style={{ borderTop: '4px solid #ef4444' }}>
+                  <h4 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                    {t('teacher.absences') || 'État des Absences'}
+                  </h4>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <div>
+                      <p style={{ fontSize: '32px', fontWeight: '900', color: '#ef4444', lineHeight: 1 }}>{stats.absences?.total || 0}</p>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>Total des absences</p>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', padding: '4px 10px', background: '#f0fdf4', color: '#16a34a', borderRadius: '20px', fontWeight: '700' }}>
+                        {stats.absences?.justified || 0} {t('teacher.justifiedShort') || 'Justifiées'}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', padding: '4px 10px', background: '#fef2f2', color: '#dc2626', borderRadius: '20px', fontWeight: '700' }}>
+                        {stats.absences?.unjustified || 0} {t('teacher.unjustifiedShort') || 'Non-justifiées'}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="card-academic">
-                  <h4 style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>{t('teacher.extraSessions') || 'Extra Sessions'}</h4>
-                  <p style={{ fontSize: '32px', fontWeight: '800', color: '#f59e0b' }}>{stats.extra_sessions || 0}</p>
-                </div>
+
               </div>
 
               <div className="card-academic">
@@ -178,6 +226,7 @@ const getPageTitle = (view, t) => {
     case 'absences': return t('sidebar.absences');
     case 'reminders': return t('sidebar.reminders');
     case 'promotions': return t('sidebar.promotions');
+    case 'salary': return t('sidebar.salary') || 'Mon Salaire';
     case 'documents': return t('sidebar.documents');
     case 'evaluations': return t('sidebar.evaluations');
     case 'settings': return t('settings.title');

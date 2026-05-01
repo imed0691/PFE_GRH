@@ -14,29 +14,63 @@ function ManageSalaries() {
       const res = await fetch('http://localhost:5000/api/salaries', { headers: { 'Authorization': `Bearer ${token}` } }); 
       if (res.ok) setSalaries(await res.json()); 
     } catch (error) { 
-      toast.error(t('salaries.errorLoading')); 
+      toast.error(t('salary.errorLoading')); 
     } finally { 
       setLoading(false); 
     }
+  };
+
+  const handleFinalizeMonth = async () => {
+    const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+    const now = new Date();
+    const currentMonth = monthNames[now.getMonth()];
+    const currentYear = now.getFullYear();
+
+    if (!window.confirm(`Voulez-vous vraiment clôturer le mois de ${currentMonth} ${currentYear} ? \nCela va archiver les bulletins et remettre à zéro les heures supplémentaires.`)) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/salaries/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ month: currentMonth, year: currentYear })
+      });
+      if (res.ok) {
+        toast.success(`Mois de ${currentMonth} clôturé avec succès !`);
+        fetchSalaries();
+      } else {
+        toast.error("Erreur lors de la clôture du mois");
+      }
+    } catch (e) { toast.error("Erreur de connexion"); }
   };
 
   useEffect(() => { fetchSalaries(); }, []);
 
   return (
     <div className="card-academic" style={{ padding: '32px' }}>
-      <h3 style={{ marginBottom: '24px', fontSize: '24px' }}>{t('salaries.title')}</h3>
-      {loading ? <div className="loading-spinner">{t('salaries.calculating')}</div> : (
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <h3 style={{ margin: 0, fontSize: '24px' }}>{t('salary.title')}</h3>
+        <button 
+          onClick={handleFinalizeMonth}
+          className="btn-confirm-pro"
+          style={{ padding: '10px 20px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          {t('salary.finalizeMonth') || 'Clôturer le Mois'}
+        </button>
+      </div>
+      {loading ? <div className="loading-spinner">{t('salary.calculating')}</div> : (
         <div className="modern-table-wrapper">
           <table className="modern-table">
             <thead>
               <tr>
                 <th style={{ width: '60px' }}>#</th>
                 <th style={{ width: '250px' }}>{t('common.fullName')}</th>
-                <th style={{ width: '180px' }}>{t('salaries.grade')}</th>
-                <th style={{ width: '150px' }}>{t('salaries.baseSalary')} (DA)</th>
-                <th style={{ width: '120px' }}>{t('salaries.extraHours')}</th>
+                <th style={{ width: '180px' }}>{t('salary.grade')}</th>
+                <th style={{ width: '150px' }}>{t('salary.baseSalary')} (DA)</th>
+                <th style={{ width: '120px' }}>{t('salary.extraHours')}</th>
                 <th style={{ width: '120px' }}>{t('sidebar.absences') || 'Absences'}</th>
-                <th style={{ width: '180px' }}>{t('salaries.netSalary')}</th>
+                <th style={{ width: '180px' }}>{t('salary.netSalary')}</th>
               </tr>
             </thead>
             <tbody>
@@ -53,7 +87,7 @@ function ManageSalaries() {
                       </div>
                     </div>
                   </td>
-                  <td data-label={t('salaries.grade')}>
+                  <td data-label={t('salary.grade')}>
                     <span className="role-tag">
                       {(() => {
                         const translated = t('grades.' + s.grade);

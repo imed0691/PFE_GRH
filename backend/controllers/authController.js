@@ -271,3 +271,13 @@ exports.deleteProfileImage = (req, res) => {
     });
   });
 };
+// Get current user profile
+exports.getProfile = (req, res) => {
+  const userId = req.user.id;
+  const query = "SELECT id, nom, prenom, role, department_id, grade, profile_image FROM users WHERE id = ?";
+  
+  db.query(query, [userId], (err, results) => {
+    if (err || results.length === 0) return res.status(500).json({ message: "User not found" });
+    res.json(results[0]);
+  });
+};

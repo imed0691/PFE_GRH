@@ -161,25 +161,28 @@ exports.getTeacherDashboardData = (req, res) => {
     const currentHour = today.getHours() + today.getMinutes() / 60;
 
     sessions.forEach(s => {
-      const [eh, em] = s.end_time.split(':').map(Number);
-      const sessionEndHour = eh + em/60;
+      // Only count normal sessions toward the annual target
+      if (!s.is_extra) {
+        const [eh, em] = s.end_time.split(':').map(Number);
+        const sessionEndHour = eh + em/60;
 
-      if (s.session_date) {
-        const sDate = new Date(s.session_date);
-        const todayNoTime = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const sessionDateNoTime = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
+        if (s.session_date) {
+          const sDate = new Date(s.session_date);
+          const todayNoTime = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          const sessionDateNoTime = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
 
-        if (sessionDateNoTime < todayNoTime) {
-          completedSessionsCount++;
-        } else if (sessionDateNoTime.getTime() === todayNoTime.getTime() && sessionEndHour <= currentHour) {
-          completedSessionsCount++;
-        }
-      } else {
-        const sessionDayIndex = daysOfWeek.indexOf(s.day_of_week);
-        if (sessionDayIndex < todayIndex) {
-          completedSessionsCount++;
-        } else if (sessionDayIndex === todayIndex && sessionEndHour <= currentHour) {
-          completedSessionsCount++;
+          if (sessionDateNoTime < todayNoTime) {
+            completedSessionsCount++;
+          } else if (sessionDateNoTime.getTime() === todayNoTime.getTime() && sessionEndHour <= currentHour) {
+            completedSessionsCount++;
+          }
+        } else {
+          const sessionDayIndex = daysOfWeek.indexOf(s.day_of_week);
+          if (sessionDayIndex < todayIndex) {
+            completedSessionsCount++;
+          } else if (sessionDayIndex === todayIndex && sessionEndHour <= currentHour) {
+            completedSessionsCount++;
+          }
         }
       }
     });
@@ -197,12 +200,18 @@ exports.getTeacherDashboardData = (req, res) => {
           let actualDone = completedSessionsCount - (teacherStats.total_absences || 0);
           if (actualDone < 0) actualDone = 0;
 
-          const sessionsToDo = sessions.length - actualDone;
+          const annualTarget = teacherStats.volume_horaire || 0;
+          const remaining = annualTarget - actualDone;
+
           const dashboardStats = {
-            total_weekly_sessions: sessionsToDo < 0 ? 0 : sessionsToDo,
+            annual_volume_target: annualTarget,
+            sessions_done: actualDone,
             extra_sessions: sessions.filter(s => s.is_extra).length,
-            completed_sessions: actualDone,
-            absences: teacherStats.total_absences || 0
+            absences: {
+              total: teacherStats.total_absences || 0,
+              unjustified: teacherStats.unjustified_count || 0,
+              justified: (teacherStats.total_absences || 0) - (teacherStats.unjustified_count || 0)
+            }
           };
 
           console.log('[BACKEND DEBUG] Sending Stats:', dashboardStats);
@@ -237,5 +246,105 @@ exports.getModules = (req, res) => {
   db.query(query, params, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
+  });
+};
+
+// Helper to get last occurrence date of a day of week
+const getLastOccurrence = (dayName) => {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const targetIndex = days.indexOf(dayName);
+  const today = new Date();
+  const todayIndex = today.getDay();
+  
+  let diff = todayIndex - targetIndex;
+  if (diff < 0) diff += 7; // It was in the previous week
+  
+  const lastDate = new Date();
+  lastDate.setDate(today.getDate() - diff);
+  lastDate.setHours(0, 0, 0, 0);
+  return lastDate;
+};
+
+// GET: Recent past sessions for marking absences (for Dept Heads / HR)
+exports.getRecentPastSessions = (req, res) => {
+  const userId = req.user.id;
+  const userRole = req.user.role.toUpperCase().replace(/[\s-]/g, '_');
+  
+  // 1. Get user's department if they are a Dept Head
+  let deptQuery = "SELECT department_id FROM users WHERE id = ?";
+  db.query(deptQuery, [userId], (err, userRes) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    const headDeptId = (userRes && userRes.length > 0) ? userRes[0].department_id : null;
+
+    // 2. Query ALL sessions that could have occurred recently
+    let sessionsQuery = `
+      SELECT s.id, s.teacher_id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.end_time, s.session_date,
+             u.nom as teacher_nom, u.prenom as teacher_prenom,
+             sl.name as study_level, sec.name as section, sg.name as groupe
+      FROM academic_sessions s
+      JOIN users u ON s.teacher_id = u.id
+      JOIN study_levels sl ON s.study_level_id = sl.id
+      LEFT JOIN sections sec ON s.section_id = sec.id
+      LEFT JOIN student_groups sg ON s.group_id = sg.id
+      WHERE 1=1
+    `;
+    
+    if (userRole === 'DEPARTMENT_HEAD' || userRole === 'CHEF_DEPARTEMENT') {
+      sessionsQuery += " AND s.department_id = " + headDeptId;
+    }
+
+    db.query(sessionsQuery, (err, sessions) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const now = new Date();
+      const currentHour = now.getHours() + now.getMinutes() / 60;
+      const pastSessions = [];
+
+      sessions.forEach(s => {
+        const [eh, em] = s.end_time.split(':').map(Number);
+        const sessionEndHour = eh + em / 60;
+
+        let occ;
+        if (s.session_date) {
+          occ = new Date(s.session_date);
+        } else {
+          occ = getLastOccurrence(s.day_of_week);
+        }
+
+        // Only keep if it's in the past (before 'now')
+        const isToday = occ.toDateString() === now.toDateString();
+        const isPast = occ < now || (isToday && sessionEndHour < currentHour);
+        
+        if (isPast) {
+          const y = occ.getFullYear();
+          const m = String(occ.getMonth() + 1).padStart(2, '0');
+          const d = String(occ.getDate()).padStart(2, '0');
+          pastSessions.push({
+            ...s,
+            actual_date: `${y}-${m}-${d}`
+          });
+        }
+      });
+
+      // 3. Filter out those that already have an absence record
+      if (pastSessions.length === 0) return res.json([]);
+
+      const checkAbsenceQuery = "SELECT teacher_id, DATE_FORMAT(date, '%Y-%m-%d') as date FROM absences";
+      db.query(checkAbsenceQuery, (err, absences) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        const filtered = pastSessions.filter(ps => {
+          return !absences.find(a => 
+            Number(a.teacher_id) === Number(ps.teacher_id) && a.date === ps.actual_date
+          );
+        });
+
+        // Sort by date desc
+        filtered.sort((a, b) => new Date(b.actual_date) - new Date(a.actual_date));
+        
+        res.json(filtered.slice(0, 20)); // Limit to last 20 sessions
+      });
+    });
   });
 };

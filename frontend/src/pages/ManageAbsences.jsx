@@ -18,6 +18,8 @@ function ManageAbsences({ user: propUser }) {
   const [selectedTeacher, setSelectedTeacher] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [absenceReason, setAbsenceReason] = useState('');
+  const [pastSessions, setPastSessions] = useState([]);
+  const [loadingPast, setLoadingPast] = useState(false);
 
   // Justification Form
   const [activeJustifyId, setActiveJustifyId] = useState(null);
@@ -52,6 +54,17 @@ function ManageAbsences({ user: propUser }) {
         }
       }
     } catch (error) { toast.error(t('absences.errorLoading')); } finally { setLoading(false); }
+  };
+
+  const fetchPastSessions = async () => {
+    setLoadingPast(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/sessions/past', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) setPastSessions(await res.json());
+    } catch (e) { console.error(e); } finally { setLoadingPast(false); }
   };
 
   const markAsReadTeacher = async () => {
@@ -95,28 +108,29 @@ function ManageAbsences({ user: propUser }) {
     fetchDepartments();
     if (userRole) {
       const r = userRole.toUpperCase().replace(/[\s-]/g, '_');
-      if (r !== 'TEACHER' && r !== 'ENSEIGNANT') fetchTeachers();
+      if (r !== 'TEACHER' && r !== 'ENSEIGNANT') {
+        fetchTeachers();
+        fetchPastSessions();
+      }
     }
   }, [userRole]);
 
-  const handleMarkAbsence = async (e) => {
-    e.preventDefault();
-    if (!selectedTeacher || !absenceDate || !absenceReason) return toast.error(t('teacher.allFieldsRequired'));
+  const handleMarkAbsence = async (teacherId, date, reason = 'Absence constatée') => {
+    const loadToast = toast.loading(t('common.loading') || 'Enregistrement...');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:5000/api/absences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ teacher_id: selectedTeacher, date: absenceDate, reason: absenceReason })
+        body: JSON.stringify({ teacher_id: teacherId, date, reason })
       });
+      toast.dismiss(loadToast);
       if (res.ok) {
         toast.success(t('absences.statusUpdated'));
-        setShowForm(false);
-        setAbsenceReason('');
-        setSelectedTeacher('');
         fetchAbsences();
+        fetchPastSessions();
       }
-    } catch (error) { toast.error(t('common.serverError')); }
+    } catch (error) { toast.dismiss(loadToast); toast.error(t('common.serverError')); }
   };
 
   const handleSubmitJustification = async (e) => {
@@ -216,61 +230,70 @@ function ManageAbsences({ user: propUser }) {
     <>
       <div className="animate-mnadm">
         {(isDeptHead || isAdmin || isHR) && (
-          <div className="card-academic" style={{ marginBottom: '32px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0 }}>{t('absences.recordNew')}</h3>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button 
-                  className={showForm ? "btn-cancel-pro" : "btn-confirm-pro"} 
-                  onClick={() => setShowForm(!showForm)}
-                >
-                  {showForm ? t('common.cancel') : t('absences.recordNew')}
-                </button>
+          <div className="card-academic" style={{ marginBottom: '32px', borderLeft: '4px solid var(--p-indigo)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h3 style={{ margin: 0 }}>{t('absences.recentSessions') || 'Séances récentes à pointer'}</h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+                  {t('absences.recentSessionsSub') || 'Sélectionnez une séance passée pour marquer une absence.'}
+                </p>
               </div>
+              <button 
+                className="btn-confirm-pro" 
+                onClick={fetchPastSessions}
+                disabled={loadingPast}
+                style={{ padding: '8px 16px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                {t('common.refresh') || 'Actualiser'}
+              </button>
             </div>
-            {showForm && (
-              <form onSubmit={handleMarkAbsence} style={{ marginTop: '24px' }}>
-                <div className="mnadm-form-row">
-                  <div className="mnadm-form-group">
-                    <label className="mnadm-label">{t('common.department')}</label>
-                    <select 
-                      className="mnadm-input" 
-                      value={selectedDept} 
-                      onChange={e => { setSelectedDept(e.target.value); setSelectedTeacher(''); }}
-                      style={{ borderRadius: '10px', height: '42px' }}
-                    >
-                      <option value="all">{t('common.all')}</option>
-                      {departments.map(d => (
-                        <option key={d.id} value={d.id}>
-                          {t('departments.' + d.name).includes('.') ? d.name : t('departments.' + d.name)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="mnadm-form-group">
-                    <label className="mnadm-label">{t('absences.selectPersonnel')}</label>
-                    <Select 
-                      options={teacherOptions} 
-                      value={teacherOptions.find(o => o.value === selectedTeacher)} 
-                      onChange={o => setSelectedTeacher(o?.value || '')} 
-                      placeholder={t('common.select') || 'Sélectionner...'}
-                      styles={{ 
-                        control: (base) => ({ ...base, borderRadius: '10px', border: '1px solid #e2e8f0', minHeight: '42px', fontSize: '14px' }),
-                        menu: (base) => ({ ...base, zIndex: 9999 })
-                      }}
-                    />
-                  </div>
-                  <div className="mnadm-form-group">
-                    <label className="mnadm-label">{t('common.date')}</label>
-                    <input type="date" className="mnadm-input" value={absenceDate} onChange={e => setAbsenceDate(e.target.value)} required />
-                  </div>
-                  <div className="mnadm-form-group">
-                    <label className="mnadm-label">{t('teacher.reason')}</label>
-                    <input type="text" className="mnadm-input" value={absenceReason} onChange={e => setAbsenceReason(e.target.value)} required placeholder={t('teacher.reason')} />
-                  </div>
-                </div>
-                <button type="submit" className="btn-confirm-pro" style={{ width: '100%', padding: '14px' }}>{t('absences.saveRecord')}</button>
-              </form>
+
+            {loadingPast ? (
+              <div className="loading-spinner" style={{ padding: '20px' }}>{t('common.loading')}</div>
+            ) : pastSessions.length > 0 ? (
+              <div className="modern-table-wrapper" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                <table className="modern-table">
+                  <thead>
+                    <tr>
+                      <th>{t('common.date')}</th>
+                      <th>{t('common.module')}</th>
+                      <th>{t('absences.staffMember')}</th>
+                      <th style={{ textAlign: 'center' }}>{t('common.actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pastSessions.map((s, idx) => (
+                      <tr key={`${s.id}-${idx}`}>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <div style={{ fontWeight: '700', color: 'var(--p-indigo)' }}>{new Date(s.actual_date).toLocaleDateString()}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{s.start_time} - {s.end_time}</div>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: '700' }}>{s.module_name}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{s.session_type} • {s.study_level}</div>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: '600' }}>{s.teacher_prenom} {s.teacher_nom}</div>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <button 
+                            className="btn-delete-pro" 
+                            style={{ padding: '8px 16px', fontSize: '11px', background: '#ef4444', color: 'white', border: 'none' }}
+                            onClick={() => handleMarkAbsence(s.teacher_id, s.actual_date, `Absence au cours de ${s.module_name}`)}
+                          >
+                            {t('absences.markAbsent') || 'Marquer Absent'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ padding: '40px', textAlign: 'center', background: 'var(--bg-main)', borderRadius: '12px', border: '1px dashed var(--border-soft)' }}>
+                <p style={{ color: 'var(--text-muted)', margin: 0 }}>{t('absences.noRecentSessions') || 'Aucune séance récente à pointer.'}</p>
+              </div>
             )}
           </div>
         )}

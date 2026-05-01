@@ -48,6 +48,8 @@ const fr = {
     clearHistory: "Nettoyer l'historique",
     historyCleared: "Historique supprimé",
     confirmClearAll: "Voulez-vous vraiment supprimer tout l'historique traité ?",
+    chooseFile: 'Choisir un fichier',
+    noFileSelected: 'Aucun fichier sélectionné',
   },
 
   // ── Connexion ──
@@ -120,6 +122,7 @@ const fr = {
     notifications: 'Notifications',
     mySchedule: 'Mon emploi du temps',
     myAbsences: 'Mes Absences',
+    salary: 'Mon Salaire',
   },
 
   // ── Paramètres ──
@@ -212,7 +215,7 @@ const fr = {
     noModulesAssigned: 'Aucun module assigné pour le moment.',
     levelAdded: 'Niveau ajouté avec succès',
     sectionAdded: 'Section ajoutée avec succès',
-    groupAdded: 'Groupe ajouté avec succès',
+    groupAdded: 'Groupe ajoutée avec succès',
     moduleAdded: 'Module ajouté avec succès',
     deleted: 'Supprimé avec succès',
     moduleAssigned: 'Module assigné avec succès',
@@ -244,8 +247,10 @@ const fr = {
   // ── Tableau de bord Enseignant ──
   teacher: {
     failedLoadDashboard: 'Échec du chargement des données',
-    remainingHours: 'Heures restantes',
-    completedHours: 'Heures effectuées',
+    remainingHours: 'Séances restantes',
+    remainingSessions: 'Séances restantes',
+    completedHours: 'Séances effectuées',
+    annualVolume: 'Objectif Annuel',
     sessionsToDo: 'Séances à faire',
     sessionsDone: 'Séances faites',
     absences: 'Absences',
@@ -358,9 +363,9 @@ const fr = {
     headOfDept: 'Chef de département',
     academicGrade: 'Grade académique',
     teacherDefault: 'Enseignant (Par défaut)',
-    extraHourlyRate: 'Taux horaire supplémentaire (DA)',
+    extraHourlyRate: 'Taux par séance supp (DA)',
     absencePenalty: 'Pénalité d\'absence (DA)',
-    volumeHoraire: 'Volume Horaire Annuel (h)',
+    volumeHoraire: 'Nombre de séances annuel',
     createAccount: 'Créer le compte',
     sessionExpired: 'Session expirée',
     creatingAccount: 'Création du compte...',
@@ -372,6 +377,10 @@ const fr = {
   absences: {
     title: 'Absences et Rattrapages',
     errorLoading: 'Erreur lors du chargement des absences',
+    recentSessions: 'Séances récentes à pointer',
+    recentSessionsSub: 'Sélectionnez une séance passée pour marquer une absence.',
+    noRecentSessions: 'Aucune séance récente à pointer.',
+    markAbsent: 'Marquer Absent',
     statusUpdated: 'État mis à jour',
     errorUpdating: 'Erreur lors de la mise à jour',
     recommendApproval: 'Recommander',
@@ -529,6 +538,16 @@ const fr = {
     finalizeGrade: 'Finaliser le changement de grade :',
     updateFile: 'Mettre à jour le dossier RH',
     historyTitle: 'Historique du circuit :',
+    maxGradeReached: 'Statut Académique : Professeur',
+    congratsProf: '',
+    finalizeFinancials: 'Paramètres financiers pour le nouveau grade :',
+  },
+
+  // ── Paramètres salariaux ──
+  salary: {
+    baseSalary: 'Salaire de base (DA)',
+    hourlyRate: 'Taux des heures supp',
+    absencePenalty: 'Pénalité d\'absence',
   },
 
   // ── Gestion des recrutements ──
@@ -613,11 +632,11 @@ const fr = {
   },
 
   // ── Gestion des salaires ──
-  salaries: {
+  salary: {
     title: 'Salaires des enseignants',
     grade: 'Grade',
-    baseSalary: 'Base (DA)',
-    extraHours: 'Heures Sup.',
+    baseSalary: 'Salaire de Base',
+    extraHours: 'Heures Supp.',
     ratePenalty: 'Taux / Pén.',
     netSalary: 'Salaire net',
     rate: 'Taux :',
@@ -631,6 +650,15 @@ const fr = {
     adjustFor: 'Ajuster le salaire pour',
     hourlyRate: 'Taux horaire supplémentaire (DA/h)',
     absencePenalty: 'Pénalité d\'absence (DA)',
+    currentMonth: 'Situation Salariale Actuelle',
+    extraPay: 'Heures Supp.',
+    penalties: 'Retenues / Absences',
+    netToPay: 'Net à Payer',
+    history: 'Historique des Bulletins',
+    noHistory: 'Aucun historique de paiement disponible.',
+    errorLoad: 'Erreur lors du chargement des données salariales',
+    extraPayShort: 'Gain Supp.',
+    finalizeMonth: 'Clôturer le Mois',
   },
 
   // ── Gestion des séances ──
@@ -658,7 +686,7 @@ const fr = {
     loadingSchedule: 'Chargement de l\'emploi du temps...',
     moduleSubjectCol: 'Module / Matière',
     secGrp: 'Sec/Grp',
-    noSessions: 'Aucune séance programmée pour le moment.',
+    noSessions: "Aucune séance prévue pour le moment.",
     monday: 'Lundi',
     tuesday: 'Mardi',
     wednesday: 'Mercredi',
@@ -670,8 +698,6 @@ const fr = {
     tutorialTD: 'TD',
     practicalTP: 'TP',
     failedFetch: 'Échec de la récupération des données du serveur.',
-    failedCreate: 'Erreur lors de la création de la séance',
-    teacher: 'Enseignant',
     sessionType: 'Type de Séance',
     tutorial: 'Travaux Dirigés (TD)',
     practical: 'Travaux Pratiques (TP)',
@@ -689,6 +715,20 @@ const fr = {
     extraBadge: 'SUPP',
     ends: 'Fin',
     failedDelete: 'Échec de la suppression de la séance',
+  },
+
+  teacher: {
+    label: 'Enseignant',
+    annualVolume: 'Objectif Annuel',
+    sessions: "séances",
+    completed: "complété",
+    extraSessions: 'Séances Supplémentaires (SUPP)',
+    extraNote: "Hors objectif annuel",
+    absences: 'État des Absences',
+    totalAbsences: 'Total des absences',
+    justifiedShort: "Justifiées",
+    unjustifiedShort: "Non-justifiées",
+    noSessions: "Aucune séance prévue pour le moment."
   },
 
   // ── Fil de notifications ──

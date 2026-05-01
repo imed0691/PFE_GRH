@@ -8,13 +8,32 @@ exports.requestPromotion = (req, res) => {
         return res.status(400).json({ message: 'Requested grade is required' });
     }
 
+    const gradeHierarchy = ['Teacher', 'Vacataire', 'Assistant', 'MAB', 'MAA', 'MCB', 'MCA', 'Professeur'];
+
     db.query('SELECT grade FROM users WHERE id = ?', [teacherId], (err, userResults) => {
-        if (err || userResults.length === 0) return res.status(500).json({ message: 'Error fetching current grade' });
+        if (err || userResults.length === 0) {
+            console.error("[PromotionRequest] Error fetching current grade:", err);
+            return res.status(500).json({ message: 'Error fetching current grade', error: err });
+        }
 
         const current_grade = userResults[0].grade || 'Teacher';
-        const query = 'INSERT INTO promotions (teacher_id, current_grade, requested_grade, status) VALUES (?, ?, ?, "Pending_Dept")';
-        db.query(query, [teacherId, current_grade, requested_grade], (err, results) => {
-            if (err) return res.status(500).json({ message: 'Error submitting promotion request' });
+        
+        // Validation: Must be higher in hierarchy
+        const currentIndex = gradeHierarchy.findIndex(g => g.toUpperCase() === current_grade.toUpperCase());
+        const requestedIndex = gradeHierarchy.findIndex(g => g.toUpperCase() === requested_grade.toUpperCase());
+
+        if (requestedIndex <= currentIndex) {
+            return res.status(400).json({ message: 'Impossible de demander un grade inférieur ou identique à votre grade actuel.' });
+        }
+
+        const filePath = req.file ? req.file.filename : null;
+        
+        const query = 'INSERT INTO `promotions` (`teacher_id`, `current_grade`, `requested_grade`, `file_path`, `status`) VALUES (?, ?, ?, ?, "Pending_Dept")';
+        db.query(query, [teacherId, current_grade, requested_grade, filePath], (err, results) => {
+            if (err) {
+                console.error("[PromotionRequest] INSERT error:", err);
+                return res.status(500).json({ message: 'Error submitting promotion request', error: err.message });
+            }
             res.status(201).json({ message: 'Promotion requested successfully' });
         });
     });
@@ -105,7 +124,7 @@ exports.recommendPromotion = (req, res) => {
 
 exports.approveRejectPromotion = (req, res) => {
     const { id } = req.params;
-    const { status, finalGrade } = req.body; // 'Approved' or 'Rejected'
+    const { status, finalGrade, hourly_rate, absence_penalty, base_salary } = req.body; // 'Approved' or 'Rejected'
     const handledBy = req.user.id;
 
     const query = 'UPDATE promotions SET status = ?, handled_by = ?, handling_date = NOW() WHERE id = ?';
@@ -116,7 +135,10 @@ exports.approveRejectPromotion = (req, res) => {
             db.query('SELECT requested_grade, teacher_id FROM promotions WHERE id = ?', [id], (err, promoRes) => {
                 if (promoRes && promoRes.length > 0) {
                     const gradeToSet = finalGrade || promoRes[0].requested_grade;
-                    db.query('UPDATE users SET grade = ? WHERE id = ?', [gradeToSet, promoRes[0].teacher_id]);
+                    const userUpdateQuery = 'UPDATE users SET grade = ?, hourly_rate = ?, absence_penalty = ?, base_salary = ? WHERE id = ?';
+                    db.query(userUpdateQuery, [gradeToSet, hourly_rate || 0, absence_penalty || 0, base_salary || 0, promoRes[0].teacher_id], (err) => {
+                        if (err) console.error("Error updating user info after promotion:", err);
+                    });
                 }
             });
         }

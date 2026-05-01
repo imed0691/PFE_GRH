@@ -2,15 +2,47 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
 
-const gradeHierarchy = ['Teacher', 'Vacataire', 'Assistant', 'Maître-Assistant B', 'Maître-Assistant A', 'Maître de Conférences B', 'Maître de Conférences A', 'Professeur'];
+const gradeHierarchy = ['Teacher', 'Vacataire', 'Assistant', 'MAB', 'MAA', 'MCB', 'MCA', 'Professeur'];
 
 function ManagePromotions({ user }) {
   const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentUserGrade, setCurrentUserGrade] = useState(user.grade || 'Teacher');
   const [requestedGrade, setRequestedGrade] = useState('');
+  const [file, setFile] = useState(null);
   const [recommendation, setRecommendation] = useState('');
   const [activePromoId, setActivePromoId] = useState(null);
+  const [newBaseSalary, setNewBaseSalary] = useState(0);
+  const [newHourlyRate, setNewHourlyRate] = useState(0);
+  const [newAbsencePenalty, setNewAbsencePenalty] = useState(0);
   const { t } = useLanguage();
+  const isTeacher = user.role === 'TEACHER' || user.role === 'ENSEIGNANT';
+  const isDeptHead = user.role === 'DEPARTMENT_HEAD' || user.role === 'CHEF_DEPARTEMENT';
+  const isDean = user.role === 'DEAN' || user.role === 'DOYEN';
+  const isRector = user.role === 'RECTOR' || user.role === 'RECTEUR';
+  const isHR = user.role === 'HR' || user.role === 'RH' || user.role === 'HR_MANAGER' || user.role === 'RH_MANAGER';
+
+  const fetchCurrentProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/profile', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentUserGrade(data.grade || 'Teacher');
+        const updatedUser = { ...user, grade: data.grade };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        console.log("Profile synchronized:", data.grade);
+      } else {
+        const errorText = await res.text();
+        toast.error("Erreur Sync Profil: " + res.status + " " + errorText);
+      }
+    } catch (e) { 
+      console.error('Error fetching profile:', e);
+      toast.error("Erreur Connexion Profil: " + e.message);
+    }
+  };
 
   const fetchPromotions = async () => {
     setLoading(true);
@@ -32,18 +64,35 @@ function ManagePromotions({ user }) {
     }
   };
 
-  useEffect(() => { fetchPromotions(); }, []);
+  useEffect(() => { 
+    fetchPromotions(); 
+    fetchCurrentProfile();
+  }, []);
 
   const handleRequestPromotion = async (e) => {
-    e.preventDefault(); if (!requestedGrade) return;
-    console.log("[ManagePromotions] --> POST /api/promotions payload:", { requested_grade: requestedGrade });
+    e.preventDefault(); if (!requestedGrade || !file) return toast.error(t('absences.allFieldsRequired') || 'Tous les champs sont requis');
+    
+    const formData = new FormData();
+    formData.append('requested_grade', requestedGrade);
+    formData.append('file', file);
+
     try {
       const token = localStorage.getItem('token'); 
-      const res = await fetch('http://localhost:5000/api/promotions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ requested_grade: requestedGrade }) });
-      console.log("[ManagePromotions] <-- POST /api/promotions response status:", res.status);
-      if (res.ok) { toast.success(t('promotions.submitted')); setRequestedGrade(''); fetchPromotions(); } else { toast.error(t('promotions.errorSubmitting')); }
+      const res = await fetch('http://localhost:5000/api/promotions', { 
+        method: 'POST', 
+        headers: { 'Authorization': `Bearer ${token}` }, 
+        body: formData 
+      });
+      if (res.ok) { 
+        toast.success(t('promotions.submitted')); 
+        setRequestedGrade(''); 
+        setFile(null);
+        fetchPromotions(); 
+      } else { 
+        const errorData = await res.json();
+        toast.error(`${t('promotions.errorSubmitting')}: ${errorData.error || errorData.message}`); 
+      }
     } catch (error) { 
-      console.error("[ManagePromotions] Error submitting promotion:", error);
       toast.error(t('common.serverError')); 
     }
   };
@@ -78,7 +127,13 @@ function ManagePromotions({ user }) {
       const res = await fetch(`http://localhost:5000/api/promotions/${id}/status`, { 
         method: 'PUT', 
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
-        body: JSON.stringify({ status, finalGrade }) 
+        body: JSON.stringify({ 
+          status, 
+          finalGrade, 
+          base_salary: newBaseSalary, 
+          hourly_rate: newHourlyRate, 
+          absence_penalty: newAbsencePenalty 
+        }) 
       });
       if (res.ok) { 
         toast.success(status === 'Approved' ? t('promotions.gradeUpdated') || 'Grade mis à jour avec succès' : t('promotions.promotionRejected')); 
@@ -91,13 +146,9 @@ function ManagePromotions({ user }) {
     }
   };
 
-  const isTeacher = user.role === 'TEACHER' || user.role === 'ENSEIGNANT';
-  const isDeptHead = user.role === 'DEPARTMENT_HEAD' || user.role === 'CHEF_DEPARTEMENT';
-  const isDean = user.role === 'DEAN' || user.role === 'DOYEN';
-  const isRector = user.role === 'RECTOR' || user.role === 'RECTEUR';
-  const isHR = user.role === 'HR' || user.role === 'RH' || user.role === 'HR_MANAGER' || user.role === 'RH_MANAGER';
 
-  const currentGradeIndex = gradeHierarchy.indexOf(user.grade || 'Teacher');
+
+  const currentGradeIndex = gradeHierarchy.findIndex(g => g.toUpperCase() === currentUserGrade.toUpperCase());
   const availableGrades = gradeHierarchy.slice(currentGradeIndex + 1);
 
   const getStatusStyle = (status) => {
@@ -117,23 +168,60 @@ function ManagePromotions({ user }) {
     <div className="card-academic" style={{ padding: '32px' }}>
       <h3 style={{ marginBottom: '24px', fontSize: '24px' }}>{t('promotions.title')}</h3>
       {isTeacher && (
-        <form onSubmit={handleRequestPromotion} className="card-academic" style={{ background: 'var(--bg-main)', padding: '24px', borderRadius: '16px', marginBottom: '32px', border: '1px solid var(--border-soft)' }}>
-          <h4 style={{ margin: '0 0 20px 0', color: 'var(--secondary)', fontSize: '18px' }}>{t('promotions.requestPromotion')}</h4>
-          <div className="mnadm-form-row">
-            <div className="mnadm-form-group">
-              <label className="mnadm-label">{t('promotions.currentGrade')}</label>
-              <input type="text" className="mnadm-input" value={t('grades.' + (user.grade || 'Teacher'))} disabled />
-            </div>
-            <div className="mnadm-form-group">
-              <label className="mnadm-label">{t('promotions.requestedGrade')}</label>
-              <select className="mnadm-input" value={requestedGrade} onChange={e => setRequestedGrade(e.target.value)} required>
-                <option value="">{t('promotions.selectNextGrade')}</option>
-                {availableGrades.map(g => <option key={g} value={g}>{t('grades.' + g) || g}</option>)}
-              </select>
-            </div>
+        currentUserGrade.toUpperCase() === 'PROFESSEUR' ? (
+          <div className="card-academic" style={{ background: '#f8f9fa', padding: '24px', borderRadius: '12px', marginBottom: '32px', textAlign: 'left', borderLeft: '5px solid var(--p-indigo)' }}>
+             <h4 style={{ color: 'var(--secondary)', margin: '0 0 4px 0', fontSize: '18px' }}>{t('promotions.maxGradeReached')}</h4>
+             {t('promotions.congratsProf') && <p style={{ color: '#666', margin: 0, fontSize: '14px' }}>{t('promotions.congratsProf')}</p>}
           </div>
-          <button type="submit" className="btn-confirm-pro" style={{ width: '100%', padding: '14px' }}>{t('promotions.submitFile')}</button>
-        </form>
+        ) : (
+          <form onSubmit={handleRequestPromotion} className="card-academic" style={{ background: 'var(--bg-main)', padding: '24px', borderRadius: '16px', marginBottom: '32px', border: '1px solid var(--border-soft)' }}>
+            <h4 style={{ margin: '0 0 20px 0', color: 'var(--secondary)', fontSize: '18px' }}>{t('promotions.requestPromotion')}</h4>
+            <div className="mnadm-form-row">
+              <div className="mnadm-form-group">
+                <label className="mnadm-label">{t('promotions.currentGrade')}</label>
+                <input type="text" className="mnadm-input" value={t('grades.' + currentUserGrade) || currentUserGrade} disabled />
+              </div>
+              <div className="mnadm-form-group">
+                <label className="mnadm-label">{t('promotions.requestedGrade')}</label>
+                <select className="mnadm-input" value={requestedGrade} onChange={e => setRequestedGrade(e.target.value)} required>
+                  <option value="">{t('promotions.selectNextGrade')}</option>
+                  {availableGrades.map(g => <option key={g} value={g}>{t('grades.' + g) || g}</option>)}
+                </select>
+              </div>
+              <div className="mnadm-form-group">
+                <label className="mnadm-label">{t('absences.attachmentLabel') || 'Pièce jointe (PDF/Diplôme)'}</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <label className="btn-confirm-pro" style={{ 
+                    padding: '8px 16px', 
+                    fontSize: '14px', 
+                    cursor: 'pointer', 
+                    background: 'var(--bg-main)', 
+                    color: 'var(--p-indigo)', 
+                    border: '1px solid var(--p-indigo)',
+                    margin: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    {t('common.chooseFile') || 'Choisir un fichier'}
+                    <input 
+                      type="file" 
+                      onChange={e => setFile(e.target.files[0])} 
+                      required 
+                      accept=".pdf,image/*"
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                  <span style={{ fontSize: '13px', color: file ? 'var(--p-indigo)' : '#888', fontStyle: 'italic' }}>
+                    {file ? file.name : (t('common.noFileSelected') || 'Aucun fichier sélectionné')}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button type="submit" className="btn-confirm-pro" style={{ width: '100%', padding: '14px', marginTop: '10px' }}>{t('promotions.submitFile')}</button>
+          </form>
+        )
       )}
       {loading ? <div className="loading-spinner">{t('promotions.loadingPromos')}</div> : (
         <div className="modern-table-wrapper">
@@ -191,6 +279,18 @@ function ManagePromotions({ user }) {
                       </span>
                     </td>
                     <td data-label={t('common.actions')}>
+                      {p.file_path && (
+                        <div style={{ marginBottom: '8px' }}>
+                          <button 
+                            onClick={() => window.open(`http://localhost:5000/uploads/promotions/${p.file_path}`, '_blank')}
+                            className="btn-action-pro" 
+                            style={{ width: 'auto', padding: '0 12px', height: '32px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            {t('absences.viewAttachment') || 'Voir le dossier'}
+                          </button>
+                        </div>
+                      )}
                       {p.dept_head_recommendation && (
                         <div style={{ marginBottom: '8px', padding: '12px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border-soft)', fontSize: '12px' }}>
                           <div style={{ fontWeight: '800', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.05em' }}>{t('promotions.historyTitle')}</div>
@@ -212,28 +312,36 @@ function ManagePromotions({ user }) {
                         </button>
                       ))}
                       {canApprove && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('promotions.finalizeGrade')}</div>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <select 
-                              id={`grade-select-${p.id}`}
-                              className="mnadm-input"
-                              defaultValue={p.requested_grade}
-                              style={{ flex: '2' }}
-                            >
-                              {gradeHierarchy.map(g => <option key={g} value={g}>{t('grades.' + g) || g}</option>)}
-                            </select>
-                            <button 
-                              onClick={() => {
-                                const finalGrade = document.getElementById(`grade-select-${p.id}`).value;
-                                handleStatusUpdate(p.id, 'Approved', finalGrade);
-                              }} 
-                              className="btn-confirm-pro"
-                              style={{ padding: '10px 16px', fontSize: '12px', flex: '1' }}
-                            >
-                              {t('promotions.updateFile')}
-                            </button>
+                        <div className="finalize-form" style={{ marginTop: '15px', padding: '15px', background: 'rgba(79, 70, 229, 0.05)', borderRadius: '12px', border: '1px solid rgba(79, 70, 229, 0.1)' }}>
+                          <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--p-indigo)', textTransform: 'uppercase', marginBottom: '12px' }}>
+                            {t('promotions.finalizeFinancials') || 'Paramètres financiers pour le nouveau grade :'}
                           </div>
+                          
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', marginBottom: '12px' }}>
+                            <div>
+                              <label style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>{t('salary.baseSalary') || 'Salaire de base (DA)'}</label>
+                              <input type="number" className="mnadm-input" value={newBaseSalary} onChange={e => setNewBaseSalary(e.target.value)} style={{ height: '36px', fontSize: '12px' }} />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                              <div>
+                                <label style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>{t('salary.hourlyRate') || 'Taux H. Supp'}</label>
+                                <input type="number" className="mnadm-input" value={newHourlyRate} onChange={e => setNewHourlyRate(e.target.value)} style={{ height: '36px', fontSize: '12px' }} />
+                              </div>
+                              <div>
+                                <label style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>{t('salary.absencePenalty') || 'Pénalité'}</label>
+                                <input type="number" className="mnadm-input" value={newAbsencePenalty} onChange={e => setNewAbsencePenalty(e.target.value)} style={{ height: '36px', fontSize: '12px' }} />
+                              </div>
+                            </div>
+                          </div>
+
+                          <button 
+                            onClick={() => handleStatusUpdate(p.id, 'Approved', p.requested_grade)}
+                            className="btn-confirm-pro"
+                            style={{ width: '100%', padding: '10px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                            {t('promotions.updateFile')}
+                          </button>
                         </div>
                       )}
                     </td>
