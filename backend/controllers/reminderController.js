@@ -43,7 +43,10 @@ exports.getRemindersForTeacher = (req, res) => {
       SELECT r.*, u.nom as sender_nom, u.prenom as sender_prenom, u.role as sender_role 
       FROM reminders r 
       LEFT JOIN users u ON r.sender_id = u.id 
-      WHERE r.sender_id != ? AND (
+      LEFT JOIN reminder_status rs ON r.id = rs.reminder_id AND rs.user_id = ?
+      WHERE r.sender_id != ? 
+      AND (rs.is_deleted IS NULL OR rs.is_deleted = FALSE)
+      AND (
          (r.teacher_id = ?) 
          OR (r.teacher_id IS NULL AND r.department_id = ?)
          OR (r.teacher_id IS NULL AND r.department_id IS NULL AND (
@@ -53,7 +56,7 @@ exports.getRemindersForTeacher = (req, res) => {
       )
       ORDER BY r.created_at DESC
     `;
-    db.query(query, [id, id, userDeptId, id], (err, results) => {
+    db.query(query, [id, id, id, userDeptId, id], (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(results);
     });

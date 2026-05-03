@@ -132,8 +132,8 @@ exports.getTeacherDashboardData = (req, res) => {
   // 2. Get teacher stats (absences and target volume)
   const statsQuery = `
     SELECT u.volume_horaire, u.created_at,
-           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id) as total_absences,
-           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted')) as unjustified_count
+           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND date >= DATE(u.created_at)) as total_absences,
+           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted') AND date >= DATE(u.created_at)) as unjustified_count
     FROM users u WHERE u.id = ?
   `;
 
@@ -164,6 +164,10 @@ exports.getTeacherDashboardData = (req, res) => {
       return res.status(500).json({ error: err.message });
     }
 
+    const today = new Date();
+    const semesterStart = new Date(today.getFullYear(), 0, 1); 
+    const semesterStartStr = semesterStart.toISOString().split('T')[0];
+
     db.query(statsQuery, [teacherId], (err, statsResult) => {
       if (err) {
         console.error('[BACKEND ERROR] statsQuery failed:', err);
@@ -179,7 +183,6 @@ exports.getTeacherDashboardData = (req, res) => {
       const currentHour = today.getHours() + today.getMinutes() / 60;
       
       let completedSessionsCount = 0;
-      const semesterStart = new Date(today.getFullYear(), 0, 1); 
       const actualStart = teacherCreatedAt > semesterStart ? teacherCreatedAt : semesterStart;
 
       sessions.forEach(s => {

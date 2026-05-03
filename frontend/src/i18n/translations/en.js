@@ -107,6 +107,16 @@ const en = {
     interfaceTitle: 'Interface Preferences',
     interfaceDesc: 'Adjust the portal to your personal language and region.',
     portalLanguage: 'Portal Language',
+    title: 'Settings',
+    profile: 'Profile Information',
+    confirmRemovePhoto: 'Are you sure you want to remove your profile photo?',
+    currentPassword: 'Current Password',
+    newPassword: 'New Password',
+    confirmPassword: 'Confirm Password',
+    updateProfile: 'Update Profile',
+    updatePassword: 'Update Password',
+    profileSuccess: 'Profile updated successfully!',
+    profileError: 'Failed to update profile.',
   },
 
   // ── Sidebar Navigation ──
@@ -303,6 +313,18 @@ const en = {
     practical: 'Practical (TP)',
     loadingDashboard: 'Loading your dashboard...',
     errorLoadingReminders: 'Error loading reminders',
+    label: 'Teacher',
+    weeklySchedule: 'Weekly Schedule',
+    annualVolume: 'Annual Target',
+    sessions: "sessions",
+    completed: "completed",
+    extraSessions: 'Extra Sessions (SUPP)',
+    extraNote: "Outside annual target",
+    absences: 'Absence Status',
+    totalAbsences: 'Total Absences',
+    justifiedShort: "Justified",
+    unjustifiedShort: "Unjustified",
+    noSessions: "No sessions scheduled at the moment."
   },
 
   // ── Dept Head Dashboard ──
@@ -727,21 +749,6 @@ const en = {
     Sunday: 'Sunday'
   },
 
-  teacher: {
-    label: 'Teacher',
-    weeklySchedule: 'Weekly Schedule',
-    annualVolume: 'Annual Target',
-    sessions: "sessions",
-    completed: "completed",
-    extraSessions: 'Extra Sessions (SUPP)',
-    extraNote: "Outside annual target",
-    absences: 'Absence Status',
-    totalAbsences: 'Total Absences',
-    justifiedShort: "Justified",
-    unjustifiedShort: "Unjustified",
-    noSessions: "No sessions scheduled at the moment."
-  },
-
   // ── Notification Feed ──
   feed: {
     evaluation: 'Evaluation',
@@ -772,44 +779,6 @@ const en = {
     requirements: 'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.',
     success: 'Password updated successfully!',
     error: 'Failed to update password.',
-  },
-  settings: {
-    title: 'Settings',
-    profile: 'Profile Information',
-    security: 'Account Security',
-    personalData: 'Personal Data',
-    preferences: 'System Options',
-    profileTitle: 'Personal Profile',
-    profileDesc: 'Update your identification details and how others see you.',
-    changePhoto: 'Change Photo',
-    removePhoto: 'Remove',
-    photoSpecs: 'JPG, PNG or GIF. Max 2MB.',
-    updateInfo: 'Update Information',
-    securityTitle: 'Security Settings',
-    securityDesc: 'Manage your password and protect your academic account.',
-    updateCredentials: 'Update Credentials',
-    interfaceTitle: 'Interface Preferences',
-    interfaceDesc: 'Adjust the portal to your personal language and region.',
-    portalLanguage: 'Portal Language',
-    confirmRemovePhoto: 'Are you sure you want to remove your profile photo?',
-    currentPassword: 'Current Password',
-    newPassword: 'New Password',
-    confirmPassword: 'Confirm Password',
-    updateProfile: 'Update Profile',
-    updatePassword: 'Update Password',
-    profileSuccess: 'Profile updated successfully!',
-    profileError: 'Failed to update profile.',
-  },
-
-  // ── Days ──
-  days: {
-    Sunday: 'Sunday',
-    Monday: 'Monday',
-    Tuesday: 'Tuesday',
-    Wednesday: 'Wednesday',
-    Thursday: 'Thursday',
-    Friday: 'Friday',
-    Saturday: 'Saturday',
   },
   grades: {
     Teacher: 'Teacher',
