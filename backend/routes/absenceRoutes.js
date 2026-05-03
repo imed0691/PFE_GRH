@@ -24,6 +24,7 @@ router.put('/absences/read-teacher', verifyToken, absenceController.markAsReadTe
 
 // Teacher actions: justify and catch-up
 router.put('/absences/:id/justify', verifyToken, upload.single('justification_file'), absenceController.submitJustification);
+router.delete('/absences/:id/justify', verifyToken, absenceController.cancelJustification);
 router.put('/absences/:id/catchup', verifyToken, absenceController.submitCatchup);
 
 router.delete('/absences/bulk-delete', verifyToken, absenceController.bulkDeleteAbsences);

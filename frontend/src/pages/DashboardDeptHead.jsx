@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
-import DashboardLayout from '../components/DashboardLayout';
-import ManageSessions from './ManageSessions';
-import ManageAbsences from './ManageAbsences';
+import DashboardLayout from '../components/DashboardLayout';import ManageAbsences from './ManageAbsences';
 import ManageReminders from './ManageReminders';
 import ReminderInbox from './ReminderInbox';
 import ManagePromotions from './ManagePromotions';
@@ -214,6 +212,30 @@ function DashboardDeptHead({ user, onLogout }) {
     d.setMinutes(d.getMinutes() + 90);
     const endTimeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
+    let calculatedSessionDate = null;
+    if (quickAddForm.is_extra) {
+      const todayDate = new Date();
+      const currentJsDay = todayDate.getDay();
+      
+      const daysJsMap = {
+        'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6
+      };
+      const targetJsDay = daysJsMap[addSlotDay];
+
+      // Convert standard JS day index to Academic week index (Saturday = 0, Sunday = 1, ... Friday = 6)
+      const toAcademicIndex = (day) => (day === 6 ? 0 : day + 1);
+      
+      const currentAcademicIndex = toAcademicIndex(currentJsDay);
+      const targetAcademicIndex = toAcademicIndex(targetJsDay);
+      
+      // Calculate how many days to add/subtract to stay in the SAME academic week
+      const distance = targetAcademicIndex - currentAcademicIndex;
+      const targetDate = new Date(todayDate);
+      targetDate.setDate(todayDate.getDate() + distance);
+      
+      calculatedSessionDate = targetDate.toISOString().split('T')[0];
+    }
+
     try {
       const res = await fetch('http://localhost:5000/api/sessions', {
         method: 'POST',
@@ -228,8 +250,9 @@ function DashboardDeptHead({ user, onLogout }) {
           session_type: quickAddForm.session_type,
           study_level_id: quickAddForm.study_level_id,
           section_id: quickAddForm.section_id,
-          group_id: quickAddForm.group_id,
-          is_extra: quickAddForm.is_extra
+          group_id: quickAddForm.session_type === 'Lecture' ? null : quickAddForm.group_id,
+          is_extra: quickAddForm.is_extra,
+          session_date: calculatedSessionDate
         })
       });
 
@@ -300,7 +323,7 @@ function DashboardDeptHead({ user, onLogout }) {
                 <div className="schedule-grid-container" style={{ background: 'white', borderRadius: '24px', padding: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.05)', overflowX: 'auto' }}>
                   <div className="schedule-grid" style={{ 
                     display: 'grid', 
-                    gridTemplateColumns: '100px repeat(7, 1fr)', 
+                    gridTemplateColumns: '100px repeat(6, 1fr)', 
                     gap: '12px',
                     minWidth: '1000px'
                   }}>
@@ -308,7 +331,7 @@ function DashboardDeptHead({ user, onLogout }) {
                     <div className="grid-header-cell" style={{ background: '#f8fafc', padding: '15px 10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700', color: 'var(--text-main)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       Horaires
                     </div>
-                    {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+                    {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => (
                       <div key={day} className="grid-header-cell" style={{ textAlign: 'center', fontWeight: '700', textTransform: 'capitalize', background: '#f8fafc', padding: '15px 10px', borderRadius: '10px', fontSize: '13px', color: 'var(--text-main)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {t(`days.${day}`)}
                       </div>
@@ -339,11 +362,11 @@ function DashboardDeptHead({ user, onLogout }) {
                         </div>
 
                         {/* Day cells for this slot */}
-                        {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => {
-                          const sessionsInSlot = teacherSchedule.filter(s => 
-                            s.day_of_week === day && 
-                            s.start_time?.startsWith(slot.start)
-                          );
+                        {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => {
+                          const sessionsInSlot = teacherSchedule.filter(s => {
+                            const isSameDayAndTime = s.day_of_week === day && s.start_time?.startsWith(slot.start);
+                            return isSameDayAndTime;
+                          });
 
                           return (
                             <div 
@@ -571,21 +594,40 @@ function DashboardDeptHead({ user, onLogout }) {
               </div>
 
               <form onSubmit={handleQuickAddSubmit}>
-                <div className="mnadm-form-group">
-                  <label className="mnadm-label" style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.moduleSubject')}</label>
-                  <select 
-                    className="mnadm-input" 
-                    style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}
-                    value={quickAddForm.module_name} 
-                    onChange={e => {
-                      const mod = teacherModules.find(m => m.name === e.target.value);
-                      setQuickAddForm({...quickAddForm, module_name: e.target.value, study_level_id: mod?.study_level_id || ''});
-                    }}
-                    required
-                  >
-                    <option value="">-- {t('common.select')} --</option>
-                    {teacherModules.map(m => <option key={m.id} value={m.name}>{m.name} ({m.study_level})</option>)}
-                  </select>
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+                  <div className="mnadm-form-group" style={{ flex: 1 }}>
+                    <label className="mnadm-label" style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>Année / Niveau</label>
+                    <select 
+                      className="mnadm-input" 
+                      style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}
+                      value={quickAddForm.study_level_id || ''} 
+                      onChange={e => setQuickAddForm({...quickAddForm, study_level_id: e.target.value, module_name: '', section_id: '', group_id: ''})}
+                      required
+                    >
+                      <option value="">-- {t('common.select')} --</option>
+                      {Array.from(new Map(teacherModules.map(m => [m.study_level_id, { id: m.study_level_id, name: m.study_level }])).values()).map(sl => (
+                        <option key={sl.id} value={sl.id}>{sl.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mnadm-form-group" style={{ flex: 2 }}>
+                    <label className="mnadm-label" style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.moduleSubject')}</label>
+                    <select 
+                      className="mnadm-input" 
+                      style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}
+                      value={quickAddForm.module_name} 
+                      onChange={e => {
+                        const mod = teacherModules.find(m => m.name === e.target.value);
+                        setQuickAddForm({...quickAddForm, module_name: e.target.value, study_level_id: mod?.study_level_id || quickAddForm.study_level_id});
+                      }}
+                      required
+                      disabled={!quickAddForm.study_level_id}
+                    >
+                      <option value="">-- {t('common.select')} --</option>
+                      {teacherModules.filter(m => String(m.study_level_id) === String(quickAddForm.study_level_id)).map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+                    </select>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
@@ -606,18 +648,20 @@ function DashboardDeptHead({ user, onLogout }) {
                 <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
                   <div className="mnadm-form-group" style={{ flex: 1 }}>
                     <label className="mnadm-label" style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.section')}</label>
-                    <select className="mnadm-input" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }} value={quickAddForm.section_id} onChange={e => setQuickAddForm({...quickAddForm, section_id: e.target.value, group_id: ''})} disabled={!quickAddForm.study_level_id}>
+                    <select className="mnadm-input" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }} value={quickAddForm.section_id} onChange={e => setQuickAddForm({...quickAddForm, section_id: e.target.value, group_id: ''})} disabled={!quickAddForm.study_level_id} required>
                       <option value="">-- {t('common.select')} --</option>
                       {sectionsList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                   </div>
-                  <div className="mnadm-form-group" style={{ flex: 1 }}>
-                    <label className="mnadm-label" style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.group')}</label>
-                    <select className="mnadm-input" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }} value={quickAddForm.group_id} onChange={e => setQuickAddForm({...quickAddForm, group_id: e.target.value})} disabled={!quickAddForm.section_id}>
-                      <option value="">-- {t('common.select')} --</option>
-                      {groupsList.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                    </select>
-                  </div>
+                  {quickAddForm.session_type !== 'Lecture' && (
+                    <div className="mnadm-form-group" style={{ flex: 1 }}>
+                      <label className="mnadm-label" style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.group')}</label>
+                      <select className="mnadm-input" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }} value={quickAddForm.group_id} onChange={e => setQuickAddForm({...quickAddForm, group_id: e.target.value})} disabled={!quickAddForm.section_id} required>
+                        <option value="">-- {t('common.select')} --</option>
+                        {groupsList.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 <button type="submit" className="btn-confirm-pro" style={{ width: '100%', marginTop: '24px', padding: '14px', borderRadius: '12px', fontWeight: '700' }}>

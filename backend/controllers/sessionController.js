@@ -30,7 +30,13 @@ exports.createSession = (req, res) => {
     return res.status(400).json({ message: "All fields are required." });
   }
 
-  // --- PAST DATE VALIDATION ---
+  // --- SUPP SESSION VALIDATION ---
+  if (is_extra && !session_date) {
+    return res.status(400).json({ message: "Une date est strictement requise pour une séance supplémentaire." });
+  }
+
+  // --- PAST DATE VALIDATION (TEMPORARILY DISABLED FOR TESTING) ---
+  /*
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   if (session_date) {
@@ -40,6 +46,7 @@ exports.createSession = (req, res) => {
       return res.status(400).json({ message: "Impossible de créer une séance à une date passée." });
     }
   }
+  */
 
   // --- CONFLICT DETECTION LOGIC (TOTAL LOCKDOWN) ---
   const tId = Number(teacher_id);
@@ -54,9 +61,9 @@ exports.createSession = (req, res) => {
       AND day_of_week = ? 
       AND TIME(start_time) = TIME(?)
       AND (
-        (session_date IS NULL)           -- Existing is recurring (blocks all)
-        OR (DATE(session_date) = DATE(?)) -- Existing is same date
-        OR (? IS NULL)                    -- New is recurring (blocks all existing on that day)
+        (session_date IS NULL AND is_extra = FALSE)     -- Existing is a REAL recurring session
+        OR (DATE(session_date) = DATE(?))                -- Existing is on the same specific date
+        OR (? IS NULL AND (session_date IS NULL OR 1=1)) -- New is recurring (blocks all)
       )
   `;
 
@@ -131,9 +138,10 @@ exports.getTeacherDashboardData = (req, res) => {
 
   // 2. Get teacher stats (absences and target volume)
   const statsQuery = `
-    SELECT u.volume_horaire, u.created_at,
-           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND date >= DATE(u.created_at)) as total_absences,
-           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted') AND date >= DATE(u.created_at)) as unjustified_count
+    SELECT u.volume_horaire, u.created_at, 
+           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND is_extra = 0 AND date >= DATE(u.created_at)) as total_reg_absences,
+           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted') AND is_extra = 0 AND date >= DATE(u.created_at)) as unjustified_count,
+           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted') AND is_extra = 1 AND date >= DATE(u.created_at)) as extra_unjustified_count
     FROM users u WHERE u.id = ?
   `;
 
@@ -156,7 +164,7 @@ exports.getTeacherDashboardData = (req, res) => {
   `;
 
   // 4. Get absences
-  const absencesQuery = "SELECT id, date, reason, status, has_justification, justification_status, justification_file, is_caught_up, is_read_by_teacher, justification_text, catchup_date, catchup_start_time, catchup_end_time FROM absences WHERE teacher_id = ? ORDER BY created_at DESC";
+  const absencesQuery = "SELECT id, teacher_id, DATE_FORMAT(date, '%Y-%m-%d') as date, reason, status, has_justification, is_extra, start_time, justification_status, justification_file, is_caught_up, is_read_by_teacher, justification_text, catchup_date, catchup_start_time, catchup_end_time FROM absences WHERE teacher_id = ? ORDER BY created_at DESC";
 
   db.query(sessionsQuery, [teacherId], (err, sessions) => {
     if (err) {
@@ -183,34 +191,39 @@ exports.getTeacherDashboardData = (req, res) => {
       const currentHour = today.getHours() + today.getMinutes() / 60;
       
       let completedSessionsCount = 0;
+      let completedExtraCount = 0;
       const actualStart = teacherCreatedAt > semesterStart ? teacherCreatedAt : semesterStart;
 
       sessions.forEach(s => {
-        if (!s.is_extra) {
-          const [eh, em] = s.end_time.split(':').map(Number);
-          const sessionEndHour = eh + em/60;
+        const [eh, em] = s.end_time.split(':').map(Number);
+        const sessionEndHour = eh + em/60;
 
-          if (s.session_date) {
-            const sDate = new Date(s.session_date);
-            const todayNoTime = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            const sessionDateNoTime = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
+        if (s.session_date) {
+          const sDate = new Date(s.session_date);
+          const todayNoTime = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          const sessionDateNoTime = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
 
-            if (sessionDateNoTime < todayNoTime || (sessionDateNoTime.getTime() === todayNoTime.getTime() && sessionEndHour <= currentHour)) {
-              completedSessionsCount++;
-            }
-          } else {
-            const targetDayIndex = daysOfWeek.indexOf(s.day_of_week);
-            let tempDate = new Date(actualStart);
-            while (tempDate <= today) {
-              if (tempDate.getDay() === targetDayIndex) {
-                if (tempDate.toDateString() === today.toDateString()) {
-                  if (sessionEndHour <= currentHour) completedSessionsCount++;
-                } else {
-                  completedSessionsCount++;
+          if (sessionDateNoTime < todayNoTime || (sessionDateNoTime.getTime() === todayNoTime.getTime() && sessionEndHour <= currentHour)) {
+            if (!s.is_extra) completedSessionsCount++;
+            else completedExtraCount++;
+          }
+        } else {
+          if (s.is_extra) return; // SUPP sessions should never be counted as recurring
+          const targetDayIndex = daysOfWeek.indexOf(s.day_of_week);
+          let tempDate = new Date(actualStart);
+          while (tempDate <= today) {
+            if (tempDate.getDay() === targetDayIndex) {
+              if (tempDate.toDateString() === today.toDateString()) {
+                if (sessionEndHour <= currentHour) {
+                  if (!s.is_extra) completedSessionsCount++;
+                  else completedExtraCount++;
                 }
+              } else {
+                if (!s.is_extra) completedSessionsCount++;
+                else completedExtraCount++;
               }
-              tempDate.setDate(tempDate.getDate() + 1);
             }
+            tempDate.setDate(tempDate.getDate() + 1);
           }
         }
       });
@@ -227,19 +240,24 @@ exports.getTeacherDashboardData = (req, res) => {
             return res.status(500).json({ error: err.message });
           }
 
-          let actualDone = completedSessionsCount - (teacherStats.total_absences || 0);
+          // Subtract ONLY unjustified absences from the regular sessions done
+          let actualDone = completedSessionsCount - (teacherStats.unjustified_count || 0);
           if (actualDone < 0) actualDone = 0;
+
+          // Extra sessions done = completed - unjustified extra absences
+          let actualExtraDone = completedExtraCount - (teacherStats.extra_unjustified_count || 0);
+          if (actualExtraDone < 0) actualExtraDone = 0;
 
           const annualTarget = teacherStats.volume_horaire || 0;
           const dashboardStats = {
             annual_volume_target: annualTarget,
             sessions_done: actualDone,
-            extra_sessions: sessions.filter(s => s.is_extra).length,
+            extra_sessions: actualExtraDone,
             teacher_created_at: teacherStats.created_at,
             absences: {
-              total: teacherStats.total_absences || 0,
+              total: teacherStats.total_reg_absences || 0,
               unjustified: teacherStats.unjustified_count || 0,
-              justified: (teacherStats.total_absences || 0) - (teacherStats.unjustified_count || 0)
+              justified: (teacherStats.total_reg_absences || 0) - (teacherStats.unjustified_count || 0)
             }
           };
 
@@ -307,7 +325,7 @@ exports.getRecentPastSessions = (req, res) => {
     // 2. Query ALL sessions that could have occurred recently
     let sessionsQuery = `
       SELECT s.id, s.teacher_id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.end_time, s.session_date,
-             u.nom as teacher_nom, u.prenom as teacher_prenom,
+             u.nom as teacher_nom, u.prenom as teacher_prenom, u.created_at as teacher_created_at,
              sl.name as study_level, sec.name as section, sg.name as groupe
       FROM academic_sessions s
       JOIN users u ON s.teacher_id = u.id
@@ -336,14 +354,19 @@ exports.getRecentPastSessions = (req, res) => {
         if (s.session_date) {
           occ = new Date(s.session_date);
         } else {
+          if (s.is_extra) return; // SUPP sessions are not recurring
           occ = getLastOccurrence(s.day_of_week);
         }
 
-        // Only keep if it's in the past (before 'now')
+        // Only keep if it's in the past (before 'now') AND after the teacher joined
+        const teacherJoinDate = new Date(s.teacher_created_at);
+        teacherJoinDate.setHours(0,0,0,0);
+        
         const isToday = occ.toDateString() === now.toDateString();
         const isPast = occ < now || (isToday && sessionEndHour < currentHour);
+        const isAfterJoining = occ >= teacherJoinDate;
         
-        if (isPast) {
+        if (isPast && isAfterJoining) {
           const y = occ.getFullYear();
           const m = String(occ.getMonth() + 1).padStart(2, '0');
           const d = String(occ.getDate()).padStart(2, '0');
@@ -357,13 +380,15 @@ exports.getRecentPastSessions = (req, res) => {
       // 3. Filter out those that already have an absence record
       if (pastSessions.length === 0) return res.json([]);
 
-      const checkAbsenceQuery = "SELECT teacher_id, DATE_FORMAT(date, '%Y-%m-%d') as date FROM absences";
+      const checkAbsenceQuery = "SELECT teacher_id, DATE_FORMAT(date, '%Y-%m-%d') as date, start_time FROM absences";
       db.query(checkAbsenceQuery, (err, absences) => {
         if (err) return res.status(500).json({ error: err.message });
 
         const filtered = pastSessions.filter(ps => {
           return !absences.find(a => 
-            Number(a.teacher_id) === Number(ps.teacher_id) && a.date === ps.actual_date
+            Number(a.teacher_id) === Number(ps.teacher_id) && 
+            a.date === ps.actual_date &&
+            a.start_time === ps.start_time
           );
         });
 

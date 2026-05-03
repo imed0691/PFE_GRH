@@ -78,26 +78,21 @@ exports.calculateSalaries = (req, res) => {
                   totalExtraSessionsThisMonth++;
                 }
               }
-            } else {
-              totalExtraSessionsThisMonth += countPastDayOccurrences(s.day_of_week, currentMonth, currentYear, s.end_time, now, s.created_at);
-              if (now.getDate() < 15) {
-                const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-                const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-                totalExtraSessionsThisMonth += countPastDayOccurrences(s.day_of_week, prevMonth, prevYear, s.end_time, new Date(prevYear, prevMonth + 1, 0), s.created_at);
-              }
             }
           });
 
-          // 2. Get Absences this month
+          // 2. Get Absences this month (distinguishing regular vs extra)
           const absQuery = `
-            SELECT COUNT(*) as count 
+            SELECT 
+              SUM(CASE WHEN is_extra = 0 THEN 1 ELSE 0 END) as reg_unjustified,
+              SUM(CASE WHEN is_extra = 1 THEN 1 ELSE 0 END) as extra_unjustified
             FROM absences 
             WHERE teacher_id = ? 
               AND (
                 (MONTH(date) = ? AND YEAR(date) = ?)
                 OR (DAY(?) < 15 AND MONTH(date) = ? AND YEAR(date) = ?)
               )
-              AND date <= DATE(?) -- Only count past or today's absences
+              AND date <= DATE(?) 
               AND (justification_status IS NULL OR justification_status != 'Accepted')
               AND is_caught_up = FALSE
           `;
@@ -106,9 +101,15 @@ exports.calculateSalaries = (req, res) => {
           db.query(absQuery, [t.id, currentMonth + 1, currentYear, now, prevM, prevY, now], (err, absRes) => {
             if (err) return reject(err);
             
-            const unjustifiedAbsences = absRes[0].count;
-            const extraPay = totalExtraSessionsThisMonth * (t.hourly_rate || 0);
-            const penaltyAmount = unjustifiedAbsences * (t.absence_penalty || 0);
+            const regUnjustified = absRes[0].reg_unjustified || 0;
+            const extraUnjustified = absRes[0].extra_unjustified || 0;
+
+            // Extra pay = (Scheduled - Unjustified Absences) * rate
+            let finalExtraSessions = totalExtraSessionsThisMonth - extraUnjustified;
+            if (finalExtraSessions < 0) finalExtraSessions = 0;
+
+            const extraPay = finalExtraSessions * (t.hourly_rate || 0);
+            const penaltyAmount = regUnjustified * (t.absence_penalty || 0);
             const netSalary = (t.base_salary || 0) + extraPay - penaltyAmount;
 
             resolve({
@@ -117,9 +118,9 @@ exports.calculateSalaries = (req, res) => {
               prenom: t.prenom,
               grade: t.grade || 'Teacher',
               base_salary: t.base_salary || 0,
-              extra_hours: totalExtraSessionsThisMonth, // Here extra_hours is actually count of extra sessions
+              extra_hours: finalExtraSessions,
               hourly_rate: t.hourly_rate || 0,
-              absences: unjustifiedAbsences,
+              absences: regUnjustified,
               absence_penalty: t.absence_penalty || 0,
               total_penalty: penaltyAmount,
               extra_pay: extraPay,
@@ -136,93 +137,98 @@ exports.calculateSalaries = (req, res) => {
   });
 };
 
-// Teacher: Get my own salary and history (Dynamique)
+// Helper to calculate salary for a specific teacher and month/year
+const calculateSalaryForMonth = (teacher, month, year, sessions, now) => {
+  const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+  const monthName = monthNames[month];
+  
+  let totalExtraSessions = 0;
+  sessions.forEach(s => {
+    const sessionCreatedAt = new Date(s.created_at);
+    if (s.session_date) {
+      const sDate = new Date(s.session_date);
+      if (sDate.getMonth() === month && sDate.getFullYear() === year && sDate <= now && sDate >= sessionCreatedAt) {
+        totalExtraSessions++;
+      }
+    }
+  });
+
+  return new Promise((resolve, reject) => {
+    const absQuery = `
+      SELECT 
+        SUM(CASE WHEN is_extra = 0 THEN 1 ELSE 0 END) as reg_unjustified
+      FROM absences 
+      WHERE teacher_id = ? 
+        AND MONTH(date) = ? AND YEAR(date) = ?
+        AND date <= DATE(?) 
+        AND (justification_status IS NULL OR justification_status != 'Accepted')
+        AND is_caught_up = FALSE
+    `;
+    db.query(absQuery, [teacher.id, month + 1, year, now], (err, absRes) => {
+      if (err) return reject(err);
+      
+      const regUnjustified = absRes[0].reg_unjustified || 0;
+      const extraPay = totalExtraSessions * (teacher.hourly_rate || 0);
+      const penaltyAmount = regUnjustified * (teacher.absence_penalty || 0);
+      const netSalary = (teacher.base_salary || 0) + extraPay - penaltyAmount;
+
+      resolve({
+        date: `${monthName} ${year}`,
+        month: monthName,
+        year: year,
+        base_salary: teacher.base_salary || 0,
+        extra_hours: totalExtraSessions,
+        hourly_rate: teacher.hourly_rate || 0,
+        absences: regUnjustified,
+        absence_penalty: teacher.absence_penalty || 0,
+        total_penalty: penaltyAmount,
+        extra_pay: extraPay,
+        net_salary: netSalary > 0 ? netSalary : 0,
+        status: 'Paid'
+      });
+    });
+  });
+};
+
+// Teacher: Get my own salary and history (Fully Automated)
 exports.getMySalary = (req, res) => {
   const teacherId = req.user.id;
   const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-
-  const userQuery = "SELECT id, nom, prenom, grade, base_salary, hourly_rate, absence_penalty FROM users WHERE id = ?";
-  db.query(userQuery, [teacherId], (err, users) => {
+  
+  const userQuery = "SELECT id, nom, prenom, grade, base_salary, hourly_rate, absence_penalty, created_at FROM users WHERE id = ?";
+  db.query(userQuery, [teacherId], async (err, users) => {
     if (err || users.length === 0) return res.status(500).json({ error: "User not found" });
     
     const t = users[0];
-
-    // Calculate dynamic stats for current teacher
+    const teacherJoined = new Date(t.created_at);
+    
+    // Get all sessions once to use in history calculation
     const sessionsQuery = "SELECT *, created_at FROM academic_sessions WHERE teacher_id = ? AND is_extra = TRUE";
-    db.query(sessionsQuery, [t.id], (err, sessions) => {
+    db.query(sessionsQuery, [t.id], async (err, sessions) => {
       if (err) return res.status(500).json({ error: err.message });
 
-      let totalExtraSessionsThisMonth = 0;
-      
-      // We look at current month
-      sessions.forEach(s => {
-        const sessionCreatedAt = new Date(s.created_at);
-        if (s.session_date) {
-          const sDate = new Date(s.session_date);
-          if (sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear && sDate <= now && sDate >= sessionCreatedAt) {
-            totalExtraSessionsThisMonth++;
-          }
-          // If beginning of month, also check previous month
-          if (now.getDate() < 15) {
-            const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-            const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-            if (sDate.getMonth() === prevMonth && sDate.getFullYear() === prevYear && sDate >= sessionCreatedAt) {
-              totalExtraSessionsThisMonth++;
-            }
-          }
-        } else {
-          totalExtraSessionsThisMonth += countPastDayOccurrences(s.day_of_week, currentMonth, currentYear, s.end_time, now, s.created_at);
-          if (now.getDate() < 15) {
-            const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-            const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-            totalExtraSessionsThisMonth += countPastDayOccurrences(s.day_of_week, prevMonth, prevYear, s.end_time, new Date(prevYear, prevMonth + 1, 0), s.created_at);
-          }
-        }
-      });
+      // 1. Calculate Current Month (Dynamic)
+      const currentData = await calculateSalaryForMonth(t, now.getMonth(), now.getFullYear(), sessions, now);
 
-      const absQuery = `
-        SELECT COUNT(*) as count 
-        FROM absences 
-        WHERE teacher_id = ? 
-          AND (
-            (MONTH(date) = ? AND YEAR(date) = ?)
-            OR (DAY(?) < 15 AND MONTH(date) = ? AND YEAR(date) = ?)
-          )
-          AND date <= DATE(?) -- Only count past or today's absences
-          AND (justification_status IS NULL OR justification_status != 'Accepted')
-          AND is_caught_up = FALSE
-      `;
-      
-      const prevM = currentMonth === 0 ? 12 : currentMonth;
-      const prevY = currentMonth === 0 ? currentYear - 1 : currentYear;
+      // 2. Calculate History (All months since joining up to last month)
+      const history = [];
+      let iterDate = new Date(teacherJoined.getFullYear(), teacherJoined.getMonth(), 1);
+      const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-      db.query(absQuery, [t.id, currentMonth + 1, currentYear, now, prevM, prevY, now], (err, absRes) => {
-        if (err) return res.status(500).json({ error: err.message });
-        
-        const unjustifiedAbsences = absRes[0].count;
-        const extraPay = totalExtraSessionsThisMonth * (t.hourly_rate || 0);
-        const penaltyAmount = unjustifiedAbsences * (t.absence_penalty || 0);
-        const netSalary = (t.base_salary || 0) + extraPay - penaltyAmount;
+      const historyPromises = [];
+      while (iterDate <= lastMonthDate) {
+        // Only if it's in the past
+        historyPromises.push(calculateSalaryForMonth(t, iterDate.getMonth(), iterDate.getFullYear(), sessions, new Date(iterDate.getFullYear(), iterDate.getMonth() + 1, 0, 23, 59, 59)));
+        iterDate.setMonth(iterDate.getMonth() + 1);
+      }
 
-        const currentData = {
-          base_salary: t.base_salary || 0,
-          extra_hours: totalExtraSessionsThisMonth,
-          hourly_rate: t.hourly_rate || 0,
-          absences: unjustifiedAbsences,
-          absence_penalty: t.absence_penalty || 0, // Added this
-          total_penalty: penaltyAmount,
-          extra_pay: extraPay,
-          net_salary: netSalary > 0 ? netSalary : 0,
-          grade: t.grade
-        };
+      const historyResults = await Promise.all(historyPromises);
+      // Sort history descending (most recent first)
+      historyResults.reverse();
 
-        const historyQuery = "SELECT * FROM payrolls WHERE teacher_id = ? ORDER BY year DESC, month DESC";
-        db.query(historyQuery, [teacherId], (err, history) => {
-          if (err) return res.status(500).json({ error: err.message });
-          res.json({ current: currentData, history });
-        });
+      res.json({ 
+        current: currentData, 
+        history: historyResults 
       });
     });
   });
@@ -264,8 +270,6 @@ exports.finalizeMonth = (req, res) => {
             if (s.session_date) {
               const sDate = new Date(s.session_date);
               if (sDate.getMonth() === mIndex && sDate.getFullYear() === Number(year)) extraSessions++;
-            } else {
-              extraSessions += countDayOccurrences(s.day_of_week, mIndex, Number(year));
             }
           });
 

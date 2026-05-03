@@ -43,7 +43,7 @@ function ManageAbsences({ user: propUser }) {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/absences', {
+      const res = await fetch('http://localhost:5000/api/absences?filter=week', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -115,14 +115,14 @@ function ManageAbsences({ user: propUser }) {
     }
   }, [userRole]);
 
-  const handleMarkAbsence = async (teacherId, date, reason = 'Absence constatée') => {
+  const handleMarkAbsence = async (teacherId, date, reason = 'Absence constatée', startTime, endTime, isExtra) => {
     const loadToast = toast.loading(t('common.loading') || 'Enregistrement...');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:5000/api/absences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ teacher_id: teacherId, date, reason })
+        body: JSON.stringify({ teacher_id: teacherId, date, reason, start_time: startTime, end_time: endTime, is_extra: isExtra })
       });
       toast.dismiss(loadToast);
       if (res.ok) {
@@ -155,6 +155,21 @@ function ManageAbsences({ user: propUser }) {
         fetchAbsences();
       }
     } catch (error) { toast.error(t('common.serverError')); } finally { setIsSubmitting(false); }
+  };
+
+  const handleCancelJustification = async (id) => {
+    if (!window.confirm(t('absences.confirmCancelJustify') || 'Voulez-vous vraiment annuler votre justification ?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/absences/${id}/justify`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        toast.success(t('absences.justificationCancelled') || 'Justification annulée');
+        fetchAbsences();
+      }
+    } catch (error) { toast.error(t('common.serverError')); }
   };
 
   const isTeacher = userRole === 'TEACHER' || userRole === 'ENSEIGNANT';
@@ -280,7 +295,7 @@ function ManageAbsences({ user: propUser }) {
                           <button 
                             className="btn-delete-pro" 
                             style={{ padding: '8px 16px', fontSize: '11px', background: '#ef4444', color: 'white', border: 'none' }}
-                            onClick={() => handleMarkAbsence(s.teacher_id, s.actual_date, `Absence au cours de ${s.module_name}`)}
+                            onClick={() => handleMarkAbsence(s.teacher_id, s.actual_date, `Absence au cours de ${s.module_name}`, s.start_time, s.end_time, s.is_extra)}
                           >
                             {t('absences.markAbsent') || 'Marquer Absent'}
                           </button>
@@ -321,7 +336,18 @@ function ManageAbsences({ user: propUser }) {
               <tbody>
                 {absences.map((a) => (
                   <tr key={a.id}>
-                    <td><div style={{ fontWeight: '700', color: 'var(--secondary)' }}>{new Date(a.date).toLocaleDateString()}</div></td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ fontWeight: '700', color: 'var(--secondary)' }}>{new Date(a.date).toLocaleDateString()}</div>
+                        {a.is_extra === 1 && (
+                          <span style={{ 
+                            fontSize: '9px', background: '#f59e0b', color: 'white', 
+                            padding: '1px 5px', borderRadius: '4px', fontWeight: '900'
+                          }}>{t('common.extraShort') || 'SUPP'}</span>
+                        )}
+                      </div>
+                      {a.start_time && <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{a.start_time.substring(0,5)}</div>}
+                    </td>
                     {!isTeacher && (
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -357,7 +383,29 @@ function ManageAbsences({ user: propUser }) {
                     <td>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
                         {isTeacher && a.justification_status !== 'Accepted' && (
-                          <button onClick={() => setActiveJustifyId(a.id)} className="btn-confirm-pro" style={{ padding: '8px 16px', fontSize: '12px' }}>{t('absences.justify')}</button>
+                          <button 
+                            onClick={() => {
+                              setActiveJustifyId(a.id);
+                              if (a.justification_status === 'Pending') {
+                                setJustificationText(a.justification_text || '');
+                              }
+                            }} 
+                            className="btn-confirm-pro" 
+                            style={{ padding: '8px 16px', fontSize: '12px' }}
+                          >
+                            {a.justification_status === 'Pending' 
+                              ? (t('absences.updateJustification') || 'Mettre à jour') 
+                              : t('absences.justify')}
+                          </button>
+                        )}
+                        {isTeacher && a.justification_status === 'Pending' && (
+                          <button 
+                            onClick={() => handleCancelJustification(a.id)} 
+                            className="btn-cancel-pro" 
+                            style={{ padding: '8px 16px', fontSize: '12px' }}
+                          >
+                            {t('common.cancel') || 'Annuler'}
+                          </button>
                         )}
                         {(isDeptHead || isHR || isAdmin) && a.justification_status === 'Pending' && (
                           <>

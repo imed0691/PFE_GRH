@@ -123,7 +123,6 @@ function DashboardHR({ user, onLogout }) {
     { id: 'add', label: t('sidebar.addEmployee') },
     { id: 'departments', label: t('sidebar.departments') },
     { id: 'classes', label: t('sidebar.classes') || 'Classes' },
-    { id: 'salaries', label: t('sidebar.salaries') },
     { id: 'reminders', label: t('sidebar.reminders'), badge: badges.reminders },
     { id: 'documents', label: t('sidebar.documents'), badge: badges.documents },
     { id: 'promotions', label: t('sidebar.promotions'), badge: badges.promotions },
@@ -136,7 +135,6 @@ function DashboardHR({ user, onLogout }) {
       case 'add': return t('topbar.newHire');
       case 'departments': return t('topbar.manageDepartments');
       case 'classes': return t('classes.title');
-      case 'salaries': return t('topbar.salaryCalculation');
       case 'absences': return t('sidebar.absences');
       case 'documents': return t('topbar.documentRequests');
       case 'promotions': return t('topbar.careerAdvancements');
@@ -161,8 +159,6 @@ function DashboardHR({ user, onLogout }) {
           <ManageDepartments />
         ) : view === 'classes' ? (
           <ManageClasses user={user} />
-        ) : view === 'salaries' ? (
-          <ManageSalaries />
         ) : view === 'documents' ? (
           <ManageDocuments user={user} />
         ) : view === 'promotions' ? (

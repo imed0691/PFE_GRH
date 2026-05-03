@@ -68,6 +68,20 @@ function DashboardTeacher({ user, onLogout }) {
     const teacherCreated = stats.teacher_created_at ? new Date(stats.teacher_created_at) : janFirst;
     const semesterStart = teacherCreated > janFirst ? teacherCreated : janFirst;
 
+    // Helper to check if a session at a specific date/time was an unjustified absence
+    const isUnjustifiedAbsence = (sessionId, dateStr, startTime) => {
+      return absences.find(a => {
+        // Robust time comparison (HH:mm)
+        const aTime = a.start_time ? a.start_time.substring(0, 5) : null;
+        const sTime = startTime ? startTime.substring(0, 5) : null;
+        
+        return Number(a.teacher_id) === Number(user.id) &&
+               a.date === dateStr &&
+               (aTime === sTime || !aTime) &&
+               a.justification_status !== 'Accepted';
+      });
+    };
+
     schedule.forEach(s => {
       const isExtra = s.is_extra;
       if (detailView === 'completed' && isExtra) return;
@@ -75,17 +89,24 @@ function DashboardTeacher({ user, onLogout }) {
 
       if (s.session_date) {
         // One-time session
-        if (isSessionPassed(s)) history.push(s);
+        const d = new Date(s.session_date);
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        if (isSessionPassed(s) && !isUnjustifiedAbsence(s.id, dateStr, s.start_time)) {
+          history.push(s);
+        }
       } else {
-        // Recurring session: Generate past occurrences since Jan 1st
+        if (isExtra) return; // SUPP sessions should never be counted as recurring
+        // Recurring session: Generate past occurrences since joining
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const targetDayIndex = days.indexOf(s.day_of_week);
         
         let tempDate = new Date(semesterStart);
+        tempDate.setHours(0,0,0,0);
         while (tempDate <= today) {
           if (tempDate.getDay() === targetDayIndex) {
-            const occ = { ...s, session_date: tempDate.toISOString().split('T')[0] };
-            if (isSessionPassed(occ)) {
+            const dateStr = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
+            const occ = { ...s, session_date: dateStr };
+            if (isSessionPassed(occ) && !isUnjustifiedAbsence(s.id, dateStr, s.start_time)) {
               history.push(occ);
             }
           }
@@ -95,7 +116,7 @@ function DashboardTeacher({ user, onLogout }) {
     });
 
     // Sort by date descending
-    return history.sort((a, b) => new Date(b.session_date) - new Date(a.session_date));
+    return history.sort((a, b) => new Date(b.session_date || b.created_at) - new Date(a.session_date || a.created_at));
   };
 
   const handleProfileUpdate = (newData) => {
@@ -124,6 +145,7 @@ function DashboardTeacher({ user, onLogout }) {
           setStats(data.academic_stats);
         }
         setSchedule(data.all_sessions || []);
+        setAbsences(data.my_absences || []);
       }
     } catch (e) { toast.error(t('teacher.failedLoadDashboard')); } finally { setLoading(false); }
   };
@@ -246,7 +268,7 @@ function DashboardTeacher({ user, onLogout }) {
                   </h3>
                   <div className="schedule-grid" style={{ 
                     display: 'grid', 
-                    gridTemplateColumns: '100px repeat(7, 1fr)', 
+                    gridTemplateColumns: '100px repeat(6, 1fr)', 
                     gap: '12px',
                     minWidth: '1000px'
                   }}>
@@ -254,7 +276,7 @@ function DashboardTeacher({ user, onLogout }) {
                     <div className="grid-header-cell" style={{ background: '#f8fafc', padding: '15px 10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700', color: 'var(--text-main)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       Horaires
                     </div>
-                    {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(day => (
+                    {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => (
                       <div key={day} className="grid-header-cell" style={{ textAlign: 'center', fontWeight: '700', textTransform: 'capitalize', background: '#f8fafc', padding: '15px 10px', borderRadius: '10px', fontSize: '13px', color: 'var(--text-main)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {t(`days.${day}`)}
                       </div>
@@ -285,11 +307,11 @@ function DashboardTeacher({ user, onLogout }) {
                         </div>
 
                         {/* Day cells for this slot */}
-                        {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(day => {
-                          const sessionsInSlot = schedule.filter(s => 
-                            s.day_of_week === day && 
-                            s.start_time?.startsWith(slot.start)
-                          );
+                        {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => {
+                          const sessionsInSlot = schedule.filter(s => {
+                            const isSameDayAndTime = s.day_of_week === day && s.start_time?.startsWith(slot.start);
+                            return isSameDayAndTime;
+                          });
 
                           return (
                             <div 
@@ -324,7 +346,7 @@ function DashboardTeacher({ user, onLogout }) {
                                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                                   }}
                                 >
-                                  {session.is_extra && (
+                                  {!!session.is_extra && (
                                     <div style={{ 
                                       position: 'absolute',
                                       top: '-8px',
@@ -410,9 +432,19 @@ function DashboardTeacher({ user, onLogout }) {
                         <div key={idx} style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
                           {detailView === 'absences' ? (
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div>
-                                <p style={{ fontWeight: '700', color: 'var(--text-main)' }}>{item.reason || 'Absence'}</p>
-                                <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(item.date).toLocaleDateString()}</p>
+                              <div style={{ position: 'relative' }}>
+                                {item.is_extra === 1 && (
+                                  <span style={{ 
+                                    fontSize: '9px', background: '#f59e0b', color: 'white', 
+                                    padding: '1px 5px', borderRadius: '4px', fontWeight: '900',
+                                    marginRight: '8px', verticalAlign: 'middle'
+                                  }}>{t('common.extraShort') || 'SUPP'}</span>
+                                )}
+                                <p style={{ fontWeight: '700', color: 'var(--text-main)', display: 'inline-block' }}>{item.reason || 'Absence'}</p>
+                                <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                  {new Date(item.date).toLocaleDateString()}
+                                  {item.start_time && ` • ${item.start_time.substring(0,5)}`}
+                                </p>
                               </div>
                               <span style={{ 
                                 fontSize: '11px', padding: '4px 10px', borderRadius: '20px', fontWeight: '800',

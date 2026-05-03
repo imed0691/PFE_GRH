@@ -3,7 +3,6 @@ import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
 import DashboardLayout from '../components/DashboardLayout';
 import ManageClasses from './ManageClasses';
-import ManageSessions from './ManageSessions';
 import ManageAbsences from './ManageAbsences';
 import ManagePromotions from './ManagePromotions';
 import ManageDocuments from './ManageDocuments';
@@ -61,7 +60,6 @@ function DashboardViceDean({ user, onLogout }) {
   const menuItems = [
     { id: 'overview', label: t('sidebar.overview'), icon: '📊' },
     { id: 'classes', label: t('sidebar.classes'), icon: '🏫' }, 
-    { id: 'sessions', label: t('sidebar.schedules'), icon: '🗓️' },
     { id: 'absences', label: t('sidebar.absences'), icon: '⚠️', badge: badges.absences },
     { id: 'promotions', label: t('sidebar.promotions'), icon: '📈', badge: badges.promotions },
     { id: 'documents', label: t('sidebar.documents'), icon: '📄', badge: badges.documents },
@@ -81,7 +79,6 @@ function DashboardViceDean({ user, onLogout }) {
     >
       <div className="animate-academic">
         {view === 'classes' ? <ManageClasses /> :
-         view === 'sessions' ? <ManageSessions user={user} /> :
          view === 'absences' ? <ManageAbsences user={user} /> : 
          view === 'promotions' ? <ManagePromotions user={user} /> : 
          view === 'documents' ? <ManageDocuments user={user} /> : 

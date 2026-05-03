@@ -3,7 +3,7 @@ const db = require('../config/db');
 // Chef Département: Marquer une absence
 exports.markAbsence = (req, res) => {
   const sender_id = req.user.id;
-  const { teacher_id, date, reason } = req.body;
+  const { teacher_id, date, reason, start_time, end_time, is_extra } = req.body;
   
   if (!teacher_id || !date || !reason) {
     return res.status(400).json({ message: "Tous les champs sont requis." });
@@ -21,11 +21,11 @@ exports.markAbsence = (req, res) => {
 
   const query = `
     INSERT INTO absences 
-    (teacher_id, date, reason, status, justification_status, has_justification, is_caught_up, is_read_by_teacher, is_read_by_admin, created_at) 
-    VALUES (?, ?, ?, 'Approved', 'None', FALSE, FALSE, FALSE, TRUE, NOW())
+    (teacher_id, date, reason, start_time, end_time, is_extra, status, justification_status, has_justification, is_caught_up, is_read_by_teacher, is_read_by_admin, created_at) 
+    VALUES (?, ?, ?, ?, ?, ?, 'Approved', 'None', FALSE, FALSE, FALSE, TRUE, NOW())
   `;
   
-  db.query(query, [teacher_id, date, reason], (err, result) => {
+  db.query(query, [teacher_id, date, reason, start_time, end_time, is_extra ? 1 : 0], (err, result) => {
     if (err) {
       console.error("Error marking absence:", err);
       return res.status(500).json({ error: err.message });
@@ -53,12 +53,16 @@ exports.getAllAbsences = (req, res) => {
   let query = `
     SELECT a.id, a.date, a.reason, a.status, a.has_justification, a.justification_status, a.is_caught_up, 
            a.justification_text, a.justification_file, a.catchup_date, a.catchup_start_time, a.catchup_end_time,
-           a.created_at, a.is_read_by_admin, a.is_read_by_teacher, 
+           a.created_at, a.is_read_by_admin, a.is_read_by_teacher, a.is_extra, a.start_time,
            u.nom, u.prenom, u.department_id 
      FROM absences a
      JOIN users u ON a.teacher_id = u.id
      WHERE 1=1
   `;
+
+  if (req.query.filter === 'week') {
+    query += " AND YEARWEEK(DATE_ADD(a.date, INTERVAL 2 DAY), 1) = YEARWEEK(DATE_ADD(CURDATE(), INTERVAL 2 DAY), 1)";
+  }
 
   if (userRole === 'TEACHER' || userRole === 'ENSEIGNANT') {
     query += " AND a.teacher_id = ? ORDER BY a.created_at DESC";
@@ -239,5 +243,25 @@ exports.bulkDeleteAbsences = (req, res) => {
   db.query(query, (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: "Historique supprimé." });
+  });
+};
+
+exports.cancelJustification = (req, res) => {
+  const teacherId = req.user.id;
+  const { id } = req.params;
+
+  db.query('SELECT * FROM absences WHERE id = ? AND teacher_id = ?', [id, teacherId], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (results.length === 0) return res.status(404).json({ message: "Absence non trouvée." });
+    
+    if (results[0].justification_status === 'Accepted') {
+      return res.status(400).json({ message: "Impossible d'annuler une justification déjà acceptée." });
+    }
+
+    const query = "UPDATE absences SET justification_text = NULL, justification_file = NULL, has_justification = FALSE, justification_status = 'None' WHERE id = ?";
+    db.query(query, [id], (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: "Justification annulée." });
+    });
   });
 };
