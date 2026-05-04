@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
 
-const gradeHierarchy = ['Teacher', 'Vacataire', 'Assistant', 'MAB', 'MAA', 'MCB', 'MCA', 'Professeur'];
+const gradeHierarchy = ['Teacher', 'MAB', 'MAA', 'MCB', 'MCA', 'Professeur'];
 
 function ManagePromotions({ user }) {
   const [promotions, setPromotions] = useState([]);
@@ -149,7 +149,7 @@ function ManagePromotions({ user }) {
 
 
   const currentGradeIndex = gradeHierarchy.findIndex(g => g.toUpperCase() === currentUserGrade.toUpperCase());
-  const availableGrades = gradeHierarchy.slice(currentGradeIndex + 1);
+  const availableGrades = currentGradeIndex === -1 ? [] : gradeHierarchy.slice(currentGradeIndex + 1);
 
   const getStatusStyle = (status) => {
     switch (status) {
@@ -181,6 +181,14 @@ function ManagePromotions({ user }) {
                </div>
                <h4 className="serif" style={{ color: '#166534', margin: '0 0 8px 0', fontSize: '20px', fontWeight: '800' }}>{t('promotions.maxGradeReached')}</h4>
                {t('promotions.congratsProf') && <p style={{ color: '#15803d', margin: 0, fontSize: '15px', fontWeight: '500' }}>{t('promotions.congratsProf')}</p>}
+            </div>
+          ) : currentGradeIndex === -1 ? (
+            <div className="card-academic" style={{ background: '#fff7ed', padding: '32px', borderRadius: '24px', marginBottom: '40px', border: '1px solid #ffedd5', color: '#9a3412', textAlign: 'center' }}>
+              <div style={{ width: '48px', height: '48px', background: '#ffedd5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#f97316' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              </div>
+              <h4 className="serif" style={{ margin: '0 0 8px 0', fontSize: '18px' }}>{t('promotions.gradeNotRecognized') || 'Grade non reconnu'}</h4>
+              <p style={{ margin: 0, fontSize: '14px', opacity: 0.8 }}>{t('promotions.syncRequired') || 'Veuillez contacter le service RH pour synchroniser votre profil académique.'}</p>
             </div>
           ) : (
             <form onSubmit={handleRequestPromotion} className="card-academic" style={{ background: '#f8fafc', padding: '32px', borderRadius: '24px', marginBottom: '40px', border: '1px solid #e2e8f0' }}>

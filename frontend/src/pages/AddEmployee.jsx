@@ -171,8 +171,6 @@ function AddEmployee({ onCancel, onSuccess }) {
                     <label className="mnadm-label">{t('addEmployee.academicGrade')}</label>
                     <select className="mnadm-input" name="grade" value={formData.grade} onChange={handleChange} style={{ borderRadius: '12px', fontWeight: '800' }}>
                       <option value="Teacher">{t('grades.Teacher')}</option>
-                      <option value="Vacataire">{t('grades.Vacataire')}</option>
-                      <option value="Assistant">{t('grades.Assistant')}</option>
                       <option value="MAB">{t('grades.MAB')}</option>
                       <option value="MAA">{t('grades.MAA')}</option>
                       <option value="MCB">{t('grades.MCB')}</option>

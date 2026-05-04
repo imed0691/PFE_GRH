@@ -515,6 +515,8 @@ const ar = {
     maxGradeReached: 'تم الوصول إلى أقصى درجة أكاديمية.',
     congratsProf: 'تهانينا للوصول إلى أعلى درجة!',
     finalizeFinancials: 'إتمام التعديل المالي لهذه الترقية.',
+    gradeNotRecognized: 'الرتبة الأكاديمية غير معروفة',
+    syncRequired: 'يرجى الاتصال بمصلحة الموارد البشرية لمزامنة ملفك الأكاديمي.',
   },
   recruitments: {
     title: 'إدارة التوظيف',

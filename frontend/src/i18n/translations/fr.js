@@ -608,8 +608,10 @@ const fr = {
     updateFile: 'Mettre à jour le dossier RH',
     historyTitle: 'Historique du circuit :',
     maxGradeReached: 'Statut Académique : Professeur',
-    congratsProf: '',
+    congratsProf: 'Félicitations pour avoir atteint le grade le plus élevé !',
     finalizeFinancials: 'Paramètres financiers pour le nouveau grade :',
+    gradeNotRecognized: 'Grade académique non reconnu',
+    syncRequired: 'Veuillez contacter le service des Ressources Humaines pour synchroniser votre profil académique.',
   },
 
   // ── Paramètres salariaux ──

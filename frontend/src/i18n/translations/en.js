@@ -618,6 +618,8 @@ const en = {
     maxGradeReached: 'Maximum academic grade reached.',
     congratsProf: 'Congratulations on reaching the highest grade!',
     finalizeFinancials: 'Finalize financial adjustment for this promotion.',
+    gradeNotRecognized: 'Academic Grade Not Recognized',
+    syncRequired: 'Please contact the Human Resources department to synchronize your academic profile.',
   },
 
   // ── Manage Recruitments ──

@@ -130,8 +130,8 @@ function DashboardDean({ user, onLogout }) {
               <div className="card-academic analytics-card">
                 <h3 className="academic-title" style={{ fontSize: '16px', marginBottom: '24px' }}>{t('topbar.evaluationStatistics')}</h3>
                 <div className="grade-distribution-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {['Professor', 'MCA', 'MCB', 'MAA', 'MAB'].map(grade => {
-                    const count = users.filter(u => u.grade === grade).length;
+                  {['Professeur', 'MCA', 'MCB', 'MAA', 'MAB', 'Teacher'].map(grade => {
+                    const count = users.filter(u => u.grade?.toUpperCase() === grade.toUpperCase()).length;
                     const percentage = users.length > 0 ? (count / users.length) * 100 : 0;
                     return (
                       <div key={grade} className="grade-bar-wrapper">

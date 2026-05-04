@@ -8,7 +8,7 @@ exports.requestPromotion = (req, res) => {
         return res.status(400).json({ message: 'Requested grade is required' });
     }
 
-    const gradeHierarchy = ['Teacher', 'Vacataire', 'Assistant', 'MAB', 'MAA', 'MCB', 'MCA', 'Professeur'];
+    const gradeHierarchy = ['Teacher', 'MAB', 'MAA', 'MCB', 'MCA', 'Professeur'];
 
     db.query('SELECT grade FROM users WHERE id = ?', [teacherId], (err, userResults) => {
         if (err || userResults.length === 0) {
@@ -22,8 +22,15 @@ exports.requestPromotion = (req, res) => {
         const currentIndex = gradeHierarchy.findIndex(g => g.toUpperCase() === current_grade.toUpperCase());
         const requestedIndex = gradeHierarchy.findIndex(g => g.toUpperCase() === requested_grade.toUpperCase());
 
+        if (currentIndex === -1) {
+            return res.status(400).json({ message: 'Grade actuel non reconnu. Veuillez contacter l\'administration.' });
+        }
+        if (requestedIndex === -1) {
+            return res.status(400).json({ message: 'Grade demandé non reconnu.' });
+        }
+
         if (requestedIndex <= currentIndex) {
-            return res.status(400).json({ message: 'Impossible de demander un grade inférieur ou identique à votre grade actuel.' });
+            return res.status(400).json({ message: 'Impossible de demander un grade inférieur ou identique à votre grade actuel (Promotion uniquement).' });
         }
 
         const filePath = req.file ? req.file.filename : null;

@@ -114,7 +114,7 @@ function DashboardRector({ user, onLogout }) {
               </div>
               <div className="card-academic" style={{ borderTop: '4px solid #f59e0b' }}>
                 <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>{t('rector.teachers')}</h3>
-                <p style={{ fontSize: '32px', fontWeight: '900', color: '#f59e0b', margin: 0 }}>{users.filter(u => u.grade === 'Professor' || u.grade === 'MCA').length}</p>
+                <p style={{ fontSize: '32px', fontWeight: '900', color: '#f59e0b', margin: 0 }}>{users.filter(u => u.grade?.toUpperCase() === 'PROFESSEUR' || u.grade?.toUpperCase() === 'MCA').length}</p>
               </div>
               <div className="card-academic" style={{ borderTop: '4px solid #8b5cf6' }}>
                 <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>{t('rector.departments')}</h3>
@@ -126,8 +126,8 @@ function DashboardRector({ user, onLogout }) {
               <div className="card-academic analytics-card">
                 <h3 className="academic-title" style={{ fontSize: '16px', marginBottom: '24px' }}>University Grade Distribution</h3>
                 <div className="grade-distribution-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {['Professor', 'MCA', 'MCB', 'MAA', 'MAB'].map(grade => {
-                    const count = users.filter(u => u.grade === grade).length;
+                  {['Professeur', 'MCA', 'MCB', 'MAA', 'MAB', 'Teacher'].map(grade => {
+                    const count = users.filter(u => u.grade?.toUpperCase() === grade.toUpperCase()).length;
                     const percentage = users.length > 0 ? (count / users.length) * 100 : 0;
                     return (
                       <div key={grade} className="grade-bar-wrapper">
