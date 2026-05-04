@@ -54,6 +54,8 @@ const en = {
     noFileSelected: 'No file selected',
     active: 'Active',
     period: 'Period',
+    details: 'Details',
+    close: 'Close',
   },
 
   // ── Login ──

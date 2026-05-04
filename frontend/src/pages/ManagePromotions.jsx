@@ -264,9 +264,13 @@ function ManagePromotions({ user }) {
                         </td>
                         <td style={{ textAlign: 'center', padding: '20px 16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-                            <span className="badge-pro" style={{ background: '#f1f5f9', color: '#475569', fontSize: '11px', fontWeight: '800' }}>{p.current_grade}</span>
+                            <span className="badge-pro" style={{ background: '#f1f5f9', color: '#475569', fontSize: '11px', fontWeight: '800' }}>
+                                {t(`grades.${p.current_grade}`) === `grades.${p.current_grade}` ? p.current_grade : t(`grades.${p.current_grade}`)}
+                            </span>
                             <span style={{ color: '#94a3b8', fontWeight: '900' }}>→</span>
-                            <span className="badge-pro" style={{ background: 'var(--p-indigo-light)', color: 'var(--p-indigo)', fontSize: '11px', fontWeight: '800' }}>{p.requested_grade}</span>
+                            <span className="badge-pro" style={{ background: 'var(--p-indigo-light)', color: 'var(--p-indigo)', fontSize: '11px', fontWeight: '800' }}>
+                                {t(`grades.${p.requested_grade}`) === `grades.${p.requested_grade}` ? p.requested_grade : t(`grades.${p.requested_grade}`)}
+                            </span>
                           </div>
                         </td>
                         <td style={{ textAlign: 'center', padding: '20px 16px' }}>
@@ -362,26 +366,26 @@ function ManagePromotions({ user }) {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                         {showHistory.dept_head_recommendation && (
                             <div style={{ borderLeft: '4px solid var(--p-indigo)', paddingLeft: '16px' }}>
-                                <div style={{ fontWeight: '800', color: 'var(--p-indigo)', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px' }}>Chef de Département</div>
+                                <div style={{ fontWeight: '800', color: 'var(--p-indigo)', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px' }}>{t('roles.DEPARTMENT_HEAD')}</div>
                                 <div style={{ color: '#475569', lineHeight: '1.6', fontSize: '14px', whiteSpace: 'pre-wrap' }}>{showHistory.dept_head_recommendation}</div>
                             </div>
                         )}
                         {showHistory.evaluation_score && (
                             <div style={{ borderLeft: '4px solid #16a34a', paddingLeft: '16px' }}>
-                                <div style={{ fontWeight: '800', color: '#16a34a', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px' }}>Vice-Doyen (Évaluation)</div>
+                                <div style={{ fontWeight: '800', color: '#16a34a', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px' }}>{t('roles.VICE_DEAN')} ({t('promotions.pendingEvaluation').split(' ')[2]})</div>
                                 <div style={{ color: '#16a34a', fontWeight: '800', fontSize: '24px' }}>{showHistory.evaluation_score} / 100</div>
                             </div>
                         )}
                         {showHistory.dean_recommendation && (
                             <div style={{ borderLeft: '4px solid #8b5cf6', paddingLeft: '16px' }}>
-                                <div style={{ fontWeight: '800', color: '#8b5cf6', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px' }}>Doyen</div>
+                                <div style={{ fontWeight: '800', color: '#8b5cf6', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px' }}>{t('roles.DEAN')}</div>
                                 <div style={{ color: '#475569', lineHeight: '1.6', fontSize: '14px', whiteSpace: 'pre-wrap' }}>{showHistory.dean_recommendation}</div>
                             </div>
                         )}
                     </div>
                 </div>
                 <div style={{ padding: '24px 32px', background: '#f8fafc', textAlign: 'right', borderTop: '1px solid #e2e8f0' }}>
-                    <button onClick={() => setShowHistory(null)} className="btn-confirm-pro" style={{ padding: '10px 24px' }}>{t('common.close') || 'FERMER'}</button>
+                    <button onClick={() => setShowHistory(null)} className="btn-confirm-pro" style={{ padding: '10px 24px' }}>{t('common.close')}</button>
                 </div>
             </div>
           </div>

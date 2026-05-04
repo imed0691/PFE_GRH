@@ -56,6 +56,8 @@ const fr = {
     noFileSelected: 'Aucun fichier sélectionné',
     active: 'Actif',
     period: 'Période',
+    details: 'Détails',
+    close: 'Fermer',
   },
 
   // ── Connexion ──
