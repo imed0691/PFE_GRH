@@ -129,6 +129,8 @@ const fr = {
     mySchedule: 'Mon emploi du temps',
     myAbsences: 'Mes Absences',
     salary: 'Mon Salaire',
+    analytics: 'Centre d\'Analyse',
+    approvals: 'Approbations',
   },
 
   // ── Paramètres ──

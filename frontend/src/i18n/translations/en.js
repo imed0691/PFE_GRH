@@ -152,8 +152,11 @@ const en = {
     schedules: 'Schedules',
     notifications: 'Notifications',
     mySchedule: 'My Schedule',
-    myAbsences: 'My Absences',
+    myAbsences: 'Mes Absences',
     salary: 'My Salary',
+    analytics: 'Analytics Hub',
+    approvals: 'Approvals',
+    communications: 'Communications',
   },
 
   // ── Topbar Titles ──

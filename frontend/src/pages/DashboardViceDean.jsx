@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
 import DashboardLayout from '../components/DashboardLayout';
-import ManageSessions from './ManageSessions';
+import ManageApprovals from './ManageApprovals';
 import ManageAbsences from './ManageAbsences';
 import ManageReminders from './ManageReminders';
 import Settings from './Settings';
@@ -77,6 +77,7 @@ function DashboardViceDean({ user, onLogout }) {
 
   const menuItems = [
     { id: 'overview', label: t('sidebar.overview') || 'Aperçu' },
+    { id: 'approvals', label: t('sidebar.approvals') || 'Approbations' },
     { id: 'absences', label: t('sidebar.absences') || 'Absences', badge: unreadAbsences },
     { id: 'reminders', label: t('sidebar.reminders') || 'Communications' },
     { id: 'settings', label: t('settings.title') },
@@ -85,7 +86,7 @@ function DashboardViceDean({ user, onLogout }) {
   const getPageTitle = () => {
     switch(view) {
       case 'overview': return t('sidebar.overview') || 'Tableau de Bord Pédagogie';
-      case 'sessions': return t('sidebar.sessions') || 'Gestion de la Scolarité';
+      case 'approvals': return t('sidebar.approvals') || 'Approbations';
       case 'absences': return t('sidebar.absences') || 'Suivi des Absences';
       case 'reminders': return t('sidebar.reminders') || 'Communications & Rappels';
       case 'settings': return t('settings.title');
@@ -118,6 +119,8 @@ function DashboardViceDean({ user, onLogout }) {
               </div>
             </div>
           )
+        ) : view === 'approvals' ? (
+          <ManageApprovals user={user} />
         ) : view === 'absences' ? (
           <ManageAbsences user={user} />
         ) : view === 'reminders' ? (

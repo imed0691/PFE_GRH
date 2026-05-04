@@ -82,30 +82,44 @@ function ReminderInbox({ user }) {
         {reminders.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {reminders.map(r => (
-              <div key={r.id} style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-soft)', background: r.type === 'error' ? '#fff1f2' : r.type === 'warning' ? '#fffbeb' : '#f8fafc' }}>
-                <div style={{ fontWeight: '800', marginBottom: '8px', color: r.type === 'error' ? '#e11d48' : r.type === 'warning' ? '#92400e' : '#6366f1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div key={r.id} className={`reminder-item-pro ${r.type === 'official' ? 'official-note' : ''}`} style={{ 
+                padding: '20px', 
+                borderRadius: '12px', 
+                border: r.type === 'official' ? '2px solid #818cf8' : '1px solid var(--border-soft)', 
+                background: r.type === 'error' ? '#fff1f2' : r.type === 'warning' ? '#fffbeb' : r.type === 'official' ? 'linear-gradient(to right, #fcfdfe, #f8fafc)' : '#f8fafc',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                {r.type === 'official' && (
+                  <div style={{ position: 'absolute', top: 0, right: 0, background: '#818cf8', color: 'white', fontSize: '9px', padding: '4px 12px', fontWeight: '900', textTransform: 'uppercase', borderRadius: '0 0 0 12px' }}>
+                    Note de Service
+                  </div>
+                )}
+                <div style={{ fontWeight: '800', marginBottom: '8px', color: r.type === 'error' ? '#e11d48' : r.type === 'warning' ? '#92400e' : r.type === 'official' ? '#4338ca' : '#6366f1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <span>
                       {r.type === 'error' ? (
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                       ) : r.type === 'warning' ? (
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                      ) : r.type === 'official' ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                       ) : (
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                       )}
-                      {r.type === 'error' ? (t('teacher.urgent') || 'Urgent') : r.type === 'warning' ? (t('teacher.important') || 'Important') : (t('teacher.information') || 'Info')}
+                      {r.type === 'error' ? (t('teacher.urgent') || 'Urgent') : r.type === 'warning' ? (t('teacher.important') || 'Important') : r.type === 'official' ? 'Official Note' : (t('teacher.information') || 'Info')}
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <span style={{ fontWeight: '600', color: '#64748b' }}>
-                      {t('common.from') || 'From'}: {r.sender_prenom} {r.sender_nom}
+                      {t('common.from') || 'From'}: {r.sender_prenom} {r.sender_nom} ({r.sender_role})
                     </span>
                     <button onClick={() => handleDeleteReminder(r.id)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center' }} title={t('common.delete')}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                   </div>
                 </div>
-                <div style={{ color: '#334155', lineHeight: '1.6', fontSize: '14px', fontWeight: '500' }}>{r.message || r.text}</div>
+                <div style={{ color: '#334155', lineHeight: '1.6', fontSize: '14px', fontWeight: r.type === 'official' ? '700' : '500' }}>{r.message || r.text}</div>
               </div>
             ))}
           </div>
