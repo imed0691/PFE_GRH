@@ -50,6 +50,8 @@ const en = {
     clearHistory: 'Clear History',
     historyCleared: 'History cleared',
     confirmClearAll: 'Are you sure you want to clear the entire processed history?',
+    chooseFile: 'Choose File',
+    noFileSelected: 'No file selected',
   },
 
   // ── Login ──

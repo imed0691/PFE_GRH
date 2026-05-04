@@ -48,7 +48,7 @@ function MySalary({ user }) {
           </div>
           <div style={{ textAlign: 'right' }}>
             <span className="role-tag" style={{ background: 'var(--p-indigo-light)', color: 'var(--p-indigo)', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold' }}>
-              {t('grades.' + current.grade) || current.grade}
+              {current.grade ? (t('grades.' + current.grade) || current.grade) : (t('roles.TEACHER') || 'Enseignant')}
             </span>
           </div>
         </div>

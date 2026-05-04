@@ -46,6 +46,8 @@ const ar = {
     clearHistory: 'مسح السجل',
     historyCleared: 'تم مسح السجل بنجاح',
     confirmClearAll: 'هل أنت متأكد من مسح السجل المعالج بالكامل؟',
+    chooseFile: 'اختر ملفاً',
+    noFileSelected: 'لم يتم اختيار ملف',
   },
   login: {
     title: 'تسجيل الدخول',

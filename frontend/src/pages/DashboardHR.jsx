@@ -343,7 +343,7 @@ function DashboardHR({ user, onLogout }) {
                           </td>
                           <td>
                             <span className="grade-tag" style={{ background: '#f8fafc', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', border: '1px solid #e2e8f0', color: '#64748b', fontWeight: '600' }}>
-                              {['TEACHER', 'ENSEIGNANT'].includes(u.role) ? (t('grades.' + u.grade) || u.grade) : '-'}
+                              {['TEACHER', 'ENSEIGNANT'].includes(u.role) ? (u.grade ? (t('grades.' + u.grade) || u.grade) : '-') : '-'}
                             </span>
                           </td>
                           <td>
