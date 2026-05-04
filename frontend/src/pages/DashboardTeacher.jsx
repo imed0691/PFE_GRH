@@ -283,35 +283,54 @@ function DashboardTeacher({ user, onLogout }) {
                     ))}
 
                     {/* Time Slots & Cells */}
-                    {[
-                      { start: '08:00', end: '09:30' },
-                      { start: '09:35', end: '11:05' },
-                      { start: '11:10', end: '12:40' },
-                      { start: '12:45', end: '14:15' },
-                      { start: '14:20', end: '15:50' },
-                      { start: '15:55', end: '17:25' }
-                    ].map(slot => (
-                      <div key={slot.start} style={{ display: 'contents' }}>
-                        {/* Time label */}
-                        <div style={{ 
-                          fontSize: '12px', 
-                          color: 'var(--text-muted)', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          borderRight: '1px solid #f1f5f9',
-                          padding: '10px 0',
-                          fontWeight: '700'
-                        }}>
-                          {slot.start} - {slot.end}
-                        </div>
+                    {(() => {
+                      const today = new Date();
+                      today.setHours(0,0,0,0);
+                      const currentJsDay = today.getDay();
+                      const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                      const currentAcademicIndex = toAcademicIndex(currentJsDay);
+                      const startOfWeek = new Date(today);
+                      startOfWeek.setDate(today.getDate() - currentAcademicIndex);
+                      const endOfWeek = new Date(startOfWeek);
+                      endOfWeek.setDate(startOfWeek.getDate() + 6);
+                      endOfWeek.setHours(23, 59, 59, 999);
 
-                        {/* Day cells for this slot */}
-                        {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => {
-                          const sessionsInSlot = schedule.filter(s => {
-                            const isSameDayAndTime = s.day_of_week === day && s.start_time?.startsWith(slot.start);
-                            return isSameDayAndTime;
-                          });
+                      const currentWeekSchedule = schedule.filter(s => {
+                        if (!s.is_extra) return true;
+                        if (!s.session_date) return false;
+                        const sDate = new Date(s.session_date);
+                        return sDate >= startOfWeek && sDate <= endOfWeek;
+                      });
+
+                      return [
+                        { start: '08:00', end: '09:30' },
+                        { start: '09:35', end: '11:05' },
+                        { start: '11:10', end: '12:40' },
+                        { start: '12:45', end: '14:15' },
+                        { start: '14:20', end: '15:50' },
+                        { start: '15:55', end: '17:25' }
+                      ].map(slot => (
+                        <div key={slot.start} style={{ display: 'contents' }}>
+                          {/* Time label */}
+                          <div style={{ 
+                            fontSize: '12px', 
+                            color: 'var(--text-muted)', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            borderRight: '1px solid #f1f5f9',
+                            padding: '10px 0',
+                            fontWeight: '700'
+                          }}>
+                            {slot.start} - {slot.end}
+                          </div>
+
+                          {/* Day cells for this slot */}
+                          {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => {
+                            const sessionsInSlot = currentWeekSchedule.filter(s => {
+                              const isSameDayAndTime = s.day_of_week === day && s.start_time?.startsWith(slot.start);
+                              return isSameDayAndTime;
+                            });
 
                           return (
                             <div 
@@ -394,7 +413,8 @@ function DashboardTeacher({ user, onLogout }) {
                         );
                       })}
                     </div>
-                  ))}
+                  ));
+                })()}
                 </div>
               </div>
             </div>

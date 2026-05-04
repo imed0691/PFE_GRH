@@ -324,7 +324,7 @@ exports.getRecentPastSessions = (req, res) => {
 
     // 2. Query ALL sessions that could have occurred recently
     let sessionsQuery = `
-      SELECT s.id, s.teacher_id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.end_time, s.session_date,
+      SELECT s.id, s.teacher_id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.end_time, s.session_date, s.is_extra,
              u.nom as teacher_nom, u.prenom as teacher_prenom, u.created_at as teacher_created_at,
              sl.name as study_level, sec.name as section, sg.name as groupe
       FROM academic_sessions s
