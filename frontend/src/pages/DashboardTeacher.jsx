@@ -171,11 +171,11 @@ function DashboardTeacher({ user, onLogout }) {
   }, [view, badges[view]]);
 
   const menuItems = [
-    { id: 'overview', label: t('sidebar.mySchedule') || 'My Schedule' },
+    { id: 'overview', label: t('sidebar.mySchedule') },
     { id: 'absences', label: t('sidebar.absences'), badge: badges.absences },
     { id: 'reminders', label: t('sidebar.reminders'), badge: badges.reminders },
     { id: 'promotions', label: t('sidebar.promotions'), badge: badges.promotions },
-    { id: 'salary', label: t('sidebar.salary') || 'Mon Salaire' },
+    { id: 'salary', label: t('sidebar.salary') },
     { id: 'documents', label: t('sidebar.documents'), badge: badges.documents },
     { id: 'evaluations', label: t('sidebar.evaluations'), badge: badges.evaluations },
     { id: 'settings', label: t('settings.title') },
@@ -190,7 +190,7 @@ function DashboardTeacher({ user, onLogout }) {
       onLogout={onLogout}
       title={getPageTitle(view, t)}
     >
-      <div className="animate-float">
+      <div className="dashboard-content-pro animate-mnadm">
         <>
           {view === 'absences' ? <ManageAbsences user={user} /> : 
            view === 'reminders' ? <ReminderInbox user={user} /> : 
@@ -199,235 +199,227 @@ function DashboardTeacher({ user, onLogout }) {
            view === 'documents' ? <ManageDocuments user={user} /> :
            view === 'evaluations' ? <ManageEvaluations user={user} /> :
            view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : (
-             <div className="teacher-view animate-mnadm">
-                <div className="stats-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+             <div className="teacher-view">
+                <div className="stats-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' }}>
                   
                   {/* PROGRESS CARD */}
                   <div 
                     className="card-academic clickable-card" 
                     onClick={() => setDetailView('completed')}
-                    style={{ borderTop: '4px solid var(--p-indigo)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s' }}
+                    style={{ borderTop: '4px solid var(--p-indigo)', padding: '32px' }}
                   >
-                    <h4 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                      <div style={{ background: 'var(--p-indigo-light)', padding: '12px', borderRadius: '14px', color: 'var(--p-indigo)' }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                      </div>
+                      <span className="badge-pro badge-pro-info" style={{ fontSize: '10px' }}>{Math.round(((stats.sessions_done || 0) / (stats.annual_volume_target || 1)) * 100)}%</span>
+                    </div>
+                    <h4 className="serif" style={{ fontSize: '14px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       {t('teacher.annualVolume') || 'Objectif Annuel'}
                     </h4>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '32px', fontWeight: '900', color: 'var(--p-indigo)' }}>{stats.sessions_done || 0}</span>
-                      <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>/ {stats.annual_volume_target || 0} {t('teacher.sessions') || 'séances'}</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '12px', marginBottom: '16px' }}>
+                      <span style={{ fontSize: '36px', fontWeight: '900', color: '#0f172a' }}>{stats.sessions_done || 0}</span>
+                      <span style={{ color: '#94a3b8', fontWeight: '600', fontSize: '16px' }}>/ {stats.annual_volume_target || 0}</span>
                     </div>
-                    <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '10px', overflow: 'hidden' }}>
                       <div style={{ 
                         width: `${Math.min(100, ((stats.sessions_done || 0) / (stats.annual_volume_target || 1)) * 100)}%`, 
                         height: '100%', 
                         background: 'linear-gradient(90deg, var(--p-indigo), #818cf8)',
-                        borderRadius: '4px',
-                        transition: 'width 1s ease-out'
+                        borderRadius: '10px',
+                        transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)'
                       }}></div>
                     </div>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '12px', fontWeight: '500' }}>
-                      {Math.round(((stats.sessions_done || 0) / (stats.annual_volume_target || 1)) * 100)}% {t('teacher.completed') || 'complété'}
-                    </p>
                   </div>
 
                   {/* EXTRA SESSIONS */}
                   <div 
                     className="card-academic clickable-card" 
                     onClick={() => setDetailView('extra')}
-                    style={{ borderTop: '4px solid #f59e0b', cursor: 'pointer', transition: 'transform 0.2s' }}
+                    style={{ borderTop: '4px solid #f59e0b', padding: '32px' }}
                   >
-                    <h4 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                      {t('teacher.extraSessions') || 'Séances Supplémentaires (SUPP)'}
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <p style={{ fontSize: '32px', fontWeight: '900', color: '#f59e0b', lineHeight: 1 }}>{stats.extra_sessions || 0}</p>
-                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>{t('teacher.extraNote') || 'Hors objectif annuel'}</p>
+                    <div style={{ background: '#fffbeb', padding: '12px', borderRadius: '14px', color: '#f59e0b', width: 'fit-content', marginBottom: '20px' }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                     </div>
+                    <h4 className="serif" style={{ fontSize: '14px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {t('teacher.extraSessions') || 'Séances SUPP'}
+                    </h4>
+                    <p style={{ fontSize: '36px', fontWeight: '900', color: '#0f172a', marginTop: '12px', marginBottom: '8px' }}>{stats.extra_sessions || 0}</p>
+                    <p style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '500' }}>{t('teacher.extraNote') || 'Hors objectif annuel'}</p>
                   </div>
 
                   {/* ABSENCES CARD */}
                   <div 
                     className="card-academic clickable-card" 
                     onClick={() => setDetailView('absences')}
-                    style={{ borderTop: '4px solid #ef4444', cursor: 'pointer', transition: 'transform 0.2s' }}
+                    style={{ borderTop: '4px solid #ef4444', padding: '32px' }}
                   >
-                    <h4 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                      {t('teacher.absences') || 'État des Absences'}
+                    <div style={{ background: '#fef2f2', padding: '12px', borderRadius: '14px', color: '#ef4444', width: 'fit-content', marginBottom: '20px' }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </div>
+                    <h4 className="serif" style={{ fontSize: '14px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {t('teacher.absences') || 'Absences'}
                     </h4>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                      <div>
-                        <p style={{ fontSize: '32px', fontWeight: '900', color: '#ef4444', lineHeight: 1 }}>{stats.absences?.total || 0}</p>
-                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>Total des absences</p>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', padding: '4px 10px', background: '#f0fdf4', color: '#16a34a', borderRadius: '20px', fontWeight: '700' }}>
-                          {stats.absences?.justified || 0} {t('teacher.justifiedShort') || 'Justifiées'}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', padding: '4px 10px', background: '#fef2f2', color: '#dc2626', borderRadius: '20px', fontWeight: '700' }}>
-                          {stats.absences?.unjustified || 0} {t('teacher.unjustifiedShort') || 'Non-justifiées'}
-                        </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginTop: '12px' }}>
+                      <p style={{ fontSize: '36px', fontWeight: '900', color: '#0f172a' }}>{stats.absences?.total || 0}</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span className="badge-pro badge-pro-success" style={{ padding: '4px 10px', fontSize: '9px' }}>{stats.absences?.justified || 0} {t('teacher.justified')}</span>
+                        <span className="badge-pro badge-pro-danger" style={{ padding: '4px 10px', fontSize: '9px' }}>{stats.absences?.unjustified || 0} {t('teacher.unjustified')}</span>
                       </div>
                     </div>
                   </div>
 
                 </div>
 
-                <div className="schedule-grid-container" style={{ background: 'white', borderRadius: '24px', padding: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.05)', overflowX: 'auto', marginTop: '24px' }}>
-                  <h3 style={{ fontSize: '20px', marginBottom: '24px', color: 'var(--text-main)', fontWeight: '800' }}>
-                    {t('teacher.weeklySchedule') || 'Emploi du Temps Hebdomadaire'}
-                  </h3>
-                  <div className="schedule-grid" style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: '100px repeat(6, 1fr)', 
-                    gap: '12px',
-                    minWidth: '1000px'
-                  }}>
-                    {/* Header: Days */}
-                    <div className="grid-header-cell" style={{ background: '#f8fafc', padding: '15px 10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700', color: 'var(--text-main)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      Horaires
+                <div className="card-academic" style={{ borderTop: '4px solid var(--p-indigo)', padding: '32px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                    <div>
+                      <h3 className="serif" style={{ margin: 0, fontSize: '26px', color: '#0f172a' }}>{t('teacher.weeklySchedule')}</h3>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '4px 0 0 0' }}>{t('topbar.myCurrentSchedule')}</p>
                     </div>
-                    {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => (
-                      <div key={day} className="grid-header-cell" style={{ textAlign: 'center', fontWeight: '700', textTransform: 'capitalize', background: '#f8fafc', padding: '15px 10px', borderRadius: '10px', fontSize: '13px', color: 'var(--text-main)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {t(`days.${day}`)}
+                  </div>
+                  
+                  <div className="schedule-grid-container" style={{ background: '#f8fafc', borderRadius: '24px', padding: '24px', border: '1px solid #e2e8f0', overflowX: 'auto' }}>
+                    <div className="schedule-grid" style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: '120px repeat(6, 1fr)', 
+                      gap: '12px',
+                      minWidth: '1000px'
+                    }}>
+                      {/* Header: Days */}
+                      <div className="grid-header-cell" style={{ background: 'white', padding: '15px', borderRadius: '12px', fontSize: '13px', fontWeight: '800', color: 'var(--p-indigo)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', textTransform: 'uppercase' }}>
+                        {t('common.time') || 'Horaires'}
                       </div>
-                    ))}
+                      {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => (
+                        <div key={day} className="grid-header-cell" style={{ textAlign: 'center', fontWeight: '800', textTransform: 'uppercase', background: 'white', padding: '15px', borderRadius: '12px', fontSize: '13px', color: '#0f172a', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {t(`days.${day}`)}
+                        </div>
+                      ))}
 
-                    {/* Time Slots & Cells */}
-                    {(() => {
-                      const today = new Date();
-                      today.setHours(0,0,0,0);
-                      const currentJsDay = today.getDay();
-                      const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
-                      const currentAcademicIndex = toAcademicIndex(currentJsDay);
-                      const startOfWeek = new Date(today);
-                      startOfWeek.setDate(today.getDate() - currentAcademicIndex);
-                      const endOfWeek = new Date(startOfWeek);
-                      endOfWeek.setDate(startOfWeek.getDate() + 6);
-                      endOfWeek.setHours(23, 59, 59, 999);
+                      {/* Time Slots & Cells */}
+                      {(() => {
+                        const today = new Date();
+                        today.setHours(0,0,0,0);
+                        const currentJsDay = today.getDay();
+                        const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                        const currentAcademicIndex = toAcademicIndex(currentJsDay);
+                        const startOfWeek = new Date(today);
+                        startOfWeek.setDate(today.getDate() - currentAcademicIndex);
+                        const endOfWeek = new Date(startOfWeek);
+                        endOfWeek.setDate(startOfWeek.getDate() + 6);
+                        endOfWeek.setHours(23, 59, 59, 999);
 
-                      const currentWeekSchedule = schedule.filter(s => {
-                        if (!s.is_extra) return true;
-                        if (!s.session_date) return false;
-                        const sDate = new Date(s.session_date);
-                        return sDate >= startOfWeek && sDate <= endOfWeek;
-                      });
+                        const currentWeekSchedule = schedule.filter(s => {
+                          if (!s.is_extra) return true;
+                          if (!s.session_date) return false;
+                          const sDate = new Date(s.session_date);
+                          return sDate >= startOfWeek && sDate <= endOfWeek;
+                        });
 
-                      return [
-                        { start: '08:00', end: '09:30' },
-                        { start: '09:35', end: '11:05' },
-                        { start: '11:10', end: '12:40' },
-                        { start: '12:45', end: '14:15' },
-                        { start: '14:20', end: '15:50' },
-                        { start: '15:55', end: '17:25' }
-                      ].map(slot => (
-                        <div key={slot.start} style={{ display: 'contents' }}>
-                          {/* Time label */}
-                          <div style={{ 
-                            fontSize: '12px', 
-                            color: 'var(--text-muted)', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            borderRight: '1px solid #f1f5f9',
-                            padding: '10px 0',
-                            fontWeight: '700'
-                          }}>
-                            {slot.start} - {slot.end}
-                          </div>
-
-                          {/* Day cells for this slot */}
-                          {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => {
-                            const sessionsInSlot = currentWeekSchedule.filter(s => {
-                              const isSameDayAndTime = s.day_of_week === day && s.start_time?.startsWith(slot.start);
-                              return isSameDayAndTime;
-                            });
-
-                          return (
-                            <div 
-                              key={`${day}-${slot.start}`} 
-                              className="grid-slot"
-                              style={{ 
-                                minHeight: '100px', 
-                                background: '#f8fafc', 
-                                borderRadius: '16px',
-                                padding: '8px',
-                                position: 'relative',
-                                border: '1px dashed #e2e8f0',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '6px'
-                              }}
-                            >
-                              {sessionsInSlot.map(session => (
+                        return [
+                          { start: '08:00', end: '09:30' },
+                          { start: '09:35', end: '11:05' },
+                          { start: '11:10', end: '12:40' },
+                          { start: '12:45', end: '14:15' },
+                          { start: '14:20', end: '15:50' },
+                          { start: '15:55', end: '17:25' }
+                        ].map(slot => (
+                          <div key={slot.start} style={{ display: 'contents' }}>
+                            <div style={{ 
+                              fontSize: '12px', 
+                              color: '#64748b', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              background: 'white',
+                              borderRadius: '12px',
+                              border: '1px solid #e2e8f0',
+                              padding: '10px',
+                              fontWeight: '700'
+                            }}>
+                              {slot.start} - {slot.end}
+                            </div>
+                            {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => {
+                              const sessionsInSlot = currentWeekSchedule.filter(s => 
+                                s.day_of_week === day && 
+                                s.start_time?.startsWith(slot.start)
+                              );
+                              return (
                                 <div 
-                                  key={session.id} 
-                                  className="schedule-card"
+                                  key={`${day}-${slot.start}`} 
                                   style={{ 
-                                    background: getSessionColor(session.session_type),
+                                    minHeight: '100px',
+                                    background: sessionsInSlot.length === 0 ? 'rgba(255,255,255,0.4)' : 'transparent',
+                                    borderRadius: '16px',
+                                    padding: '8px',
                                     position: 'relative',
-                                    flex: 1,
+                                    border: '1px dashed #e2e8f0',
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    justifyContent: 'center',
-                                    padding: '10px',
-                                    borderRadius: '12px',
-                                    color: 'white',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                    gap: '6px'
                                   }}
                                 >
-                                  {!!session.is_extra && (
-                                    <div style={{ 
-                                      position: 'absolute',
-                                      top: '-8px',
-                                      left: '-4px',
-                                      fontSize: '8px', 
-                                      background: 'linear-gradient(135deg, #f59e0b, #d97706)', 
-                                      color: '#fff', 
-                                      padding: '2px 8px', 
-                                      borderRadius: '6px', 
-                                      fontWeight: '900', 
-                                      boxShadow: '0 4px 10px rgba(217, 119, 6, 0.5)',
-                                      border: '1px solid rgba(255,255,255,0.4)',
-                                      zIndex: 3
-                                    }}>
-                                      SUPP
+                                  {sessionsInSlot.map(s => (
+                                    <div 
+                                      key={s.id} 
+                                      className="schedule-card animate-float"
+                                      style={{ 
+                                        background: getSessionColor(s.session_type),
+                                        position: 'relative',
+                                        flex: 1,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'center',
+                                        padding: '12px',
+                                        borderRadius: '14px',
+                                        color: 'white',
+                                        boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                                      }}
+                                    >
+                                      {s.is_extra ? (
+                                        <div style={{ 
+                                          position: 'absolute',
+                                          top: '-8px',
+                                          left: '-4px',
+                                          fontSize: '8px', 
+                                          background: 'linear-gradient(135deg, #f59e0b, #d97706)', 
+                                          color: 'white', 
+                                          padding: '2px 8px', 
+                                          borderRadius: '6px', 
+                                          fontWeight: '900', 
+                                          boxShadow: '0 4px 10px rgba(217, 119, 6, 0.5)',
+                                          border: '1px solid rgba(255,255,255,0.4)',
+                                          zIndex: 3,
+                                          letterSpacing: '0.5px'
+                                        }}>
+                                          SUPP
+                                        </div>
+                                      ) : null}
+                                      <div style={{ fontWeight: '900', textTransform: 'uppercase', opacity: 0.9, fontSize: '9px', letterSpacing: '0.8px', marginBottom: '4px' }}>
+                                        {s.session_type === 'Lecture' ? t('sessions.lecture') : s.session_type === 'Tutorial' ? t('sessions.tutorialTD') : t('sessions.practicalTP')}
+                                      </div>
+                                      <div style={{ fontWeight: '800', fontSize: '13px', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {s.module_name}
                                     </div>
-                                  )}
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                                    <div style={{ 
-                                      fontSize: '10px', 
-                                      background: 'rgba(255,255,255,0.2)', 
-                                      padding: '2px 6px', 
-                                      borderRadius: '4px', 
-                                      fontWeight: '800',
-                                      textTransform: 'uppercase'
-                                    }}>
-                                      {session.session_type?.toLowerCase().includes('lecture') || session.session_type?.toLowerCase().includes('cours') ? 'COURS' : 
-                                       session.session_type?.toLowerCase().includes('tutorial') || session.session_type?.toLowerCase().includes('td') ? 'TD' : 
-                                       session.session_type?.toLowerCase().includes('practical') || session.session_type?.toLowerCase().includes('tp') ? 'TP' : 
-                                       session.session_type?.toUpperCase()}
+                                    <div style={{ fontSize: '11px', opacity: 0.8, fontWeight: '600' }}>
+                                      {s.section && `S: ${s.section}`} {s.groupe && `G: ${s.groupe}`}
+                                    </div>
+                                    <div style={{ fontSize: '11px', fontWeight: '800', opacity: 0.9, marginTop: '4px' }}>
+                                      {s.start_time.substring(0,5)} - {s.end_time.substring(0,5)}
                                     </div>
                                   </div>
-                                  <div style={{ fontWeight: '800', fontSize: '12px', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {session.module_name}
-                                  </div>
-                                  <div style={{ fontSize: '10px', opacity: 0.8 }}>
-                                    {session.section && `Sec: ${session.section}`} {session.groupe && `Grp: ${session.groupe}`}
-                                  </div>
-                                  <div style={{ fontSize: '10px', fontWeight: '600', opacity: 0.9 }}>
-                                    {session.start_time.substring(0,5)} - {session.end_time.substring(0,5)}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                        );
-                      })}
+                                ))}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ));
+                      })()}
                     </div>
-                  ));
-                })()}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
           
           {/* DETAIL MODAL */}
           {detailView && (

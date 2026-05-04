@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import Select from 'react-select';
+import { useLanguage } from '../i18n/LanguageContext';
+import ConfirmModal from '../components/ConfirmModal';
 import './DashboardHR.css';
 
 function ManageSessions() {
+  const { t } = useLanguage();
   const [sessions, setSessions] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [departments, setDepartments] = useState([]);
   
   const [filterTeacherDeptId, setFilterTeacherDeptId] = useState('');
   const [loading, setLoading] = useState(true);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
   
   const [formData, setFormData] = useState({
     module_name: '',
@@ -41,15 +45,10 @@ function ManageSessions() {
         setDepartments(await resDepts.json());
         
         const allUsers = await resUsers.json();
-        // Keep only teachers
-        setTeachers(allUsers.filter(u => u.role.toUpperCase() === 'TEACHER'));
-      } else {
-        console.error("Failed to fetch data:", resSessions.status, resUsers.status, resDepts.status);
-        toast.error("Failed to fetch some dashboard data from server.");
+        setTeachers(allUsers.filter(u => u.role.toUpperCase() === 'TEACHER' || u.role.toUpperCase() === 'ENSEIGNANT'));
       }
     } catch (error) {
-      console.error(error);
-      toast.error('Error loading data');
+      toast.error(t('common.serverError'));
     } finally {
       setLoading(false);
     }
@@ -73,7 +72,7 @@ function ManageSessions() {
     setFormData({ ...formData, teacher_id: selectedOption ? selectedOption.value : '' });
   };
 
-  const deptOptions = departments.map(d => ({ value: d.id, label: d.name }));
+  const deptOptions = departments.map(d => ({ value: d.id, label: t('departments.' + d.name).includes('.') ? d.name : t('departments.' + d.name) }));
   const handleDeptChange = (selectedOption) => {
     setFormData({ ...formData, department_id: selectedOption ? selectedOption.value : '' });
   };
@@ -81,12 +80,12 @@ function ManageSessions() {
   const handleAddSession = async (e) => {
     e.preventDefault();
     if (!formData.teacher_id || !formData.department_id) {
-      toast.error("Please select a teacher and a department");
+      toast.error(t('sessions.selectTeacherDept') || "Veuillez sélectionner un enseignant et un département");
       return;
     }
 
     const token = localStorage.getItem('token');
-    const loadToast = toast.loading('Scheduling session...');
+    const loadToast = toast.loading(t('common.loading'));
 
     try {
       const res = await fetch('http://localhost:5000/api/sessions', {
@@ -102,22 +101,25 @@ function ManageSessions() {
       toast.dismiss(loadToast);
 
       if (res.ok) {
-        toast.success(data.message);
-        // Reset form partially
+        toast.success(t('sessions.successAdd') || 'Session planifiée');
         setFormData({ ...formData, module_name: '', section: '', groupe: '' });
         fetchData();
       } else {
-        toast.error(data.message || 'Error during creation');
+        toast.error(data.message || t('common.error'));
       }
     } catch (error) {
       toast.dismiss(loadToast);
-      toast.error('Server error');
+      toast.error(t('common.serverError'));
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm(`Are you sure you want to cancel this session?`)) return;
+  const handleDeleteClick = (id) => {
+    setConfirmModal({ isOpen: true, id });
+  };
 
+  const performDelete = async () => {
+    const { id } = confirmModal;
+    setConfirmModal({ ...confirmModal, isOpen: false });
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:5000/api/sessions/${id}`, {
@@ -126,169 +128,222 @@ function ManageSessions() {
       });
 
       if (res.ok) {
-        toast.success('Session cancelled');
+        toast.success(t('sessions.successCancel') || 'Session annulée');
         fetchData();
-      } else {
-        toast.error('Error during cancellation');
       }
     } catch (error) {
-      toast.error('Server error');
+      toast.error(t('common.serverError'));
     }
   };
 
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      padding: '4px',
+      borderRadius: '14px',
+      borderColor: '#e2e8f0',
+      background: '#f8fafc',
+      boxShadow: 'none',
+      '&:hover': { borderColor: 'var(--p-indigo)' }
+    }),
+    option: (base, { isFocused, isSelected }) => ({
+      ...base,
+      backgroundColor: isSelected ? 'var(--p-indigo)' : isFocused ? '#f1f5f9' : 'white',
+      color: isSelected ? 'white' : '#1e293b',
+      fontSize: '14px'
+    })
+  };
+
   return (
-    <div className="table-card" style={{ padding: '20px' }}>
-      <form onSubmit={handleAddSession} className="add-form" style={{ marginBottom: '30px' }}>
-        <div className="form-row">
-          <div className="form-group">
-            <label>Module / Subject</label>
-            <input type="text" name="module_name" value={formData.module_name} onChange={handleChange} required placeholder="e.g. Mathematics" />
+    <div className="animate-mnadm">
+      {/* Session Creation Card */}
+      <div className="card-academic" style={{ borderTop: '4px solid var(--p-amber)', padding: '32px', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px', paddingBottom: '24px', borderBottom: '1px solid #f1f5f9' }}>
+          <div style={{ background: '#fffbeb', color: '#d97706', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
           </div>
-          <div className="form-group">
-            <label>Study Level</label>
-            <select name="study_level" value={formData.study_level} onChange={handleChange}>
-              <option value="L1">L1</option>
-              <option value="L2">L2</option>
-              <option value="L3">L3</option>
-              <option value="M1">M1</option>
-              <option value="M2">M2</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Type</label>
-            <select name="session_type" value={formData.session_type} onChange={handleChange}>
-              <option value="Lecture">Lecture</option>
-              <option value="Tutorial">Tutorial (TD)</option>
-              <option value="Practical">Practical (TP)</option>
-            </select>
+          <div>
+            <h3 className="serif" style={{ fontSize: '24px', margin: 0, color: '#0f172a' }}>{t('sessions.newSession')}</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '4px 0 0 0' }}>{t('sessions.newSessionDesc')}</p>
           </div>
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label>Section</label>
-            <input type="text" name="section" value={formData.section} onChange={handleChange} required placeholder="e.g. A" />
-          </div>
-          {(formData.session_type === 'Tutorial' || formData.session_type === 'Practical') && (
-            <div className="form-group">
-              <label>Group</label>
-              <input type="text" name="groupe" value={formData.groupe} onChange={handleChange} placeholder="e.g. G1" />
+        <form onSubmit={handleAddSession}>
+          <div className="mnadm-form-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+            <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
+              <label className="mnadm-label">{t('sessions.moduleName')}</label>
+              <input type="text" name="module_name" className="mnadm-input" value={formData.module_name} onChange={handleChange} required placeholder="e.g. Mathématiques" style={{ borderRadius: '12px', fontWeight: '700' }} />
             </div>
-          )}
+            <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
+              <label className="mnadm-label">{t('sessions.studyLevel')}</label>
+              <select name="study_level" className="mnadm-input" value={formData.study_level} onChange={handleChange} style={{ borderRadius: '12px', fontWeight: '700' }}>
+                <option value="L1">L1</option>
+                <option value="L2">L2</option>
+                <option value="L3">L3</option>
+                <option value="M1">M1</option>
+                <option value="M2">M2</option>
+              </select>
+            </div>
+            <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
+              <label className="mnadm-label">{t('sessions.type')}</label>
+              <select name="session_type" className="mnadm-input" value={formData.session_type} onChange={handleChange} style={{ borderRadius: '12px', fontWeight: '700' }}>
+                <option value="Lecture">Lecture (Cours)</option>
+                <option value="Tutorial">Tutorial (TD)</option>
+                <option value="Practical">Practical (TP)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mnadm-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+            <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
+              <label className="mnadm-label">{t('sessions.section')}</label>
+              <input type="text" name="section" className="mnadm-input" value={formData.section} onChange={handleChange} required placeholder="e.g. A" style={{ borderRadius: '12px', fontWeight: '700' }} />
+            </div>
+            <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
+              <label className="mnadm-label">{t('sessions.group') || 'Groupe'}</label>
+              <input 
+                type="text" 
+                name="groupe" 
+                className="mnadm-input" 
+                value={formData.groupe} 
+                onChange={handleChange} 
+                placeholder="e.g. G1" 
+                disabled={!(formData.session_type === 'Tutorial' || formData.session_type === 'Practical')}
+                style={{ borderRadius: '12px', fontWeight: '700' }} 
+              />
+            </div>
+            <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
+              <label className="mnadm-label">{t('sessions.day') || 'Jour'}</label>
+              <select name="day_of_week" className="mnadm-input" value={formData.day_of_week} onChange={handleChange} style={{ borderRadius: '12px', fontWeight: '700' }}>
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                  <option key={day} value={day}>{t('days.' + day) || day}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="mnadm-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 2fr', gap: '24px', marginBottom: '24px' }}>
+             <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
+              <label className="mnadm-label">{t('sessions.filterDept') || 'Filtrer Dept'}</label>
+              <select className="mnadm-input" value={filterTeacherDeptId} onChange={(e) => { setFilterTeacherDeptId(e.target.value); setFormData({...formData, teacher_id: ''}); }} style={{ borderRadius: '12px', fontWeight: '700' }}>
+                <option value="">{t('common.all')}</option>
+                {departments.map(d => (
+                  <option key={d.id} value={d.id}>{t('departments.' + d.name).includes('.') ? d.name : t('departments.' + d.name)}</option>
+                ))}
+              </select>
+            </div>
+            <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
+              <label className="mnadm-label">{t('sessions.teacher') || 'Enseignant'}</label>
+              <Select
+                options={teacherOptions}
+                onChange={handleTeacherChange}
+                placeholder="-- Rechercher --"
+                isClearable
+                isSearchable
+                value={teacherOptions.find(o => o.value === formData.teacher_id) || null}
+                styles={selectStyles}
+              />
+            </div>
+            <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
+              <label className="mnadm-label">{t('sessions.department') || 'Département (Affectation)'}</label>
+              <Select
+                options={deptOptions}
+                onChange={handleDeptChange}
+                placeholder="-- Rechercher --"
+                isClearable
+                isSearchable
+                value={deptOptions.find(o => o.value === formData.department_id) || null}
+                styles={selectStyles}
+              />
+            </div>
+          </div>
+
+          <div className="mnadm-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px' }}>
+            <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
+              <label className="mnadm-label">{t('sessions.startTime') || 'Heure début'}</label>
+              <input type="time" name="start_time" className="mnadm-input" value={formData.start_time} onChange={handleChange} required style={{ borderRadius: '12px', fontWeight: '800' }} />
+            </div>
+            <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
+              <label className="mnadm-label">{t('sessions.endTime') || 'Heure fin'}</label>
+              <input type="time" name="end_time" className="mnadm-input" value={formData.end_time} onChange={handleChange} required style={{ borderRadius: '12px', fontWeight: '800' }} />
+            </div>
+            <div className="mnadm-form-group" style={{ marginBottom: 0, display: 'flex', alignItems: 'flex-end' }}>
+               <button type="submit" className="btn-confirm-pro" style={{ width: '100%', height: '48px', borderRadius: '14px', fontWeight: '800', fontSize: '15px' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                {t('sessions.addBtn') || 'PLANIFIER LA SÉANCE'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {/* Sessions List Card */}
+      <div className="card-academic" style={{ borderTop: '4px solid var(--p-indigo)', padding: '32px' }}>
+        <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h3 className="serif" style={{ fontSize: '24px', margin: 0, color: '#0f172a' }}>{t('sessions.listTitle') || 'Emploi du Temps Global'}</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '4px 0 0 0' }}>{sessions.length} {t('sessions.countLabel') || 'séances planifiées au total'}</p>
+          </div>
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label>Filter Teachers by Dept (Optional)</label>
-            <select value={filterTeacherDeptId} onChange={(e) => {
-              setFilterTeacherDeptId(e.target.value);
-              setFormData({...formData, teacher_id: ''}); // reset selected teacher
-            }} style={{ padding: '8px', borderRadius: '5px', border: '1px solid #ddd', width: '100%', height: '38px' }}>
-              <option value="">-- All Departments --</option>
-              {departments.map(d => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
+        {loading ? (
+          <div className="loading-spinner" style={{ padding: '60px' }}>{t('common.loadingData')}</div>
+        ) : (
+          <div className="modern-table-wrapper" style={{ borderRadius: '24px', border: '1px solid #e2e8f0' }}>
+            <table className="modern-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '120px' }}>{t('sessions.day') || 'Jour'}</th>
+                  <th style={{ width: '140px' }}>{t('sessions.time') || 'Horaire'}</th>
+                  <th>{t('sessions.module') || 'Module'}</th>
+                  <th style={{ width: '100px' }}>{t('sessions.level') || 'Niveau'}</th>
+                  <th style={{ width: '120px' }}>{t('sessions.type') || 'Type'}</th>
+                  <th style={{ width: '120px' }}>{t('sessions.secGrp') || 'Sec/Grp'}</th>
+                  <th>{t('sessions.teacher') || 'Enseignant'}</th>
+                  <th style={{ textAlign: 'center', width: '80px' }}>{t('common.actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sessions.map(s => (
+                  <tr key={s.id} className="table-row-animate">
+                    <td><div style={{ fontWeight: '800', color: 'var(--p-indigo)', textTransform: 'capitalize' }}>{t('days.' + s.day_of_week) || s.day_of_week}</div></td>
+                    <td><div style={{ fontWeight: '700', color: '#1e293b', background: '#f8fafc', padding: '6px 10px', borderRadius: '8px', display: 'inline-block', fontSize: '13px' }}>{s.start_time.substring(0,5)} - {s.end_time.substring(0,5)}</div></td>
+                    <td><div style={{ fontWeight: '800', color: '#0f172a' }}>{s.module_name}</div></td>
+                    <td><span className="badge-pro badge-pro-info" style={{ fontWeight: '800', borderRadius: '8px' }}>{s.study_level}</span></td>
+                    <td><span style={{ fontWeight: '700', fontSize: '12px', color: '#64748b', background: '#f1f5f9', padding: '4px 10px', borderRadius: '20px' }}>{s.session_type}</span></td>
+                    <td>
+                      <div style={{ fontSize: '13px', fontWeight: '700', color: '#64748b' }}>
+                        {s.section && <span style={{ marginRight: '8px' }}>S: {s.section}</span>}
+                        {s.groupe && <span>G: {s.groupe}</span>}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: '600', color: '#1e293b' }}>{s.teacher_nom} {s.teacher_prenom}</div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <button className="btn-delete-pro" onClick={() => handleDeleteClick(s.id)} style={{ padding: '8px', borderRadius: '10px' }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {sessions.length === 0 && (
+                  <tr><td colSpan="8" className="empty-state-cell" style={{ padding: '60px', textAlign: 'center', color: '#94a3b8' }}>{t('sessions.empty') || 'Aucune séance planifiée'}</td></tr>
+                )}
+              </tbody>
+            </table>
           </div>
-          <div className="form-group">
-            <label>Select Teacher</label>
-            <Select
-              options={teacherOptions}
-              onChange={handleTeacherChange}
-              placeholder="-- Search teacher --"
-              isClearable
-              isSearchable
-              value={teacherOptions.find(o => o.value === formData.teacher_id) || null}
-              styles={{ control: (base) => ({ ...base, padding: '2px', borderRadius: '8px', borderColor: '#e5e7eb', '&:hover': { borderColor: '#4f46e5' } }) }}
-            />
-          </div>
-          <div className="form-group">
-            <label>Relevant Department</label>
-            <Select
-              options={deptOptions}
-              onChange={handleDeptChange}
-              placeholder="-- Search department --"
-              isClearable
-              isSearchable
-              value={deptOptions.find(o => o.value === formData.department_id) || null}
-              styles={{ control: (base) => ({ ...base, padding: '2px', borderRadius: '8px', borderColor: '#e5e7eb', '&:hover': { borderColor: '#4f46e5' } }) }}
-            />
-          </div>
-        </div>
+        )}
+      </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label>Day</label>
-            <select name="day_of_week" value={formData.day_of_week} onChange={handleChange}>
-              <option value="Monday">Monday</option>
-              <option value="Tuesday">Tuesday</option>
-              <option value="Wednesday">Wednesday</option>
-              <option value="Thursday">Thursday</option>
-              <option value="Friday">Friday</option>
-              <option value="Saturday">Saturday</option>
-              <option value="Sunday">Sunday</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Start Time</label>
-            <input type="time" name="start_time" value={formData.start_time} onChange={handleChange} required />
-          </div>
-          <div className="form-group">
-            <label>End Time</label>
-            <input type="time" name="end_time" value={formData.end_time} onChange={handleChange} required />
-          </div>
-        </div>
-        
-        <div className="form-actions" style={{ justifyContent: 'flex-start', marginTop: '10px' }}>
-          <button type="submit" className="btn-submit">➕ Schedule Session</button>
-        </div>
-      </form>
-
-      {loading ? (
-        <div className="loading-spinner">Loading schedule...</div>
-      ) : (
-        <table className="modern-table">
-          <thead>
-            <tr>
-              <th>Day</th>
-              <th>Time</th>
-              <th>Module / Subject</th>
-              <th>Level</th>
-              <th>Type</th>
-              <th>Sec/Grp</th>
-              <th>Teacher</th>
-              <th>Department</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sessions.map(s => (
-              <tr key={s.id}>
-                <td><strong>{s.day_of_week}</strong></td>
-                <td>{s.start_time.substring(0,5)} - {s.end_time.substring(0,5)}</td>
-                <td>{s.module_name}</td>
-                <td><span className="role-tag" style={{ background: '#dbeafe', color: '#1e40af' }}>{s.study_level}</span></td>
-                <td><span className="role-tag" style={{ background: '#e2e8f0', color: '#475569' }}>{s.session_type}</span></td>
-                <td>
-                  {(s.section || s.groupe) ? (
-                    <span style={{ fontSize: '0.9em', color: '#666' }}>
-                      {s.section && `Sec: ${s.section}`} {s.groupe && `Grp: ${s.groupe}`}
-                    </span>
-                  ) : '-'}
-                </td>
-                <td>{s.teacher_prenom} {s.teacher_nom}</td>
-                <td>{s.department_name}</td>
-                <td>
-                  <button className="btn-delete" onClick={() => handleDelete(s.id)}>Cancel</button>
-                </td>
-              </tr>
-            ))}
-            {sessions.length === 0 && (
-              <tr><td colSpan="9" className="empty-state">No sessions scheduled at the moment.</td></tr>
-            )}
-          </tbody>
-        </table>
-      )}
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        message={t('sessions.confirmCancel') || 'Voulez-vous vraiment annuler cette séance ?'}
+        onConfirm={performDelete}
+        onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+      />
     </div>
   );
 }

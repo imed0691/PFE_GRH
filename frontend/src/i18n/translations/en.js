@@ -52,6 +52,8 @@ const en = {
     confirmClearAll: 'Are you sure you want to clear the entire processed history?',
     chooseFile: 'Choose File',
     noFileSelected: 'No file selected',
+    active: 'Active',
+    period: 'Period',
   },
 
   // ── Login ──
@@ -123,6 +125,7 @@ const en = {
     updatePassword: 'Update Password',
     profileSuccess: 'Profile updated successfully!',
     profileError: 'Failed to update profile.',
+    errorOccurred: 'An unexpected error occurred.',
   },
 
   // ── Sidebar Navigation ──
@@ -177,6 +180,7 @@ const en = {
     sendReminders: 'Send Reminders',
     universityOverview: 'University Overview',
     globalStaffDirectory: 'Global Staff Directory',
+    myCurrentSchedule: 'My Current Schedule',
     universityStructure: 'University Structure',
     staffRecruitment: 'Staff Recruitment',
     evaluationStatistics: 'Evaluation Statistics',
@@ -253,6 +257,10 @@ const en = {
     moduleUnassigned: 'Module unassigned',
     alreadyAssigned: 'Error or already assigned',
     confirmDelete: 'Are you sure you want to delete this item?',
+    academicStructure: 'Academic Structure',
+    teacherAssignments: 'Teacher Assignments',
+    noLevels: 'No study levels defined for this department.',
+    filterByLevel: 'Filter by Level:',
   },
 
   // ── HR Dashboard ──
@@ -307,6 +315,7 @@ const en = {
     myAbsenceHistory: 'My Absence History',
     noAbsenceRecords: 'No absence records found.',
     communicationsFromHR: 'Communications from HR & Dept',
+    manageInboxDesc: 'View official announcements and administrative messages.',
     clearAll: 'Clear All',
     reminderDeleted: 'Reminder deleted',
     errorDeletingReminder: 'Error deleting reminder',
@@ -316,6 +325,8 @@ const en = {
     urgent: 'Urgent',
     important: 'Important',
     information: 'Information',
+    official: 'Official',
+    noRemindersTitle: 'Inbox Empty',
     unreadNotif: 'You have {count} unread notification(s)',
     adminMessages: '{count} message(s) from administration',
     absenceUpdates: '{count} absence update(s)',
@@ -335,6 +346,8 @@ const en = {
     totalAbsences: 'Total Absences',
     justifiedShort: "Justified",
     unjustifiedShort: "Unjustified",
+    justified: 'Justified',
+    unjustified: 'Unjustified',
     noSessions: "No sessions scheduled at the moment."
   },
 
@@ -361,6 +374,8 @@ const en = {
     recentActivity: 'RECENT ACTIVITY',
     noAlerts: 'No critical institutional alerts today.',
     reports: 'Institutional Reports',
+    statusOptimized: 'OPTIMIZED',
+    statusMonitored: 'MONITORED',
   },
 
   // ── Dean Dashboard ──
@@ -463,6 +478,11 @@ const en = {
     accepted: 'Accepted',
     rejected: 'Rejected',
     attachmentLabel: 'Attachment (PDF, Image)',
+    historyDeleted: 'Absence history cleared',
+    allUpToDate: 'All absences are up to date.',
+    historyDesc: 'View and manage previous absence records.',
+    justifyDesc: 'Provide justifications for marked absences.',
+    reasonPlaceholder: 'Reason for absence...',
   },
 
   // ── Manage Departments ──
@@ -476,6 +496,8 @@ const en = {
     confirmDelete: 'Are you sure you want to delete the department "{name}"? Teachers in this department will have no assigned department.',
     deleted: 'Department deleted',
     errorDeleting: 'Error deleting department',
+    manageTitle: 'Department Management',
+    addNew: 'Add New Department',
     noDepts: 'No departments found. Create one above!',
     loadingDepts: 'Loading departments...',
     errorFetching: 'Error fetching departments',
@@ -515,6 +537,9 @@ const en = {
     loadingRequests: 'Loading requests...',
     processing: 'In Progress',
     adminNote: 'Admin Note',
+    manageTitle: 'Document Request Management',
+    processingInstruction: 'Enter a note for the requester (optional)...',
+    notePlaceholder: 'Your administrative note here...',
     processRequest: 'Process Request',
     markProcessing: 'Mark Processing',
     delivered: 'Delivered',
@@ -545,6 +570,7 @@ const en = {
     year: 'Year',
     evaluator: 'Evaluator',
     noEvals: 'No evaluations found.',
+    manageTitle: 'Faculty Evaluations Oversight',
   },
 
   // ── Manage Promotions ──
@@ -586,6 +612,10 @@ const en = {
     finalizeGrade: 'Finalize grade change:',
     updateFile: 'Update HR Record',
     historyTitle: 'Workflow History:',
+    manageTitle: 'Institutional Promotions Oversight',
+    maxGradeReached: 'Maximum academic grade reached.',
+    congratsProf: 'Congratulations on reaching the highest grade!',
+    finalizeFinancials: 'Finalize financial adjustment for this promotion.',
   },
 
   // ── Manage Recruitments ──
@@ -645,6 +675,19 @@ const en = {
     errorLoadingData: 'Error loading data',
     historyTitle: 'Recent Communications',
     specificDean: 'Specific Dean',
+    manageTitle: 'Global Reminder System',
+    scope: '1. Distribution Scope',
+    allFaculty: 'All Faculty Staff',
+    deptHeads: 'All Department Heads',
+    priority: '2. Priority Level',
+    typeInfo: 'Information (Neutral)',
+    typeWarning: 'Important / Warning',
+    typeUrgent: 'Urgent Alert',
+    typeOfficial: 'Official Administrative Note',
+    selectRecipient: '3. Select Specific Recipient',
+    messageContent: '4. Message Content',
+    officialPlaceholder: 'Official announcement text here...',
+    sendBroadcast: 'Send Broadcast',
   },
 
   // ── Manage Research ──
@@ -700,10 +743,14 @@ const en = {
     extraPayShort: 'Extra Gain',
     absenceDetails: 'Absence Penalty Details',
     finalizeMonth: 'Finalize Month',
+    manageTitle: 'Payroll & Salary Management',
+    noAbsences: 'No absences recorded this month.',
+    noExtraSessions: 'No extra sessions recorded this month.',
   },
 
   // ── Manage Sessions ──
   sessions: {
+    addSession: 'Add New Session',
     moduleSubject: 'Module / Subject',
     studyLevel: 'Study Level',
     section: 'Section',
@@ -724,6 +771,16 @@ const en = {
     confirmCancel: 'Are you sure you want to cancel this session?',
     cancelled: 'Session cancelled',
     errorCancel: 'Error during cancellation',
+    successCancel: 'Session cancelled successfully',
+    newSession: 'New Academic Session',
+    newSessionDesc: 'Schedule a new teaching slot in the academic calendar.',
+    moduleName: 'Module Name',
+    filterDept: 'Filter by Department',
+    listTitle: 'Weekly Academic Schedule',
+    countLabel: 'Total Sessions:',
+    empty: 'No sessions found for this selection.',
+    successAdd: 'Session added successfully',
+    failedDelete: 'Failed to delete session',
     loadingSchedule: 'Loading schedule...',
     moduleSubjectCol: 'Module / Subject',
     secGrp: 'Sec/Grp',
@@ -741,7 +798,6 @@ const en = {
     tutorial: 'Tutorial (TD)',
     practical: 'Practical (TP)',
     create: 'Create Session',
-    startTime: 'Start Time',
     selectTime: 'Select start time...',
     selectLevelFirst: 'Choose level first',
     selectTeacherFirst: 'Choose teacher first',

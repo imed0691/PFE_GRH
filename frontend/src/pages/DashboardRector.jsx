@@ -105,19 +105,19 @@ function DashboardRector({ user, onLogout }) {
           <div className="overview-container-premium">
             <div className="overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '32px' }}>
               <div className="card-academic" style={{ borderTop: '4px solid var(--p-indigo)' }}>
-                <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>Total University Staff</h3>
+                <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>{t('rector.totalStaff')}</h3>
                 <p style={{ fontSize: '32px', fontWeight: '900', color: 'var(--p-indigo)', margin: 0 }}>{users.length}</p>
               </div>
               <div className="card-academic" style={{ borderTop: '4px solid #10b981' }}>
-                <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>Faculty Deans</h3>
+                <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>{t('rector.deansViceDeans')}</h3>
                 <p style={{ fontSize: '32px', fontWeight: '900', color: '#10b981', margin: 0 }}>{deansCount}</p>
               </div>
               <div className="card-academic" style={{ borderTop: '4px solid #f59e0b' }}>
-                <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>Total Professors</h3>
-                <p style={{ fontSize: '32px', fontWeight: '900', color: '#f59e0b', margin: 0 }}>{users.filter(u => u.grade === 'Professor').length}</p>
+                <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>{t('rector.teachers')}</h3>
+                <p style={{ fontSize: '32px', fontWeight: '900', color: '#f59e0b', margin: 0 }}>{users.filter(u => u.grade === 'Professor' || u.grade === 'MCA').length}</p>
               </div>
               <div className="card-academic" style={{ borderTop: '4px solid #8b5cf6' }}>
-                <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>Departments</h3>
+                <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>{t('rector.departments')}</h3>
                 <p style={{ fontSize: '32px', fontWeight: '900', color: '#8b5cf6', margin: 0 }}>{departments.length}</p>
               </div>
             </div>
@@ -132,8 +132,8 @@ function DashboardRector({ user, onLogout }) {
                     return (
                       <div key={grade} className="grade-bar-wrapper">
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: '700', color: '#475569' }}>{grade}</span>
-                          <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--p-indigo)' }}>{count} members</span>
+                          <span style={{ fontSize: '13px', fontWeight: '700', color: '#475569' }}>{t('grades.' + grade)}</span>
+                          <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--p-indigo)' }}>{count} {t('hr.personnel')}</span>
                         </div>
                         <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
                           <div style={{ height: '100%', width: `${percentage}%`, background: 'linear-gradient(90deg, var(--p-indigo), var(--p-purple))', borderRadius: '4px' }}></div>
@@ -152,7 +152,7 @@ function DashboardRector({ user, onLogout }) {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
                     </div>
                     <div style={{ fontSize: '13px' }}>
-                      <strong>{users.length}</strong> Total Staff synced
+                      <strong>{users.length}</strong> {t('rector.totalStaff')}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -160,7 +160,7 @@ function DashboardRector({ user, onLogout }) {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                     </div>
                     <div style={{ fontSize: '13px' }}>
-                      <strong>{absences.length}</strong> Absence records active
+                      <strong>{absences.length}</strong> {t('sidebar.absences')}
                     </div>
                   </div>
                 </div>
@@ -178,11 +178,11 @@ function DashboardRector({ user, onLogout }) {
                   <table className="table-academic">
                     <thead>
                       <tr>
-                        <th>Sector / Faculty</th>
-                        <th>Staff Count</th>
-                        <th>Senior Professors</th>
-                        <th>Absence Load</th>
-                        <th>Operational Status</th>
+                        <th>{t('common.department')}</th>
+                        <th>{t('rector.totalStaff')}</th>
+                        <th>{t('rector.teachers')}</th>
+                        <th>{t('sidebar.absences')}</th>
+                        <th>{t('common.status')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -202,7 +202,7 @@ function DashboardRector({ user, onLogout }) {
                             <td>{deptAbs}</td>
                             <td>
                               <span className={`role-badge ${deptAbs < 5 ? 'role-rector' : 'role-dept-head'}`} style={{ fontSize: '10px' }}>
-                                {deptAbs < 5 ? 'OPTIMIZED' : 'MONITORED'}
+                                {deptAbs < 5 ? t('rector.statusOptimized') : t('rector.statusMonitored')}
                               </span>
                             </td>
                           </tr>

@@ -61,64 +61,84 @@ function ManageDepartments() {
   };
 
   return (
-    <>
-      <div className="card-academic" style={{ padding: '32px' }}>
-        <form onSubmit={handleAddDepartment} className="mnadm-form-row" style={{ marginBottom: '32px', alignItems: 'flex-end', background: '#f8fafc', padding: '32px', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <label className="mnadm-label" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('departments.selectOrType')}</label>
-            <div className="mnadm-form-row" style={{ marginBottom: 0 }}>
-              <select 
-                className="mnadm-input"
-                onChange={handlePredefinedChange}
-              >
-                <option value="">{t('common.select')}</option>
-                {predefinedDepts.map(dept => (
-                  <option key={dept} value={dept}>{dept}</option>
-                ))}
-              </select>
-              <input 
-                className="mnadm-input"
-                type="text" 
-                value={newDeptName} 
-                onChange={(e) => setNewDeptName(e.target.value)} 
-                placeholder={t('departments.typeManual')}
-                required 
-              />
-            </div>
+    <div className="animate-mnadm">
+      <div className="card-academic" style={{ borderTop: '4px solid var(--p-indigo)', padding: '32px' }}>
+        <div style={{ marginBottom: '32px' }}>
+          <h3 className="serif" style={{ margin: 0, fontSize: '26px', color: '#0f172a' }}>{t('departments.title') || 'Gestion des Départements'}</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '4px 0 0 0' }}>{t('departments.manageTitle') || 'Configurez et gérez les unités organisationnelles de votre établissement.'}</p>
+        </div>
+
+        <form onSubmit={handleAddDepartment} className="card-academic" style={{ background: '#f8fafc', padding: '32px', borderRadius: '24px', marginBottom: '40px', border: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <div style={{ background: 'var(--p-indigo)', color: 'white', width: '32px', height: '32px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '14px' }}>+</div>
+            <h4 className="serif" style={{ margin: 0, color: '#0f172a', fontSize: '18px', fontWeight: '800' }}>{t('departments.addNew') || 'Ajouter un nouveau département'}</h4>
           </div>
-          <button type="submit" className="btn-confirm-pro" style={{ padding: '14px 32px' }}>{t('departments.addDepartment')}</button>
+          <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: '250px' }}>
+              <label className="mnadm-label">{t('departments.selectOrType')}</label>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <select 
+                  className="mnadm-input"
+                  onChange={handlePredefinedChange}
+                  style={{ flex: '0.4', fontWeight: '700', borderRadius: '14px' }}
+                >
+                  <option value="">{t('common.select')}</option>
+                  {predefinedDepts.map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+                <input 
+                  className="mnadm-input"
+                  type="text" 
+                  value={newDeptName} 
+                  onChange={(e) => setNewDeptName(e.target.value)} 
+                  placeholder={t('departments.typeManual')}
+                  style={{ flex: '0.6', fontWeight: '700', borderRadius: '14px' }}
+                  required 
+                />
+              </div>
+            </div>
+            <button type="submit" className="btn-confirm-pro" style={{ padding: '16px 40px', borderRadius: '14px', fontSize: '15px', fontWeight: '800' }}>{t('departments.addDepartment').toUpperCase()}</button>
+          </div>
         </form>
-        {loading ? <div className="loading-spinner">{t('departments.loadingDepts')}</div> : (
-          <div className="modern-table-wrapper">
+
+        {loading ? <div className="loading-spinner" style={{ padding: '40px' }}>{t('departments.loadingDepts')}</div> : (
+          <div className="modern-table-wrapper" style={{ borderRadius: '20px', border: '1px solid #e2e8f0' }}>
             <table className="modern-table">
-              <thead><tr><th>#</th><th>{t('common.id')}</th><th>{t('departments.deptName')}</th><th style={{ textAlign: 'center' }}>{t('common.actions')}</th></tr></thead>
+              <thead>
+                <tr>
+                  <th style={{ width: '60px' }}>#</th>
+                  <th style={{ width: '100px' }}>{t('common.id')}</th>
+                  <th>{t('departments.deptName')}</th>
+                  <th style={{ textAlign: 'center', width: '150px' }}>{t('common.actions')}</th>
+                </tr>
+              </thead>
               <tbody>
                 {departments.map((d, index) => (
-                  <tr key={d.id}>
-                    <td>{index + 1}</td>
-                    <td>#{d.id}</td>
-                    <td>
-                      <strong>
-                        {(() => {
-                          const translated = t('departments.' + d.name);
-                          return translated.includes('.') ? d.name : translated;
-                        })()}
-                      </strong>
+                  <tr key={d.id} className="table-row-animate">
+                    <td style={{ fontWeight: '800', color: '#94a3b8' }}>{index + 1}</td>
+                    <td style={{ fontWeight: '600', color: '#64748b' }}>#{d.id}</td>
+                    <td style={{ fontWeight: '800', color: '#0f172a', fontSize: '15px' }}>
+                      {(() => {
+                        const translated = t('departments.' + d.name);
+                        return translated.includes('.') ? d.name : translated;
+                      })()}
                     </td>
                     <td>
                       <div style={{ display: 'flex', justifyContent: 'center' }}>
                         <button 
                           className="btn-delete-pro" 
-                          style={{ padding: '8px 16px', fontSize: '12px' }} 
+                          style={{ padding: '10px 20px', fontSize: '13px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }} 
                           onClick={() => handleDeleteClick(d.id, d.name)}
                         >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                           {t('common.delete')}
                         </button>
                       </div>
                     </td>
                   </tr>
                 ))}
-                {departments.length === 0 && <tr><td colSpan="4" className="empty-state-cell">{t('departments.noDepts')}</td></tr>}
+                {departments.length === 0 && <tr><td colSpan="4" className="empty-state-cell" style={{ padding: '60px', textAlign: 'center', color: '#94a3b8' }}>{t('departments.noDepts')}</td></tr>}
               </tbody>
             </table>
           </div>
@@ -131,7 +151,7 @@ function ManageDepartments() {
         onConfirm={performDelete}
         onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
       />
-    </>
+    </div>
   );
 }
 

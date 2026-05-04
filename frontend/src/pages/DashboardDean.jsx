@@ -29,7 +29,7 @@ function DashboardDean({ user, onLogout }) {
         setUsers(data);
       }
     } catch (error) {
-      toast.error("Error fetching staff data");
+      toast.error(t('dean.errorFetchStaff'));
     } finally {
       setLoading(false);
     }
@@ -128,7 +128,7 @@ function DashboardDean({ user, onLogout }) {
 
             <div className="analytics-overview-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
               <div className="card-academic analytics-card">
-                <h3 className="academic-title" style={{ fontSize: '16px', marginBottom: '24px' }}>Staff Distribution by Grade</h3>
+                <h3 className="academic-title" style={{ fontSize: '16px', marginBottom: '24px' }}>{t('topbar.evaluationStatistics')}</h3>
                 <div className="grade-distribution-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {['Professor', 'MCA', 'MCB', 'MAA', 'MAB'].map(grade => {
                     const count = users.filter(u => u.grade === grade).length;
@@ -136,8 +136,8 @@ function DashboardDean({ user, onLogout }) {
                     return (
                       <div key={grade} className="grade-bar-wrapper">
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: '700', color: '#475569' }}>{grade}</span>
-                          <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--p-indigo)' }}>{count} staff</span>
+                          <span style={{ fontSize: '13px', fontWeight: '700', color: '#475569' }}>{t('grades.' + grade)}</span>
+                          <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--p-indigo)' }}>{count} {t('hr.personnel')}</span>
                         </div>
                         <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
                           <div style={{ height: '100%', width: `${percentage}%`, background: 'linear-gradient(90deg, var(--p-indigo), var(--p-purple))', borderRadius: '4px' }}></div>
@@ -149,7 +149,7 @@ function DashboardDean({ user, onLogout }) {
               </div>
 
               <div className="card-academic analytics-card">
-                <h3 className="academic-title" style={{ fontSize: '16px', marginBottom: '24px' }}>Department Activity</h3>
+                <h3 className="academic-title" style={{ fontSize: '16px', marginBottom: '24px' }}>{t('topbar.universityPedagogy')}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {departments.slice(0, 5).map(dept => (
                     <div key={dept.id} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -158,7 +158,7 @@ function DashboardDean({ user, onLogout }) {
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>{dept.name}</div>
-                        <div style={{ fontSize: '12px', color: '#94a3b8' }}>Active management</div>
+                        <div style={{ fontSize: '12px', color: '#94a3b8' }}>{t('common.status')}: {t('common.completed')}</div>
                       </div>
                     </div>
                   ))}
@@ -170,19 +170,19 @@ function DashboardDean({ user, onLogout }) {
           <div className="analytics-hub-pro animate-mnadm">
             <div className="analytics-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
               <div>
-                <h2 className="academic-title">Departmental Benchmarking</h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Comparative performance and staffing metrics across the faculty</p>
+                <h2 className="academic-title">{t('topbar.departmentSchedules')}</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('dean.welcomeText').substring(0, 80)}...</p>
               </div>
               <div className="last-sync-badge">
                 <span className="pulse-dot"></span>
-                Real-time Data
+                {t('common.active')}
               </div>
             </div>
 
             <div className="benchmarking-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px' }}>
               {/* Departmental Strength Comparison */}
               <div className="card-academic">
-                <h3 className="academic-title" style={{ fontSize: '16px', marginBottom: '24px' }}>Staffing Density by Department</h3>
+                <h3 className="academic-title" style={{ fontSize: '16px', marginBottom: '24px' }}>{t('dean.facultyStrength')}</h3>
                 <div className="benchmarking-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {departments.map(dept => {
                     const deptStaff = users.filter(u => u.department_id === dept.id).length;
@@ -193,7 +193,7 @@ function DashboardDean({ user, onLogout }) {
                       <div key={dept.id} className="benchmark-item">
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                           <span style={{ fontWeight: '700', color: '#1e293b' }}>{dept.name}</span>
-                          <span style={{ fontWeight: '800', color: 'var(--p-indigo)' }}>{deptStaff} Employees</span>
+                          <span style={{ fontWeight: '800', color: 'var(--p-indigo)' }}>{deptStaff} {t('hr.personnel')}</span>
                         </div>
                         <div className="benchmark-bar-bg" style={{ height: '10px', background: '#f1f5f9', borderRadius: '5px', overflow: 'hidden' }}>
                           <div className="benchmark-bar-fill" style={{ 

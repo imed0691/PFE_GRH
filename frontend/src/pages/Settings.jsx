@@ -54,10 +54,10 @@ function Settings({ user, onProfileUpdate }) {
         toast.success(t('settings.profileSuccess'));
         onProfileUpdate({ profile_image: data.profile_image });
       } else {
-        toast.error('Upload failed');
+        toast.error(t('settings.errorOccurred'));
       }
     } catch (err) {
-      toast.error('Error uploading image');
+      toast.error(t('settings.errorOccurred'));
     } finally {
       setUploadingImage(false);
     }
@@ -75,21 +75,24 @@ function Settings({ user, onProfileUpdate }) {
         onProfileUpdate({ profile_image: null });
       }
     } catch (err) {
-      toast.error('Error removing photo');
+      toast.error(t('settings.errorOccurred'));
     }
   };
 
   return (
-    <div className="card-pro animate-float" style={{ padding: 0, overflow: 'hidden' }}>
+    <div className="card-academic" style={{ padding: 0, overflow: 'hidden', borderTop: '4px solid var(--p-indigo)' }}>
       <div className="settings-container-v2">
-        <div className="settings-sidebar-v2">
+        <div className="settings-sidebar-v2" style={{ background: '#f8fafc', borderRight: '1px solid var(--border-soft)' }}>
           <button className={`settings-tab-v2 ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => handleTabChange('profile')}>
+             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '12px' }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
             {t('settings.personalData')}
           </button>
           <button className={`settings-tab-v2 ${activeTab === 'security' ? 'active' : ''}`} onClick={() => handleTabChange('security')}>
+             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '12px' }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             {t('settings.security')}
           </button>
           <button className={`settings-tab-v2 ${activeTab === 'preferences' ? 'active' : ''}`} onClick={() => handleTabChange('preferences')}>
+             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '12px' }}><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             {t('settings.preferences')}
           </button>
         </div>
@@ -97,15 +100,15 @@ function Settings({ user, onProfileUpdate }) {
         <div className="settings-content-v2">
           {activeTab === 'profile' && (
             <div className="settings-pane-v2">
-              <h2 className="serif" style={{ fontSize: '28px', marginBottom: '8px' }}>{t('settings.profileTitle')}</h2>
-              <p style={{ color: 'var(--text-muted)', marginBottom: '40px' }}>{t('settings.profileDesc')}</p>
+              <h2 className="serif" style={{ fontSize: '28px', marginBottom: '8px', color: '#0f172a' }}>{t('settings.profileTitle')}</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '40px', fontSize: '14px' }}>{t('settings.profileDesc')}</p>
               
               <div className="profile-image-section" style={{ marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '32px' }}>
-                <div style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', border: '4px solid white', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', position: 'relative', background: 'var(--p-indigo)' }}>
+                <div style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', border: '4px solid white', boxShadow: '0 8px 16px rgba(0,0,0,0.08)', position: 'relative', background: 'linear-gradient(135deg, var(--p-indigo), #6366f1)' }}>
                   {user.profile_image ? (
                     <img src={`http://localhost:5000${user.profile_image}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '48px', fontWeight: 'bold' }}>
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '42px', fontWeight: '800' }}>
                       {user.nom[0]}{user.prenom[0]}
                     </div>
                   )}
@@ -116,18 +119,18 @@ function Settings({ user, onProfileUpdate }) {
                   )}
                 </div>
                 <div className="profile-actions-v2">
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <label htmlFor="profile-upload" className="btn-profile-v2 btn-profile-primary">
+                  <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
+                    <label htmlFor="profile-upload" className="btn-profile-v2 btn-profile-primary" style={{ cursor: 'pointer', borderRadius: '12px', fontWeight: '700' }}>
                       {uploadingImage ? '...' : t('settings.changePhoto')}
                     </label>
                     {user.profile_image && (
-                      <button onClick={() => setShowConfirmModal(true)} className="btn-profile-v2 btn-remove">
+                      <button onClick={() => setShowConfirmModal(true)} className="btn-profile-v2 btn-remove" style={{ borderRadius: '12px', fontWeight: '700' }}>
                         {t('settings.removePhoto')}
                       </button>
                     )}
                   </div>
                   <input id="profile-upload" type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, fontWeight: '600' }}>{t('settings.photoSpecs')}</p>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{t('settings.photoSpecs')}</p>
                 </div>
               </div>
 
@@ -142,7 +145,7 @@ function Settings({ user, onProfileUpdate }) {
                     <input type="text" className="mnadm-input" value={profileData.prenom} onChange={(e) => setProfileData({ ...profileData, prenom: e.target.value })} required />
                   </div>
                 </div>
-                <button type="submit" className="btn-confirm-pro" disabled={loadingProfile}>
+                <button type="submit" className="btn-confirm-pro" disabled={loadingProfile} style={{ height: '48px', minWidth: '200px', borderRadius: '14px' }}>
                   {loadingProfile ? t('common.loading') : t('settings.updateInfo')}
                 </button>
               </form>
@@ -151,25 +154,25 @@ function Settings({ user, onProfileUpdate }) {
 
           {activeTab === 'security' && (
             <div className="settings-pane-v2">
-              <h2 className="serif" style={{ fontSize: '28px', marginBottom: '8px' }}>{t('settings.securityTitle')}</h2>
-              <p style={{ color: 'var(--text-muted)', marginBottom: '40px' }}>{t('settings.securityDesc')}</p>
+              <h2 className="serif" style={{ fontSize: '28px', marginBottom: '8px', color: '#0f172a' }}>{t('settings.securityTitle')}</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '40px', fontSize: '14px' }}>{t('settings.securityDesc')}</p>
               
               <form onSubmit={(e) => e.preventDefault()}>
                 <div className="mnadm-form-group" style={{ maxWidth: '400px' }}>
                   <label className="mnadm-label">{t('settings.currentPassword')}</label>
-                  <input type="password" className="mnadm-input" value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} />
+                  <input type="password" dark-mode="false" className="mnadm-input" value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} />
                 </div>
                 <div className="mnadm-form-row">
                   <div className="mnadm-form-group">
                     <label className="mnadm-label">{t('settings.newPassword')}</label>
-                    <input type="password" className="mnadm-input" value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} />
+                    <input type="password" dark-mode="false" className="mnadm-input" value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} />
                   </div>
                   <div className="mnadm-form-group">
                     <label className="mnadm-label">{t('settings.confirmPassword')}</label>
-                    <input type="password" className="mnadm-input" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} />
+                    <input type="password" dark-mode="false" className="mnadm-input" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} />
                   </div>
                 </div>
-                <button type="submit" className="btn-confirm-pro" disabled={loadingPassword}>
+                <button type="submit" className="btn-confirm-pro" disabled={loadingPassword} style={{ height: '48px', minWidth: '200px', borderRadius: '14px' }}>
                   {t('settings.updateCredentials')}
                 </button>
               </form>
@@ -178,11 +181,11 @@ function Settings({ user, onProfileUpdate }) {
 
           {activeTab === 'preferences' && (
             <div className="settings-pane-v2">
-              <h2 className="serif" style={{ fontSize: '28px', marginBottom: '8px' }}>{t('settings.interfaceTitle')}</h2>
-              <p style={{ color: 'var(--text-muted)', marginBottom: '40px' }}>{t('settings.interfaceDesc')}</p>
+              <h2 className="serif" style={{ fontSize: '28px', marginBottom: '8px', color: '#0f172a' }}>{t('settings.interfaceTitle')}</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '40px', fontSize: '14px' }}>{t('settings.interfaceDesc')}</p>
               
-              <div style={{ background: '#f8fafc', padding: '32px', borderRadius: '16px', border: '1px solid var(--border-soft)' }}>
-                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', marginBottom: '24px' }}>{t('settings.portalLanguage')}</label>
+              <div style={{ background: '#f8fafc', padding: '32px', borderRadius: '20px', border: '1px solid var(--border-soft)' }}>
+                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', marginBottom: '24px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('settings.portalLanguage')}</label>
                  <LanguageSwitcher variant="boxed" />
               </div>
             </div>
@@ -190,7 +193,6 @@ function Settings({ user, onProfileUpdate }) {
         </div>
       </div>
 
-      {/* REUSABLE CONFIRMATION MODAL */}
       <ConfirmModal 
         isOpen={showConfirmModal}
         message={t('settings.confirmRemovePhoto')}

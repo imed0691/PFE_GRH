@@ -267,7 +267,7 @@ h1, h2, h3, h4, .outfit {
   background: var(--p-indigo) !important;
   color: white !important;
   border: none !important;
-  padding: 10px 24px !important;
+  padding: 10px 24px;
   border-radius: 12px !important;
   font-weight: 700 !important;
   cursor: pointer !important;

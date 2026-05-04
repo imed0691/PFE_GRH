@@ -55,7 +55,7 @@ function DashboardDeptHead({ user, onLogout }) {
         const data = await res.json();
         setUsers(data.filter(u => (u.role === 'TEACHER' || u.role === 'ENSEIGNANT') && u.department_id === user.department_id)); 
       } else {
-        toast.error('Failed to load teachers');
+        toast.error(t('deptHead.errorFetchTeachers'));
       }
     } catch (error) { 
       toast.error(t('deptHead.errorFetchTeachers')); 
@@ -84,7 +84,7 @@ function DashboardDeptHead({ user, onLogout }) {
         setViewRaw('teacher-schedule');
       } else {
         const errorData = await res.json().catch(() => ({}));
-        toast.error(errorData.message || 'Failed to load teacher schedule');
+        toast.error(errorData.message || t('teacher.failedLoadDashboard'));
       }
     } catch (e) { 
       console.error('Fetch error:', e);
@@ -111,10 +111,10 @@ function DashboardDeptHead({ user, onLogout }) {
         toast.success(t('sessions.cancelled'));
         if (selectedTeacher) fetchTeacherSchedule(selectedTeacher);
       } else {
-        toast.error(t('sessions.failedDelete') || 'Failed to cancel session');
+        toast.error(t('sessions.failedDelete'));
       }
     } catch (error) {
-      toast.error('Connection error');
+      toast.error(t('common.serverError'));
     } finally {
       setShowConfirmModal(false);
       setSessionToDelete(null);
@@ -134,7 +134,7 @@ function DashboardDeptHead({ user, onLogout }) {
 
   const menuItems = [
     { id: 'list', label: t('sidebar.teachers') },
-    { id: 'classes', label: t('classes.tabTeachers') || 'Assigner Modules' },
+    { id: 'classes', label: t('classes.tabTeachers') },
     { id: 'absences', label: t('sidebar.absences'), badge: badges.absences },
     { id: 'reminders', label: t('sidebar.notifications'), badge: badges.reminders },
     { id: 'promotions', label: t('sidebar.promotions'), badge: badges.promotions },
@@ -262,9 +262,9 @@ function DashboardDeptHead({ user, onLogout }) {
         fetchTeacherSchedule(selectedTeacher); // Refresh
       } else {
         const err = await res.json();
-        toast.error(err.message || 'Error');
+        toast.error(err.message || t('common.errorLoading'));
       }
-    } catch (e) { toast.error('Error'); }
+    } catch (e) { toast.error(t('common.serverError')); }
   };
 
   const getPageTitle = () => {
@@ -278,7 +278,7 @@ function DashboardDeptHead({ user, onLogout }) {
       case 'settings': return t('settings.title');
       case 'reminders': return t('topbar.departmentNotifications');
       case 'teacher-schedule': return t('topbar.teacherSchedule');
-      default: return 'Dashboard';
+      default: return t('sidebar.overview');
     }
   };
 
@@ -306,95 +306,88 @@ function DashboardDeptHead({ user, onLogout }) {
              view === 'evaluations' ? <ManageEvaluations user={user} /> : 
              view === 'reminders' ? <ManageReminders user={user} /> : 
              view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : 
-             view === 'teacher-schedule' ? (
-              <div className="card-academic" style={{ padding: '0', border: 'none', background: 'transparent' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', padding: '0 10px' }}>
-                  <div>
-                    <h3 className="academic-title" style={{ margin: 0, fontSize: '24px' }}>{selectedTeacherName}</h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '4px 0 0 0' }}>{t('topbar.teacherSchedule')}</p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <button onClick={() => setView('list')} className="btn-cancel-pro" style={{ padding: '10px 24px', fontSize: '14px', borderRadius: '12px' }}>
-                      {t('common.backToList')}
-                    </button>
-                  </div>
+             view === 'teacher-schedule' ? (            <div className="card-academic" style={{ borderTop: '4px solid var(--p-indigo)', padding: '32px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                <div>
+                  <h3 className="serif" style={{ margin: 0, fontSize: '26px', color: '#0f172a' }}>{selectedTeacherName}</h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '4px 0 0 0' }}>{t('topbar.teacherSchedule')}</p>
                 </div>
+                <button onClick={() => setView('list')} className="btn-cancel-pro" style={{ padding: '10px 24px', fontSize: '14px', borderRadius: '14px' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                  {t('common.backToList')}
+                </button>
+              </div>
 
-                <div className="schedule-grid-container" style={{ background: 'white', borderRadius: '24px', padding: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.05)', overflowX: 'auto' }}>
-                  <div className="schedule-grid" style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: '100px repeat(6, 1fr)', 
-                    gap: '12px',
-                    minWidth: '1000px'
-                  }}>
-                    {/* Header: Days */}
-                    <div className="grid-header-cell" style={{ background: '#f8fafc', padding: '15px 10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700', color: 'var(--text-main)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      Horaires
+              <div className="schedule-grid-container" style={{ background: '#f8fafc', borderRadius: '24px', padding: '24px', border: '1px solid #e2e8f0', overflowX: 'auto' }}>
+                <div className="schedule-grid" style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: '120px repeat(6, 1fr)', 
+                  gap: '12px',
+                  minWidth: '1000px'
+                }}>
+                  <div className="grid-header-cell" style={{ background: 'white', padding: '15px', borderRadius: '12px', fontSize: '13px', fontWeight: '800', color: 'var(--p-indigo)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', textTransform: 'uppercase' }}>
+                    {t('common.time')}
+                  </div>
+                  {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => (
+                    <div key={day} className="grid-header-cell" style={{ textAlign: 'center', fontWeight: '800', textTransform: 'uppercase', background: 'white', padding: '15px', borderRadius: '12px', fontSize: '13px', color: '#0f172a', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {t(`days.${day}`)}
                     </div>
-                    {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => (
-                      <div key={day} className="grid-header-cell" style={{ textAlign: 'center', fontWeight: '700', textTransform: 'capitalize', background: '#f8fafc', padding: '15px 10px', borderRadius: '10px', fontSize: '13px', color: 'var(--text-main)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {t(`days.${day}`)}
-                      </div>
-                    ))}
+                  ))}
 
-                    {/* Time Slots & Cells */}
-                    {(() => {
-                      const today = new Date();
-                      today.setHours(0,0,0,0);
-                      const currentJsDay = today.getDay();
-                      const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
-                      const currentAcademicIndex = toAcademicIndex(currentJsDay);
-                      const startOfWeek = new Date(today);
-                      startOfWeek.setDate(today.getDate() - currentAcademicIndex);
-                      const endOfWeek = new Date(startOfWeek);
-                      endOfWeek.setDate(startOfWeek.getDate() + 6);
-                      endOfWeek.setHours(23, 59, 59, 999);
+                  {(() => {
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    const currentJsDay = today.getDay();
+                    const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                    const currentAcademicIndex = toAcademicIndex(currentJsDay);
+                    const startOfWeek = new Date(today);
+                    startOfWeek.setDate(today.getDate() - currentAcademicIndex);
+                    const endOfWeek = new Date(startOfWeek);
+                    endOfWeek.setDate(startOfWeek.getDate() + 6);
+                    endOfWeek.setHours(23, 59, 59, 999);
 
-                      const currentWeekSchedule = teacherSchedule.filter(s => {
-                        if (!s.is_extra) return true;
-                        if (!s.session_date) return false;
-                        const sDate = new Date(s.session_date);
-                        return sDate >= startOfWeek && sDate <= endOfWeek;
-                      });
+                    const currentWeekSchedule = teacherSchedule.filter(s => {
+                      if (!s.is_extra) return true;
+                      if (!s.session_date) return false;
+                      const sDate = new Date(s.session_date);
+                      return sDate >= startOfWeek && sDate <= endOfWeek;
+                    });
 
-                      return [
-                        { start: '08:00', end: '09:30' },
-                        { start: '09:35', end: '11:05' },
-                        { start: '11:10', end: '12:40' },
-                        { start: '12:45', end: '14:15' },
-                        { start: '14:20', end: '15:50' },
-                        { start: '15:55', end: '17:25' }
-                      ].map(slot => (
-                        <div key={slot.start} style={{ display: 'contents' }}>
-                          {/* Time label */}
-                          <div style={{ 
-                            fontSize: '12px', 
-                            color: 'var(--text-muted)', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            borderRight: '1px solid #f1f5f9',
-                            padding: '10px 0',
-                            fontWeight: '700'
-                          }}>
-                            {slot.start} - {slot.end}
-                          </div>
-
-                          {/* Day cells for this slot */}
-                          {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => {
-                            const sessionsInSlot = currentWeekSchedule.filter(s => {
-                              const isSameDayAndTime = s.day_of_week === day && s.start_time?.startsWith(slot.start);
-                              return isSameDayAndTime;
-                            });
-
+                    return [
+                      { start: '08:00', end: '09:30' },
+                      { start: '09:35', end: '11:05' },
+                      { start: '11:10', end: '12:40' },
+                      { start: '12:45', end: '14:15' },
+                      { start: '14:20', end: '15:50' },
+                      { start: '15:55', end: '17:25' }
+                    ].map(slot => (
+                      <div key={slot.start} style={{ display: 'contents' }}>
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: '#64748b', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          background: 'white',
+                          borderRadius: '12px',
+                          border: '1px solid #e2e8f0',
+                          padding: '10px',
+                          fontWeight: '700'
+                        }}>
+                          {slot.start} - {slot.end}
+                        </div>
+                        {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => {
+                          const sessionsInSlot = currentWeekSchedule.filter(s => 
+                            s.day_of_week === day && 
+                            s.start_time?.startsWith(slot.start)
+                          );
                           return (
                             <div 
                               key={`${day}-${slot.start}`} 
                               onClick={() => sessionsInSlot.length === 0 && openQuickAdd(day, slot.start)}
-                              className={`grid-slot ${sessionsInSlot.length === 0 ? 'empty-clickable' : ''}`}
                               style={{ 
-                                minHeight: '100px', 
-                                background: '#f8fafc', 
+                                minHeight: '100px',
+                                background: sessionsInSlot.length === 0 ? 'rgba(255,255,255,0.4)' : 'transparent',
                                 borderRadius: '16px',
                                 padding: '8px',
                                 position: 'relative',
@@ -411,7 +404,7 @@ function DashboardDeptHead({ user, onLogout }) {
                               {sessionsInSlot.map(s => (
                                 <div 
                                   key={s.id} 
-                                  className="schedule-card"
+                                  className="schedule-card animate-float"
                                   style={{ 
                                     background: getSessionColor(s.session_type),
                                     position: 'relative',
@@ -419,20 +412,20 @@ function DashboardDeptHead({ user, onLogout }) {
                                     display: 'flex',
                                     flexDirection: 'column',
                                     justifyContent: 'center',
-                                    padding: '10px',
-                                    borderRadius: '12px',
+                                    padding: '12px',
+                                    borderRadius: '14px',
                                     color: 'white',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
                                   }}
                                 >
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); triggerCancelSession(s.id); }}
                                     style={{ 
-                                      position: 'absolute', top: '5px', right: '5px', 
-                                      background: 'rgba(0,0,0,0.1)', border: 'none', borderRadius: '50%', 
-                                      width: '18px', height: '18px', fontSize: '10px', 
+                                      position: 'absolute', top: '8px', right: '8px', 
+                                      background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', 
+                                      width: '20px', height: '20px', fontSize: '10px', 
                                       color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                      zIndex: 2
+                                      zIndex: 2, backdropFilter: 'blur(4px)'
                                     }}
                                   >
                                     ✕
@@ -453,19 +446,19 @@ function DashboardDeptHead({ user, onLogout }) {
                                         zIndex: 3,
                                         letterSpacing: '0.5px'
                                       }}>
-                                        SUPP
+                                        {t('common.extraShort')}
                                       </div>
                                     ) : null}
-                                    <div style={{ fontWeight: '900', textTransform: 'uppercase', opacity: 0.9, fontSize: '10px', letterSpacing: '0.5px', marginBottom: '4px' }}>
-                                      {s.session_type === 'Lecture' ? 'COURS' : s.session_type === 'Tutorial' ? 'TD' : 'TP'}
+                                    <div style={{ fontWeight: '900', textTransform: 'uppercase', opacity: 0.9, fontSize: '9px', letterSpacing: '0.8px', marginBottom: '4px' }}>
+                                      {s.session_type === 'Lecture' ? t('sessions.lecture') : s.session_type === 'Tutorial' ? t('sessions.tutorialTD') : t('sessions.practicalTP')}
                                     </div>
-                                    <div style={{ fontWeight: '800', fontSize: '12px', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <div style={{ fontWeight: '800', fontSize: '13px', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {s.module_name}
                                   </div>
-                                  <div style={{ fontSize: '10px', opacity: 0.8 }}>
-                                    {s.section && `Sec: ${s.section}`} {s.groupe && `Grp: ${s.groupe}`}
+                                  <div style={{ fontSize: '11px', opacity: 0.8, fontWeight: '600' }}>
+                                    {s.section && `S: ${s.section}`} {s.groupe && `G: ${s.groupe}`}
                                   </div>
-                                  <div style={{ fontSize: '10px', fontWeight: '600', opacity: 0.9 }}>
+                                  <div style={{ fontSize: '11px', fontWeight: '800', opacity: 0.9, marginTop: '4px' }}>
                                     {s.start_time.substring(0,5)} - {s.end_time.substring(0,5)}
                                   </div>
                                 </div>
@@ -478,11 +471,14 @@ function DashboardDeptHead({ user, onLogout }) {
                     })()}
                   </div>
                 </div>
+
               </div>
-            ) : (
-              <div className="card-academic">
+            ) :              <div className="card-academic" style={{ borderTop: '4px solid var(--p-indigo)', padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
-                   <h2 className="academic-title" style={{ margin: 0 }}>{t('sidebar.teachers')}</h2>
+                   <div>
+                     <h2 className="serif" style={{ margin: 0, fontSize: '26px', color: '#0f172a' }}>{t('sidebar.teachers')}</h2>
+                     <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '4px 0 0 0' }}>{users.length} {t('deptHead.teachersInDept')}</p>
+                   </div>
                    <div className="mnadm-search-wrapper" style={{ width: '350px' }}>
                      <span className="search-icon">
                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -493,79 +489,56 @@ function DashboardDeptHead({ user, onLogout }) {
                        placeholder={t('common.search')}
                        value={searchTerm}
                        onChange={(e) => setSearchTerm(e.target.value)}
+                       style={{ height: '48px', borderRadius: '14px' }}
                      />
                    </div>
-                </div>                <div className="table-academic-wrapper">
-                   <table className="table-academic">
+                </div>
+
+                <div className="modern-table-wrapper">
+                   <table className="modern-table">
                      <thead>
                        <tr>
-                         <th style={{ width: '80px' }}>{t('common.id') || '#ID'}</th>
                          <th>{t('common.fullName')}</th>
-                         <th>{t('addEmployee.academicGrade')}</th>
-                         <th style={{ textAlign: 'right' }}>{t('common.actions')}</th>
+                         <th>{t('common.grade')}</th>
+                         <th style={{ textAlign: 'center' }}>{t('common.actions')}</th>
                        </tr>
                      </thead>
                      <tbody>
                        {users
-                         .filter(u => {
-                           const fullName = `${u.nom} ${u.prenom}`.toLowerCase();
-                           return fullName.includes(searchTerm.toLowerCase());
-                         })
+                         .filter(u => `${u.nom} ${u.prenom}`.toLowerCase().includes(searchTerm.toLowerCase()))
                          .map(u => (
-                           <tr key={u.id} style={{ cursor: 'pointer' }} onClick={() => fetchTeacherSchedule(u)}>
-                             <td><span className="id-badge">#{u.id}</span></td>
+                           <tr key={u.id} className="table-row-animate" onClick={() => fetchTeacherSchedule(u)} style={{ cursor: 'pointer' }}>
                              <td>
                                <div className="user-profile-cell" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                  <div className="avatar-circle" style={{ 
-                                   width: '40px', 
-                                   height: '40px', 
-                                   borderRadius: '12px', 
-                                   background: 'linear-gradient(135deg, var(--p-indigo), #6366f1)', 
-                                   color: 'white', 
-                                   display: 'flex', 
-                                   alignItems: 'center', 
-                                   justifyContent: 'center', 
-                                   fontWeight: '800', 
-                                   fontSize: '14px',
-                                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                   width: '40px', height: '40px', borderRadius: '12px', 
+                                   background: 'linear-gradient(135deg, var(--p-indigo), #6366f1)', color: 'white', 
+                                   display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                   fontWeight: '800', fontSize: '14px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
                                  }}>
-                                   {u.profile_image ? (
-                                      <img src={`http://localhost:5000${u.profile_image}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} />
-                                   ) : (
-                                      <>{u.nom?.[0] || ''}{u.prenom?.[0] || ''}</>
-                                   )}
+                                   {u.nom[0]}{u.prenom[0]}
                                  </div>
-                                 <div className="user-info" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                   <span className="user-name" style={{ fontWeight: '700', color: '#0f172a', fontSize: '14px' }}>
-                                     {u.nom} {u.prenom}
-                                   </span>
-                                   <span className="user-email" style={{ 
-                                     color: '#64748b', 
-                                     fontSize: '12px', 
-                                     display: 'flex', 
-                                     alignItems: 'center', 
-                                     gap: '4px' 
-                                   }}>
-                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                                     {u.email}
-                                   </span>
+                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                   <span style={{ fontWeight: '700', color: '#0f172a' }}>{u.nom} {u.prenom}</span>
+                                   <span style={{ color: '#64748b', fontSize: '12px' }}>{u.email}</span>
                                  </div>
                                </div>
                              </td>
                              <td>
-                               <span className="grade-tag" style={{ background: '#f8fafc', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', border: '1px solid #e2e8f0', color: '#64748b', fontWeight: '600' }}>
+                               <span className="grade-tag" style={{ background: '#f1f5f9', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '700' }}>
                                  {t('grades.' + (u.grade || 'Teacher'))}
                                </span>
                              </td>
-                             <td style={{ textAlign: 'right' }}>
+                             <td style={{ textAlign: 'center' }}>
                                <button 
                                  className="btn-confirm-pro" 
-                                 style={{ padding: '8px 16px', fontSize: '11px' }}
+                                 style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '10px' }}
                                  onClick={(e) => {
                                    e.stopPropagation();
                                    fetchTeacherSchedule(u);
                                  }}
                                >
+                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                                  {t('deptHead.viewSchedule')}
                                </button>
                              </td>
@@ -575,7 +548,7 @@ function DashboardDeptHead({ user, onLogout }) {
                    </table>
                 </div>
               </div>
-             )}
+            }
           </>
         )}
 
@@ -597,7 +570,7 @@ function DashboardDeptHead({ user, onLogout }) {
               }}>
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
               </div>
-              <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '12px' }}>{t('common.confirmDelete')}</h3>
+              <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '12px' }}>{t('common.confirm')}</h3>
               <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '14px', lineHeight: '1.6' }}>
                 {t('common.confirmDelete')}
               </p>
@@ -642,7 +615,7 @@ function DashboardDeptHead({ user, onLogout }) {
               <form onSubmit={handleQuickAddSubmit}>
                 <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
                   <div className="mnadm-form-group" style={{ flex: 1 }}>
-                    <label className="mnadm-label" style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>Année / Niveau</label>
+                    <label className="mnadm-label" style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>{t('sessions.studyLevel')}</label>
                     <select 
                       className="mnadm-input" 
                       style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}
@@ -687,7 +660,7 @@ function DashboardDeptHead({ user, onLogout }) {
                   </div>
                   <div className="mnadm-form-group" style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '32px' }}>
                     <input type="checkbox" id="is_extra_quick" checked={quickAddForm.is_extra} onChange={e => setQuickAddForm({...quickAddForm, is_extra: e.target.checked})} />
-                    <label htmlFor="is_extra_quick" style={{ fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>SUPP</label>
+                    <label htmlFor="is_extra_quick" style={{ fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>{t('common.extraShort')}</label>
                   </div>
                 </div>
 

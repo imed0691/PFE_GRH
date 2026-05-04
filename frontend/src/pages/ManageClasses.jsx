@@ -9,9 +9,12 @@ function ManageClasses({ user }) {
   // Role-based view selection (no state needed for tabs)
 
 
-  const [activeTab, setActiveTab] = useState('structure');
+  const isDeptHead = user.role === 'DEPARTMENT_HEAD' || user.role === 'CHEF_DEPARTEMENT';
+  const isHR = user.role === 'HR_MANAGER' || user.role === 'RH_MANAGER';
+
+  const [activeTab, setActiveTab] = useState(isDeptHead ? 'teachers' : 'structure');
   const [departments, setDepartments] = useState([]);
-  const [selectedDeptId, setSelectedDeptId] = useState(user.role === 'RH_MANAGER' ? '' : user.department_id);
+  const [selectedDeptId, setSelectedDeptId] = useState(isHR ? '' : user.department_id);
   
   // Tab 1: Structure (Levels, Sections, Groups, Modules)
   const [levels, setLevels] = useState([]);
@@ -135,7 +138,6 @@ function ManageClasses({ user }) {
   // Filter teachers to only show those in the selected department AND match search
   const filteredTeachers = teachers.filter(t => {
     // For Dept Head, strictly match their department. For HR Manager, match selected or show all if none selected.
-    const isDeptHead = user.role === 'CHEF_DEPARTEMENT' || user.role === 'DEPARTMENT_HEAD';
     const matchesDept = isDeptHead 
       ? t.department_id === parseInt(selectedDeptId)
       : (!selectedDeptId || t.department_id === parseInt(selectedDeptId));
@@ -250,386 +252,430 @@ function ManageClasses({ user }) {
   };
 
   return (
-    <div className="manage-classes-container">
-      <h2 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '32px', color: '#0f172a', letterSpacing: '-0.02em' }}>
-        {t('classes.title')}
-      </h2>
-
-      {/* Direct role-based rendering (no tabs needed) */}
-      {user.role === 'RH_MANAGER' && (
-        <>
-          {/* PREMIUM HEADER AREA */}
-          <div style={{ marginBottom: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            
-            {/* PREMIUM SUB-TABS */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div 
-                className={`card-academic ${activeTab === 'structure' ? 'active-tab-card' : ''}`} 
-                onClick={() => setActiveTab('structure')}
-                style={{ 
-                  cursor: 'pointer', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '16px', 
-                  padding: '20px 24px',
-                  border: activeTab === 'structure' ? '2px solid var(--p-indigo)' : '1px solid var(--border-soft)',
-                  background: activeTab === 'structure' ? '#f5f7ff' : 'white',
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                <div style={{ padding: '10px', background: activeTab === 'structure' ? 'var(--p-indigo)' : '#f1f5f9', color: activeTab === 'structure' ? 'white' : '#64748b', borderRadius: '12px', transition: 'all 0.3s ease' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                </div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: activeTab === 'structure' ? 'var(--p-indigo)' : '#1e293b' }}>{t('classes.tabStructure')}</h4>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#64748b', fontWeight: '500' }}>{t('classes.tabStructureSubtitle')}</p>
-                </div>
-              </div>
-
-              <div 
-                className={`card-academic ${activeTab === 'modules' ? 'active-tab-card' : ''}`} 
-                onClick={() => setActiveTab('modules')}
-                style={{ 
-                  cursor: 'pointer', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '16px', 
-                  padding: '20px 24px',
-                  border: activeTab === 'modules' ? '2px solid var(--p-indigo)' : '1px solid var(--border-soft)',
-                  background: activeTab === 'modules' ? '#f5f7ff' : 'white',
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                <div style={{ padding: '10px', background: activeTab === 'modules' ? 'var(--p-indigo)' : '#f1f5f9', color: activeTab === 'modules' ? 'white' : '#64748b', borderRadius: '12px', transition: 'all 0.3s ease' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                </div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: activeTab === 'modules' ? 'var(--p-indigo)' : '#1e293b' }}>{t('classes.tabModules')}</h4>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#64748b', fontWeight: '500' }}>{t('classes.tabModulesSubtitle')}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* DEPT SELECTION CARD */}
-            <div className="card-academic" style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '24px', width: 'fit-content', minWidth: '400px', maxWidth: '100%' }}>
-              <div style={{ padding: '12px', background: '#eff6ff', borderRadius: '16px', color: 'var(--p-indigo)' }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-              </div>
-              <div style={{ flex: 1 }}>
-                <label className="mnadm-label" style={{ marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('classes.chooseDept')}</label>
-                <select className="mnadm-input" value={selectedDeptId} onChange={e => setSelectedDeptId(e.target.value)} style={{ fontWeight: '800', border: 'none', background: '#f8fafc', padding: '10px 14px', width: '100%', minWidth: '250px' }}>
-                  <option value="">{t('classes.selectDept')}</option>
-                  {departments.map(d => {
-                    const translated = t('departments.' + d.name);
-                    return (
-                      <option key={d.id} value={d.id}>
-                        {translated.includes('.') ? d.name : translated}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-            </div>
-
+    <div className="animate-mnadm">
+      {/* Header Section */}
+      <div className="card-academic" style={{ borderTop: '4px solid var(--p-indigo)', padding: '32px', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+          <div>
+            <h3 className="serif" style={{ margin: 0, fontSize: '28px', color: '#0f172a' }}>{t('classes.title') || 'Gestion des Classes'}</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '15px', margin: '4px 0 0 0', fontWeight: '500' }}>{t('classes.subtitle') || 'Organisez la structure académique et gérez les attributions.'}</p>
           </div>
+          
+          <div style={{ display: 'flex', gap: '12px', background: '#f1f5f9', padding: '6px', borderRadius: '16px' }}>
+            {!isDeptHead && (
+              <>
+                <button 
+                  onClick={() => setActiveTab('structure')}
+                  style={{ 
+                    padding: '10px 24px', borderRadius: '12px', border: 'none', fontSize: '14px', fontWeight: '800', cursor: 'pointer',
+                    background: activeTab === 'structure' ? 'white' : 'transparent',
+                    color: activeTab === 'structure' ? 'var(--p-indigo)' : '#64748b',
+                    boxShadow: activeTab === 'structure' ? '0 4px 6px -1px rgba(0,0,0,0.05)' : 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {t('classes.tabStructure') || 'MANAGE CLASSES'}
+                </button>
+                <button 
+                  onClick={() => setActiveTab('curriculum')}
+                  style={{ 
+                    padding: '10px 24px', borderRadius: '12px', border: 'none', fontSize: '14px', fontWeight: '800', cursor: 'pointer',
+                    background: activeTab === 'curriculum' ? 'white' : 'transparent',
+                    color: activeTab === 'curriculum' ? 'var(--p-indigo)' : '#64748b',
+                    boxShadow: activeTab === 'curriculum' ? '0 4px 6px -1px rgba(0,0,0,0.05)' : 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {t('classes.tabModules') || 'CURRICULUM'}
+                </button>
+              </>
+            )}
+            {!isHR && (
+              <button 
+                onClick={() => setActiveTab('teachers')}
+                style={{ 
+                  padding: '10px 24px', borderRadius: '12px', border: 'none', fontSize: '14px', fontWeight: '800', cursor: 'pointer',
+                  background: activeTab === 'teachers' ? 'white' : 'transparent',
+                  color: activeTab === 'teachers' ? 'var(--p-indigo)' : '#64748b',
+                  boxShadow: activeTab === 'teachers' ? '0 4px 6px -1px rgba(0,0,0,0.05)' : 'none',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {t('classes.teacherAssignments') || 'ATTRIBUTIONS'}
+              </button>
+            )}
+          </div>
+        </div>
 
-          <div className="explorer-container" style={{ gridTemplateColumns: activeTab === 'modules' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)' }}>
+        {(user.role === 'RH_MANAGER' || user.role === 'ADMIN') && (
+          <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #f1f5f9' }}>
+            <label className="mnadm-label" style={{ marginBottom: '12px' }}>{t('addEmployee.department')}</label>
+            <select 
+              className="mnadm-input" 
+              value={selectedDeptId} 
+              onChange={e => setSelectedDeptId(e.target.value)}
+              style={{ maxWidth: '400px', borderRadius: '14px', fontWeight: '800', background: '#f8fafc' }}
+            >
+              <option value="">{t('addEmployee.selectDepartment')}</option>
+              {departments.map(d => (
+                <option key={d.id} value={d.id}>{t('departments.' + d.name).includes('.') ? d.name : t('departments.' + d.name)}</option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {activeTab === 'structure' && (
+        <div className="card-academic" style={{ padding: '32px', minHeight: '600px' }}>
+          <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
             
-            {/* COLUMN 1: LEVELS (Universal) */}
-            <div className={`explorer-column ${!selectedDeptId ? 'disabled' : ''}`}>
-              <div className="explorer-header">
-                <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> {t('classes.levels')}</h3>
+            {/* COLUMN 1: LEVELS */}
+            <div style={{ flex: 1, minWidth: '300px' }}>
+              <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--p-indigo-light)', color: 'var(--p-indigo)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+                </div>
+                <h4 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1e293b' }}>{t('classes.levels')}</h4>
               </div>
-              <div className="explorer-list">
-                {!selectedDeptId ? (
-                  <div style={{ padding: '20px', color: 'var(--text-muted)', textAlign: 'center', fontSize: '13px' }}>{t('classes.selectDeptFirst')}</div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc', padding: '12px', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
+                {levels.length === 0 ? (
+                  <div style={{ padding: '40px 20px', color: '#94a3b8', textAlign: 'center', fontSize: '14px' }}>{selectedDeptId ? (t('classes.noLevels') || 'Aucun niveau défini') : (t('classes.selectDeptFirst') || 'Veuillez sélectionner un département.')}</div>
                 ) : levels.map(l => (
-                  <div key={l.id} className={`explorer-item ${selectedLevelId == l.id ? 'active' : ''}`} onClick={() => setSelectedLevelId(l.id)}>
-                    <strong>{l.name}</strong>
-                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('levels', l.id); }} className="btn-delete-pro" style={{ padding: '4px 8px', fontSize: '10px' }}>
-                      {t('common.delete')}
+                  <div 
+                    key={l.id} 
+                    onClick={() => setSelectedLevelId(l.id)}
+                    style={{ 
+                      padding: '14px 20px', borderRadius: '14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s ease',
+                      background: selectedLevelId == l.id ? 'white' : 'transparent',
+                      border: selectedLevelId == l.id ? '2px solid var(--p-indigo)' : '1px solid transparent',
+                      boxShadow: selectedLevelId == l.id ? '0 10px 15px -3px rgba(0,0,0,0.04)' : 'none',
+                    }}
+                  >
+                    <span style={{ fontWeight: '800', color: selectedLevelId == l.id ? 'var(--p-indigo)' : '#475569' }}>{l.name}</span>
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('levels', l.id); }} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                   </div>
                 ))}
-              </div>
-              <div className="explorer-footer">
-                <form onSubmit={handleAddLevel} style={{ display: 'flex', gap: '8px', position: 'relative' }}>
-                  <input type="text" className="mnadm-input" value={newLevelName} onChange={e => setNewLevelName(e.target.value)} placeholder={t('classes.addLevelPlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required disabled={!selectedDeptId} />
-                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                  </span>
-                  <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }} disabled={!selectedDeptId}>{t('classes.addBtn')}</button>
+                
+                <form onSubmit={handleAddLevel} style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                  <input 
+                    type="text" className="mnadm-input" value={newLevelName} 
+                    onChange={e => setNewLevelName(e.target.value)} 
+                    placeholder={t('classes.addLevelPlaceholder')} 
+                    style={{ borderRadius: '12px', fontSize: '13px', background: 'white' }} 
+                    required 
+                    disabled={!selectedDeptId}
+                  />
+                  <button type="submit" className="btn-confirm-pro" style={{ width: '44px', height: '44px', borderRadius: '12px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }} disabled={!selectedDeptId}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  </button>
                 </form>
               </div>
             </div>
 
-            {(!activeTab || activeTab === 'structure') ? (
-              <>
-                {/* COLUMN 2: SECTIONS */}
-                <div className={`explorer-column ${!selectedLevelId ? 'disabled' : ''}`}>
-                  <div className="explorer-header">
-                    <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg> {t('classes.sections')}</h3>
+            {/* COLUMN 2: SECTIONS & GROUPS */}
+            <div style={{ flex: 2, minWidth: '400px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                {/* SECTIONS */}
+                <div>
+                  <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--p-indigo-light)', color: 'var(--p-indigo)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    </div>
+                    <h4 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1e293b' }}>{t('classes.sections')}</h4>
                   </div>
-                  <div className="explorer-list">
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc', padding: '12px', borderRadius: '20px', border: '1px solid #e2e8f0', opacity: selectedLevelId ? 1 : 0.5 }}>
                     {!selectedLevelId ? (
-                      <div style={{ padding: '20px', color: 'var(--text-muted)', textAlign: 'center', fontSize: '13px' }}>{t('classes.selectLevelFirst')}</div>
-                    ) : sections.map(s => (
-                      <div key={s.id} className={`explorer-item ${selectedSectionId == s.id ? 'active' : ''}`} onClick={() => setSelectedSectionId(s.id)}>
-                        <strong>{s.name}</strong>
-                        <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('sections', s.id); }} className="btn-delete-pro" style={{ padding: '4px 8px', fontSize: '10px' }}>
-                          {t('common.delete')}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="explorer-footer">
-                    <form onSubmit={handleAddSection} style={{ display: 'flex', gap: '8px', position: 'relative' }}>
-                      <input type="text" className="mnadm-input" value={newSectionName} onChange={e => setNewSectionName(e.target.value)} placeholder={t('classes.addSectionPlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required disabled={!selectedLevelId} />
-                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                      </span>
-                      <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }} disabled={!selectedLevelId}>{t('classes.addBtn')}</button>
-                    </form>
+                      <div style={{ padding: '40px 20px', color: '#94a3b8', textAlign: 'center', fontSize: '14px' }}>{t('classes.selectLevelFirst')}</div>
+                    ) : (
+                      <>
+                        {sections.map(s => (
+                          <div 
+                            key={s.id} 
+                            onClick={() => setSelectedSectionId(s.id)}
+                            style={{ 
+                              padding: '14px 20px', borderRadius: '14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s ease',
+                              background: selectedSectionId == s.id ? 'white' : 'transparent',
+                              border: selectedSectionId == s.id ? '2px solid var(--p-indigo)' : '1px solid transparent',
+                              boxShadow: selectedSectionId == s.id ? '0 10px 15px -3px rgba(0,0,0,0.04)' : 'none',
+                            }}
+                          >
+                            <span style={{ fontWeight: '800', color: selectedSectionId == s.id ? 'var(--p-indigo)' : '#475569' }}>{s.name}</span>
+                            <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('sections', s.id); }} style={{ background: 'transparent', border: 'none', color: '#94a3b8' }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                          </div>
+                        ))}
+                        <form onSubmit={handleAddSection} style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                          <input type="text" className="mnadm-input" value={newSectionName} onChange={e => setNewSectionName(e.target.value)} placeholder={t('classes.addSectionPlaceholder')} style={{ borderRadius: '12px', fontSize: '13px', background: 'white' }} required />
+                          <button type="submit" className="btn-confirm-pro" style={{ width: '44px', height: '44px', borderRadius: '12px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                          </button>
+                        </form>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                {/* COLUMN 3: GROUPS */}
-                <div className={`explorer-column ${!selectedSectionId ? 'disabled' : ''}`}>
-                  <div className="explorer-header">
-                    <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> {t('classes.groups')}</h3>
-                  </div>
-                  <div className="explorer-list">
-                    {!selectedSectionId ? (
-                      <div style={{ padding: '20px', color: 'var(--text-muted)', textAlign: 'center', fontSize: '13px' }}>{t('classes.selectSectionFirst')}</div>
-                    ) : groups.map(g => (
-                      <div key={g.id} className="explorer-item">
-                        <strong>{g.name}</strong>
-                        <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('groups', g.id); }} className="btn-delete-pro" style={{ padding: '4px 8px', fontSize: '10px' }}>
-                          {t('common.delete')}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="explorer-footer">
-                    <form onSubmit={handleAddGroup} style={{ display: 'flex', gap: '8px', position: 'relative' }}>
-                      <input type="text" className="mnadm-input" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t('classes.addGroupPlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required disabled={!selectedSectionId} />
-                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                      </span>
-                      <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }} disabled={!selectedSectionId}>{t('classes.addBtn')}</button>
-                    </form>
-                  </div>
-                </div>
-              </>
-            ) : (
-              /* COLUMN 2: MODULES (CURRICULUM VIEW) */
-              <div className={`explorer-column ${!selectedLevelId ? 'disabled' : ''}`} style={{ flex: '2' }}>
-                <div className="explorer-header">
-                  <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> {t('classes.modules')}</h3>
-                </div>
-                <div className="explorer-list">
-                  {!selectedLevelId ? (
-                    <div style={{ padding: '20px', color: 'var(--text-muted)', textAlign: 'center', fontSize: '13px' }}>{t('classes.selectLevelFirst')}</div>
-                  ) : modules.map(m => (
-                    <div key={m.id} className="explorer-item">
-                      <strong>{m.name}</strong>
-                      <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('modules', m.id); }} className="btn-delete-pro" style={{ padding: '4px 8px', fontSize: '10px' }}>
-                        {t('common.delete')}
-                      </button>
+                {/* GROUPS */}
+                <div>
+                  <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--p-indigo-light)', color: 'var(--p-indigo)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                     </div>
-                  ))}
-                </div>
-                <div className="explorer-footer">
-                  <form onSubmit={handleAddModule} style={{ display: 'flex', gap: '8px', position: 'relative' }}>
-                    <input type="text" className="mnadm-input" value={newModuleName} onChange={e => setNewModuleName(e.target.value)} placeholder={t('classes.addModulePlaceholder')} style={{ fontSize: '13px', padding: '12px 12px 12px 36px' }} required disabled={!selectedLevelId} />
-                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    </span>
-                    <button type="submit" className="btn-confirm-pro" style={{ padding: '0 16px', height: '42px', borderRadius: '12px' }} disabled={!selectedLevelId}>{t('classes.addBtn')}</button>
-                  </form>
+                    <h4 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1e293b' }}>{t('classes.groups')}</h4>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc', padding: '12px', borderRadius: '20px', border: '1px solid #e2e8f0', opacity: selectedSectionId ? 1 : 0.5 }}>
+                    {!selectedSectionId ? (
+                      <div style={{ padding: '40px 20px', color: '#94a3b8', textAlign: 'center', fontSize: '14px' }}>{t('classes.selectSectionFirst')}</div>
+                    ) : (
+                      <>
+                        {groups.map(g => (
+                          <div 
+                            key={g.id} 
+                            style={{ 
+                              padding: '14px 20px', borderRadius: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s ease',
+                              background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                            }}
+                          >
+                            <span style={{ fontWeight: '800', color: '#475569' }}>{g.name}</span>
+                            <button onClick={() => handleDeleteClick('groups', g.id)} style={{ background: 'transparent', border: 'none', color: '#94a3b8' }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                          </div>
+                        ))}
+                        <form onSubmit={handleAddGroup} style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                          <input type="text" className="mnadm-input" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t('classes.addGroupPlaceholder')} style={{ borderRadius: '12px', fontSize: '13px', background: 'white' }} required />
+                          <button type="submit" className="btn-confirm-pro" style={{ width: '44px', height: '44px', borderRadius: '12px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                          </button>
+                        </form>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
-
+            </div>
           </div>
-        </>
+        </div>
       )}
 
-
-      {(user.role === 'CHEF_DEPARTEMENT' || user.role === 'DEPARTMENT_HEAD') && (
-        <div className="mc-grid">
-          
-          {/* Left Column: Teacher Selection */}
-          <div className="teacher-selection-card">
-            <h3 className="section-header-pro" style={{ marginBottom: '20px', fontSize: '18px', fontWeight: '800' }}>
-              {t('classes.chooseTeacher')}
-            </h3>
-            
-            {/* Premium Search Bar */}
-            <div className="mnadm-search-wrapper" style={{ marginBottom: '20px' }}>
-              <span className="search-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              </span>
-              <input 
-                type="text" 
-                className="mnadm-input" 
-                placeholder={t('common.search') || 'Rechercher...'} 
-                value={teacherSearch}
-                onChange={(e) => setTeacherSearch(e.target.value)}
-                style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px' }}
-              />
+      {activeTab === 'curriculum' && (
+        <div className="card-academic" style={{ padding: '32px', minHeight: '600px' }}>
+          <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
+            {/* COLUMN 1: LEVELS (Shared) */}
+            <div style={{ flex: 1, minWidth: '300px' }}>
+              <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--p-indigo-light)', color: 'var(--p-indigo)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+                </div>
+                <h4 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1e293b' }}>{t('classes.levels')}</h4>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc', padding: '12px', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
+                {levels.length === 0 ? (
+                  <div style={{ padding: '40px 20px', color: '#94a3b8', textAlign: 'center', fontSize: '14px' }}>{selectedDeptId ? (t('classes.noLevels') || 'Aucun niveau défini') : (t('classes.selectDeptFirst') || 'Veuillez sélectionner un département.')}</div>
+                ) : levels.map(l => (
+                  <div 
+                    key={l.id} 
+                    onClick={() => setSelectedLevelId(l.id)}
+                    style={{ 
+                      padding: '14px 20px', borderRadius: '14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s ease',
+                      background: selectedLevelId == l.id ? 'white' : 'transparent',
+                      border: selectedLevelId == l.id ? '2px solid var(--p-indigo)' : '1px solid transparent',
+                      boxShadow: selectedLevelId == l.id ? '0 10px 15px -3px rgba(0,0,0,0.04)' : 'none',
+                    }}
+                  >
+                    <span style={{ fontWeight: '800', color: selectedLevelId == l.id ? 'var(--p-indigo)' : '#475569' }}>{l.name}</span>
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick('levels', l.id); }} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="teacher-list-scroll">
+            {/* COLUMN 2: MODULES */}
+            <div style={{ flex: 2, minWidth: '400px' }}>
+              <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--p-indigo-light)', color: 'var(--p-indigo)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                </div>
+                <h4 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1e293b' }}>{t('classes.modules')}</h4>
+              </div>
+
+              <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '24px', border: '1px solid #e2e8f0', opacity: selectedLevelId ? 1 : 0.5 }}>
+                {!selectedLevelId ? (
+                  <div style={{ padding: '40px 20px', color: '#94a3b8', textAlign: 'center', fontSize: '14px' }}>{t('classes.selectLevelFirst')}</div>
+                ) : (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                      {modules.map(m => (
+                        <div 
+                          key={m.id} 
+                          style={{ 
+                            padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)'
+                          }}
+                        >
+                          <span style={{ fontWeight: '800', color: '#1e293b', fontSize: '13px' }}>{m.name}</span>
+                          <button onClick={() => handleDeleteClick('modules', m.id)} style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', width: '28px', height: '28px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <form onSubmit={handleAddModule} style={{ marginTop: '24px', display: 'flex', gap: '12px', maxWidth: '400px' }}>
+                      <input type="text" className="mnadm-input" value={newModuleName} onChange={e => setNewModuleName(e.target.value)} placeholder={t('classes.addModulePlaceholder')} style={{ borderRadius: '14px', fontSize: '13px', background: 'white' }} required />
+                      <button type="submit" className="btn-confirm-pro" style={{ width: '48px', height: '48px', borderRadius: '14px', flexShrink: 0, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                      </button>
+                    </form>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'teachers' && (user.role !== 'RH_MANAGER' && user.role !== 'HR_MANAGER') && (
+        <div className="animate-mnadm" style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '32px' }}>
+          {/* Left Column: Teacher List */}
+          <div className="card-academic" style={{ padding: '24px', height: 'fit-content', position: 'sticky', top: '20px' }}>
+            <h4 className="serif" style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '24px' }}>{t('classes.chooseTeacher') || 'Enseignants'}</h4>
+            
+            <div style={{ position: 'relative', marginBottom: '24px' }}>
+              <input 
+                type="text" className="mnadm-input" placeholder={t('common.search')} value={teacherSearch}
+                onChange={e => setTeacherSearch(e.target.value)}
+                style={{ paddingLeft: '44px', borderRadius: '14px', background: '#f8fafc', fontSize: '13px' }}
+              />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '600px', overflowY: 'auto', paddingRight: '8px' }}>
               {filteredTeachers.map(prof => (
                 <div 
                   key={prof.id} 
-                  className={`teacher-item-card ${selectedTeacherId === prof.id ? 'active' : ''}`}
                   onClick={() => setSelectedTeacherId(prof.id)}
+                  style={{ 
+                    padding: '16px', borderRadius: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px', transition: 'all 0.2s ease',
+                    background: selectedTeacherId == prof.id ? 'var(--p-indigo-light)' : 'white',
+                    border: selectedTeacherId == prof.id ? '1px solid var(--p-indigo)' : '1px solid #f1f5f9',
+                    boxShadow: selectedTeacherId == prof.id ? '0 10px 15px -3px rgba(99, 102, 241, 0.08)' : 'none'
+                  }}
                 >
-                  <div className="teacher-avatar-pro">
-                    {prof.profile_image ? (
-                      <img src={`http://localhost:5000${prof.profile_image}`} alt="" style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} />
-                    ) : (
-                      <>{prof.nom?.[0]}{prof.prenom?.[0]}</>
-                    )}
+                  <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'var(--p-indigo)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '14px' }}>
+                    {prof.nom?.[0]}{prof.prenom?.[0]}
                   </div>
-                  <div className="teacher-info-pro">
-                    <span className="name">{prof.nom} {prof.prenom}</span>
-                    <span className="grade">{t('grades.' + (prof.grade || 'Teacher'))}</span>
+                  <div>
+                    <div style={{ fontWeight: '800', color: '#1e293b', fontSize: '14px' }}>{prof.prenom} {prof.nom}</div>
+                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.02em', marginTop: '2px' }}>{t('grades.' + (prof.grade || 'Teacher'))}</div>
                   </div>
-                  {selectedTeacherId === prof.id && (
-                    <div style={{ marginLeft: 'auto', color: 'var(--p-indigo)' }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    </div>
-                  )}
                 </div>
               ))}
-              {filteredTeachers.length === 0 && (
-                <div className="empty-state-pro" style={{ padding: '20px' }}>
-                   <p style={{ fontSize: '13px' }}>{t('common.noResults')}</p>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Right Column: Module Assignment */}
-          <div className="assignment-section">
-            
-            {/* Step 1: Available Modules */}
-            <div className="assignment-card amber">
-              <div className="section-header-pro">
-                <div>
-                  <h3>{t('classes.assignModules')}</h3>
-                  <p style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
-                    {selectedTeacherId ? t('classes.assignModulesSubtitle') || 'Sélectionnez des modules pour ce professeur' : t('classes.selectTeacherFirst')}
-                  </p>
-                </div>
+          {/* Right Column: Attribution Area */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            {/* Step 1: Available Modules Selection */}
+            <div className="card-academic" style={{ padding: '32px', opacity: selectedTeacherId ? 1 : 0.6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', paddingBottom: '20px', borderBottom: '1px solid #f1f5f9' }}>
+                <h4 className="serif" style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#0f172a' }}>{t('classes.tabTeachers')}</h4>
                 {selectedTeacherId && (
-                  <div className="badge-pro badge-pro-info" style={{ textTransform: 'none', fontSize: '12px' }}>
-                    {filteredTeachers.find(p => p.id === selectedTeacherId)?.nom} {filteredTeachers.find(p => p.id === selectedTeacherId)?.prenom}
-                  </div>
+                  <span className="badge-pro" style={{ padding: '6px 16px', borderRadius: '10px' }}>
+                    {filteredTeachers.find(p => p.id === selectedTeacherId)?.prenom} {filteredTeachers.find(p => p.id === selectedTeacherId)?.nom}
+                  </span>
                 )}
               </div>
 
-              <div style={{ opacity: selectedTeacherId ? 1 : 0.5, pointerEvents: selectedTeacherId ? 'auto' : 'none' }}>
-                <div style={{ marginBottom: '24px', display: 'flex', gap: '16px', alignItems: 'center' }}>
-                  <div style={{ flex: 1 }}>
-                    <label className="mnadm-label">{t('classes.studyLevel')}</label>
-                    <select className="mnadm-input" value={selectedLevelId} onChange={e => setSelectedLevelId(e.target.value)} style={{ borderRadius: '14px', background: '#f8fafc' }}>
+              {!selectedTeacherId ? (
+                <div style={{ padding: '60px', textAlign: 'center', color: '#94a3b8' }}>
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '20px' }}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 8 19 10 23 6"></polyline></svg>
+                  <p style={{ fontWeight: '600' }}>{t('classes.selectTeacherFirst')}</p>
+                </div>
+              ) : (
+                <>
+                  <div style={{ marginBottom: '32px' }}>
+                    <label className="mnadm-label" style={{ marginBottom: '12px' }}>{t('classes.filterByLevel')}</label>
+                    <select 
+                      className="mnadm-input" value={selectedLevelId} onChange={e => setSelectedLevelId(e.target.value)}
+                      style={{ maxWidth: '300px', borderRadius: '12px', fontWeight: '800', background: '#f8fafc' }}
+                    >
                       <option value="">{t('common.all')}</option>
                       {levels.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                     </select>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <label className="mnadm-label">{t('common.search')}</label>
-                    <input 
-                      type="text" 
-                      placeholder={t('common.searchModule') || 'Filtrer les modules...'} 
-                      className="mnadm-input" 
-                      style={{ borderRadius: '14px', background: '#f8fafc' }}
-                      onChange={(e) => {
-                        const term = e.target.value.toLowerCase();
-                        const container = document.getElementById('available-modules-container');
-                        if (container) {
-                          const pills = container.querySelectorAll('.module-pill');
-                          pills.forEach(pill => {
-                            const text = pill.textContent.toLowerCase();
-                            pill.style.display = text.includes(term) ? 'flex' : 'none';
-                          });
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-                
-                {modules.length > 0 ? (
-                  <div id="available-modules-container" className="module-grid-pro">
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
                     {modules.map(m => {
                       const isAssigned = teacherModules.some(tm => tm.id === m.id);
                       return (
                         <button 
                           key={m.id} 
-                          onClick={() => isAssigned ? handleUnassignModule(m.id) : handleAssignModule(m.id)} 
-                          className={`module-pill ${isAssigned ? 'active' : ''}`}
+                          onClick={() => isAssigned ? handleUnassignModule(m.id) : handleAssignModule(m.id)}
+                          style={{ 
+                            padding: '16px', borderRadius: '16px', border: 'none', cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', fontSize: '13px', fontWeight: '800', textAlign: 'left',
+                            background: isAssigned ? 'var(--p-indigo)' : 'white',
+                            color: isAssigned ? 'white' : '#475569',
+                            boxShadow: isAssigned ? '0 10px 15px -3px rgba(99, 102, 241, 0.25)' : '0 2px 4px rgba(0,0,0,0.02)',
+                            border: isAssigned ? 'none' : '1px solid #e2e8f0',
+                            transform: isAssigned ? 'scale(1.02)' : 'scale(1)'
+                          }}
                         >
-                          <span style={{ fontSize: '16px' }}>{isAssigned ? '✓' : '+'}</span>
+                          <div style={{ marginBottom: '8px', opacity: 0.8 }}>{isAssigned ? '✓ ' + t('common.completed') : '+ ' + t('common.new')}</div>
                           {m.name}
                         </button>
                       );
                     })}
                   </div>
-                ) : (
-                  <div className="empty-state-pro" style={{ padding: '20px', border: '1px dashed #e2e8f0', borderRadius: '16px' }}>
-                    <p style={{ fontSize: '13px' }}>{selectedLevelId ? t('classes.noModulesInLevel') : t('classes.selectLevelToSeeModules')}</p>
-                  </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
 
-            {/* Step 2: Taught Modules */}
-            <div className="assignment-card emerald">
-              <div className="section-header-pro">
-                <h3>{t('classes.taughtModules')}</h3>
-                <div className="badge-pro badge-pro-success">
-                  {teacherModules.length} Modules
-                </div>
+            {/* Step 2: Currently Assigned List */}
+            <div className="card-academic" style={{ padding: '32px', borderTop: '4px solid #16a34a' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h4 className="serif" style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#0f172a' }}>{t('classes.tabTeachers')}</h4>
+                <span style={{ background: '#dcfce7', color: '#16a34a', padding: '6px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: '900' }}>
+                  {teacherModules.length} {t('sidebar.classes').toUpperCase()}
+                </span>
               </div>
 
-              <div className="taught-list-pro" style={{ opacity: selectedTeacherId ? 1 : 0.5 }}>
-                {teacherModules.map(tm => (
-                  <div key={tm.id} className="taught-item-pro">
-                    <div className="taught-info-pro">
-                      <div className="taught-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                      </div>
-                      <div className="taught-details-pro">
-                        <strong>{tm.name}</strong>
-                        <span>{tm.study_level}</span>
-                      </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {teacherModules.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic', background: '#f8fafc', borderRadius: '20px' }}>
+                    {t('classes.noModulesAssigned')}
+                  </div>
+                ) : teacherModules.map(tm => (
+                  <div 
+                    key={tm.id} 
+                    style={{ 
+                      padding: '16px 24px', borderRadius: '20px', background: 'white', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: '800', color: '#1e293b', fontSize: '15px' }}>{tm.name}</div>
+                      <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginTop: '2px' }}>{tm.study_level}</div>
                     </div>
                     <button 
                       onClick={() => handleUnassignModule(tm.id)} 
-                      className="btn-confirm-pro" 
-                      style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '12px', background: '#ef4444', border: 'none' }}
+                      style={{ padding: '8px 16px', borderRadius: '10px', background: '#fee2e2', color: '#ef4444', border: 'none', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}
                     >
                       {t('common.delete')}
                     </button>
                   </div>
                 ))}
-                {teacherModules.length === 0 && (
-                  <div className="empty-state-pro">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }}><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-                    <p style={{ fontStyle: 'italic' }}>{t('classes.noModulesAssigned')}</p>
-                  </div>
-                )}
               </div>
             </div>
-
           </div>
-
         </div>
-
       )}
 
       <ConfirmModal 
