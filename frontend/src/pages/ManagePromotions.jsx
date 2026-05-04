@@ -362,26 +362,127 @@ function ManagePromotions({ user }) {
                     <h3 className="serif" style={{ margin: 0, fontSize: '20px' }}>{t('common.details')} - {showHistory.nom}</h3>
                     <button onClick={() => setShowHistory(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', padding: '8px', borderRadius: '12px', cursor: 'pointer' }}>✕</button>
                 </div>
-                <div style={{ padding: '32px', maxHeight: '70vh', overflowY: 'auto' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        {showHistory.dept_head_recommendation && (
-                            <div style={{ borderLeft: '4px solid var(--p-indigo)', paddingLeft: '16px' }}>
-                                <div style={{ fontWeight: '800', color: 'var(--p-indigo)', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px' }}>{t('roles.DEPARTMENT_HEAD')}</div>
-                                <div style={{ color: '#475569', lineHeight: '1.6', fontSize: '14px', whiteSpace: 'pre-wrap' }}>{showHistory.dept_head_recommendation}</div>
+                <div style={{ padding: '32px 40px', maxHeight: '70vh', overflowY: 'auto', background: '#ffffff' }}>
+                    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                        {/* Vertical Progress Line */}
+                        <div style={{ position: 'absolute', left: '11px', top: '5px', bottom: '5px', width: '2px', background: '#e2e8f0', zIndex: 1 }}></div>
+
+                        {(() => {
+                             const getRoleText = (raw, roleType) => {
+                                 if (!raw) return null;
+                                 
+                                 // Normalize strings to remove accents for matching
+                                 const normalize = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                                 const nRaw = normalize(raw);
+                                 
+                                 const markers = [
+                                     { key: 'vr', labels: ['vice-recteur', 'vice recteur'] },
+                                     { key: 'vd', labels: ['vice-doyen', 'vice doyen', 'vicedoyen'] },
+                                     { key: 'chef', labels: ['chef dept', 'chef de departement', 'chef dept:'] },
+                                     { key: 'dean', labels: ['doyen', 'dean'] },
+                                     { key: 'rh', labels: ['rh', 'hr', 'ressources humaines'] }
+                                 ];
+
+                                 const currentMarker = markers.find(m => m.key === roleType);
+                                 if (!currentMarker) return null;
+
+                                 // Find where current role starts, ensuring we don't match "Doyen" inside "Vice-Doyen"
+                                 let startIdx = -1;
+                                 for (const lbl of currentMarker.labels) {
+                                     let found = nRaw.indexOf(lbl);
+                                     
+                                     // SPECIAL FIX: If we are looking for "Doyen", check it's not "Vice-Doyen"
+                                     if (roleType === 'dean' && found !== -1) {
+                                         const isViceDoyen = nRaw.indexOf('vice-doyen') !== -1 && nRaw.indexOf('vice-doyen') <= found && found < nRaw.indexOf('vice-doyen') + 10;
+                                         if (isViceDoyen) {
+                                             // Try to find the REAL "Doyen" later in the string
+                                             found = nRaw.indexOf(lbl, found + 10);
+                                         }
+                                     }
+
+                                     if (found !== -1) {
+                                         const colonIdx = raw.indexOf(':', found);
+                                         if (colonIdx !== -1) {
+                                             startIdx = colonIdx + 1;
+                                             break;
+                                         }
+                                     }
+                                 }
+
+                                 if (startIdx === -1) {
+                                     // If the raw string is just the value (no markers), return it if it matches the field
+                                     if (!raw.includes(':')) return raw;
+                                     return null;
+                                 }
+
+                                 // Find where ANY other marker starts after startIdx
+                                 let endIdx = raw.length;
+                                 markers.forEach(m => {
+                                     m.labels.forEach(lbl => {
+                                         const found = nRaw.indexOf(lbl, startIdx);
+                                         if (found !== -1 && found < endIdx) {
+                                             endIdx = found;
+                                         }
+                                     });
+                                 });
+
+                                 const result = raw.substring(startIdx, endIdx).trim();
+                                 return result || null;
+                             };
+
+                            const rawDept = showHistory.dept_head_recommendation;
+                            const rawVD = showHistory.evaluation_score_text || rawDept;
+                            const rawDean = showHistory.dean_recommendation || rawDept;
+
+                            const deptText = getRoleText(rawDept, 'chef');
+                            const vdText = getRoleText(rawVD, 'vd') || getRoleText(rawDept, 'vd');
+                            const deanText = getRoleText(rawDean, 'dean') || getRoleText(rawDept, 'dean');
+
+                            return (
+                                <>
+                                    {/* Step 1: Head of Dept */}
+                                    <div style={{ position: 'relative', zIndex: 2, paddingLeft: '40px' }}>
+                                        <div style={{ position: 'absolute', left: '0', top: '2px', width: '24px', height: '24px', background: deptText ? 'var(--p-indigo)' : '#cbd5e1', borderRadius: '50%', border: '4px solid white', boxShadow: '0 0 0 2px #f1f5f9' }}></div>
+                                        <div style={{ fontWeight: '800', color: '#1e293b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{t('roles.DEPARTMENT_HEAD')}</div>
+                                        <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', color: '#475569', fontSize: '14px', lineHeight: '1.6', minHeight: '40px' }}>
+                                            {deptText || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>{t('promotions.pendingEvaluation')}</span>}
+                                        </div>
+                                    </div>
+
+                                    {/* Step 2: Vice-Dean Evaluation */}
+                                    <div style={{ position: 'relative', zIndex: 2, paddingLeft: '40px' }}>
+                                        <div style={{ position: 'absolute', left: '0', top: '2px', width: '24px', height: '24px', background: (showHistory.evaluation_score || vdText) ? '#16a34a' : '#cbd5e1', borderRadius: '50%', border: '4px solid white', boxShadow: '0 0 0 2px #f1f5f9' }}></div>
+                                        <div style={{ fontWeight: '800', color: '#1e293b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{t('roles.VICE_DEAN')}</div>
+                                        <div style={{ background: (showHistory.evaluation_score || vdText) ? '#f0fdf4' : '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', color: '#166534', fontSize: '14px', minHeight: '40px' }}>
+                                            {showHistory.evaluation_score ? (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                    <span style={{ fontSize: '18px', fontWeight: '900' }}>{showHistory.evaluation_score} / 100</span>
+                                                    <span style={{ background: '#16a34a', color: 'white', padding: '2px 8px', borderRadius: '6px', fontSize: '10px' }}>SCORE ACADÉMIQUE</span>
+                                                </div>
+                                            ) : (vdText || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>{t('promotions.pendingEvaluation')}</span>)}
+                                        </div>
+                                    </div>
+
+                                    {/* Step 3: Dean Validation */}
+                                    <div style={{ position: 'relative', zIndex: 2, paddingLeft: '40px' }}>
+                                        <div style={{ position: 'absolute', left: '0', top: '2px', width: '24px', height: '24px', background: deanText ? '#8b5cf6' : '#cbd5e1', borderRadius: '50%', border: '4px solid white', boxShadow: '0 0 0 2px #f1f5f9' }}></div>
+                                        <div style={{ fontWeight: '800', color: '#1e293b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{t('roles.DEAN')}</div>
+                                        <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', color: '#475569', fontSize: '14px', lineHeight: '1.6', minHeight: '40px' }}>
+                                            {deanText || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>{t('promotions.pendingEvaluation')}</span>}
+                                        </div>
+                                    </div>
+                                </>
+                            );
+                        })()}
+
+                        {/* Step 4: HR Processing */}
+                        <div style={{ position: 'relative', zIndex: 2, paddingLeft: '40px' }}>
+                            <div style={{ position: 'absolute', left: '0', top: '2px', width: '24px', height: '24px', background: (showHistory.status === 'HR Processed' || showHistory.status === 'Promoted') ? '#f59e0b' : '#cbd5e1', borderRadius: '50%', border: '4px solid white', boxShadow: '0 0 0 2px #f1f5f9' }}></div>
+                            <div style={{ fontWeight: '800', color: '#1e293b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{t('roles.HR_MANAGER')}</div>
+                            <div style={{ background: '#fffbeb', padding: '16px', borderRadius: '12px', border: '1px solid #fde68a', color: '#92400e', fontSize: '13px', fontWeight: '600' }}>
+                                {showHistory.status === 'HR Processed' || showHistory.status === 'Promoted' ? 'DOSSIER ADMINISTRATIF VÉRIFIÉ ET CONFORME' : <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>{t('promotions.statusSubmitted')}</span>}
                             </div>
-                        )}
-                        {showHistory.evaluation_score && (
-                            <div style={{ borderLeft: '4px solid #16a34a', paddingLeft: '16px' }}>
-                                <div style={{ fontWeight: '800', color: '#16a34a', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px' }}>{t('roles.VICE_DEAN')} ({t('promotions.pendingEvaluation').split(' ')[2]})</div>
-                                <div style={{ color: '#16a34a', fontWeight: '800', fontSize: '24px' }}>{showHistory.evaluation_score} / 100</div>
-                            </div>
-                        )}
-                        {showHistory.dean_recommendation && (
-                            <div style={{ borderLeft: '4px solid #8b5cf6', paddingLeft: '16px' }}>
-                                <div style={{ fontWeight: '800', color: '#8b5cf6', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px' }}>{t('roles.DEAN')}</div>
-                                <div style={{ color: '#475569', lineHeight: '1.6', fontSize: '14px', whiteSpace: 'pre-wrap' }}>{showHistory.dean_recommendation}</div>
-                            </div>
-                        )}
+                        </div>
                     </div>
                 </div>
                 <div style={{ padding: '24px 32px', background: '#f8fafc', textAlign: 'right', borderTop: '1px solid #e2e8f0' }}>
