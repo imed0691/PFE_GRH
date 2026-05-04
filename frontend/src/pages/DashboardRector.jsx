@@ -116,26 +116,82 @@ function DashboardRector({ user, onLogout }) {
           )
         ) : view === 'directory' ? (
           <div className="card-academic">
-            <h2 className="academic-title">{t('sidebar.staff') || 'Staff Directory'}</h2>
+            <h2 className="academic-title" style={{ marginBottom: '24px' }}>{t('sidebar.staff') || 'Staff Directory'}</h2>
             <div className="table-academic-wrapper">
               <table className="table-academic">
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Full Name</th>
-                    <th>Email</th>
-                    <th>Department</th>
-                    <th>Role</th>
+                    <th style={{ width: '80px' }}>{t('common.id') || '#ID'}</th>
+                    <th>{t('common.fullName')}</th>
+                    <th>{t('common.department')}</th>
+                    <th>{t('common.role')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(u => (
+                  {users
+                    .sort((a, b) => {
+                      const roleOrder = {
+                        'RECTOR': 1, 'RECTEUR': 1,
+                        'VICE_RECTOR': 2,
+                        'DEAN': 3, 'DOYEN': 3,
+                        'VICE_DEAN': 4,
+                        'DEPARTMENT_HEAD': 5, 'CHEF_DEPARTEMENT': 5,
+                        'TEACHER': 6, 'ENSEIGNANT': 6
+                      };
+                      return (roleOrder[a.role] || 99) - (roleOrder[b.role] || 99);
+                    })
+                    .map(u => (
                     <tr key={u.id}>
-                      <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>#{u.id}</td>
-                      <td style={{ fontWeight: '700' }}>{u.nom} {u.prenom}</td>
-                      <td>{u.email}</td>
-                      <td>{u.department_name || '-'}</td>
-                      <td><span className="badge-academic badge-indigo">{u.role}</span></td>
+                      <td><span className="id-badge">#{u.id}</span></td>
+                      <td>
+                        <div className="user-profile-cell" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div className="avatar-circle" style={{ 
+                            width: '40px', 
+                            height: '40px', 
+                            borderRadius: '12px', 
+                            background: 'linear-gradient(135deg, var(--p-indigo), #6366f1)', 
+                            color: 'white', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            fontWeight: '800', 
+                            fontSize: '14px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          }}>
+                            {(u.nom?.[0] || '')+(u.prenom?.[0] || '')}
+                          </div>
+                          <div className="user-info" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <span className="user-name" style={{ fontWeight: '700', color: '#0f172a', fontSize: '14px' }}>
+                              {u.nom} {u.prenom}
+                            </span>
+                            <span className="user-email" style={{ 
+                              color: '#64748b', 
+                              fontSize: '12px', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '4px' 
+                            }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                              {u.email}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="dept-tag">
+                          {u.department_name && u.department_name !== 'null' ? (
+                            (() => {
+                              const translated = t('departments.' + u.department_name);
+                              return translated.includes('.') ? u.department_name : translated;
+                            })()
+                          ) : '-'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`role-badge role-${(u.role || '').toLowerCase()}`}>
+                          {t('roles.' + u.role) || u.role}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

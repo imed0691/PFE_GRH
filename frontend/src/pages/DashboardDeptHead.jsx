@@ -495,15 +495,12 @@ function DashboardDeptHead({ user, onLogout }) {
                        onChange={(e) => setSearchTerm(e.target.value)}
                      />
                    </div>
-                </div>
-
-                <div className="table-academic-wrapper">
+                </div>                <div className="table-academic-wrapper">
                    <table className="table-academic">
                      <thead>
                        <tr>
-                         <th>{t('addEmployee.lastName')}</th>
-                         <th>{t('addEmployee.firstName')}</th>
-                         <th>{t('common.email')}</th>
+                         <th style={{ width: '80px' }}>{t('common.id') || '#ID'}</th>
+                         <th>{t('common.fullName')}</th>
                          <th>{t('addEmployee.academicGrade')}</th>
                          <th style={{ textAlign: 'right' }}>{t('common.actions')}</th>
                        </tr>
@@ -516,37 +513,66 @@ function DashboardDeptHead({ user, onLogout }) {
                          })
                          .map(u => (
                            <tr key={u.id} style={{ cursor: 'pointer' }} onClick={() => fetchTeacherSchedule(u)}>
-                             <td style={{ fontWeight: '800', color: 'var(--p-indigo)' }}>
-                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                 <div className="user-avatar-mini" style={{ width: '32px', height: '32px', fontSize: '11px', overflow: 'hidden' }}>
+                             <td><span className="id-badge">#{u.id}</span></td>
+                             <td>
+                               <div className="user-profile-cell" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                 <div className="avatar-circle" style={{ 
+                                   width: '40px', 
+                                   height: '40px', 
+                                   borderRadius: '12px', 
+                                   background: 'linear-gradient(135deg, var(--p-indigo), #6366f1)', 
+                                   color: 'white', 
+                                   display: 'flex', 
+                                   alignItems: 'center', 
+                                   justifyContent: 'center', 
+                                   fontWeight: '800', 
+                                   fontSize: '14px',
+                                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                 }}>
                                    {u.profile_image ? (
-                                     <img src={`http://localhost:5000${u.profile_image}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                      <img src={`http://localhost:5000${u.profile_image}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} />
                                    ) : (
-                                     <>{u.prenom[0]}{u.nom[0]}</>
+                                      <>{u.nom?.[0] || ''}{u.prenom?.[0] || ''}</>
                                    )}
                                  </div>
-                                 {u.nom}
+                                 <div className="user-info" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                   <span className="user-name" style={{ fontWeight: '700', color: '#0f172a', fontSize: '14px' }}>
+                                     {u.nom} {u.prenom}
+                                   </span>
+                                   <span className="user-email" style={{ 
+                                     color: '#64748b', 
+                                     fontSize: '12px', 
+                                     display: 'flex', 
+                                     alignItems: 'center', 
+                                     gap: '4px' 
+                                   }}>
+                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                     {u.email}
+                                   </span>
+                                 </div>
                                </div>
                              </td>
-                           <td>{u.prenom}</td>
-                           <td>{u.email}</td>
-                            <td><span className="badge-academic badge-gold">{t('grades.' + (u.grade || 'Teacher'))}</span></td>
-                           <td style={{ textAlign: 'right' }}>
-                             <button 
-                               className="btn-confirm-pro" 
-                               style={{ padding: '8px 16px', fontSize: '11px' }}
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 fetchTeacherSchedule(u);
-                               }}
-                             >
-                               {t('deptHead.viewSchedule')}
-                             </button>
-                           </td>
-                         </tr>
-                       ))}
-                   </tbody>
-                 </table>
+                             <td>
+                               <span className="grade-tag" style={{ background: '#f8fafc', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', border: '1px solid #e2e8f0', color: '#64748b', fontWeight: '600' }}>
+                                 {t('grades.' + (u.grade || 'Teacher'))}
+                               </span>
+                             </td>
+                             <td style={{ textAlign: 'right' }}>
+                               <button 
+                                 className="btn-confirm-pro" 
+                                 style={{ padding: '8px 16px', fontSize: '11px' }}
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   fetchTeacherSchedule(u);
+                                 }}
+                               >
+                                 {t('deptHead.viewSchedule')}
+                               </button>
+                             </td>
+                           </tr>
+                         ))}
+                     </tbody>
+                   </table>
                 </div>
               </div>
              )}

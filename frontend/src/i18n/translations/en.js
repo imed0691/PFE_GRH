@@ -94,24 +94,6 @@ const en = {
     loggedInAs: 'Logged in as:',
   },
 
-  // ── Sidebar ──
-  sidebar: {
-    overview: 'Overview',
-    staff: 'Staff',
-    faculties: 'Faculties & Depts',
-    departments: 'Departments',
-    sessions: 'Academic Affairs',
-    absences: 'Absences',
-    reminders: 'Communications',
-    documents: 'Documents',
-    promotions: 'Promotions',
-    evaluations: 'Evaluations',
-    salary: 'My Salary',
-    teachers: 'Teachers',
-    notifications: 'Notifications',
-    mySchedule: 'My Schedule',
-  },
-
   // ── Settings ──
   settings: {
     personalData: 'Personal Data',
@@ -145,8 +127,10 @@ const en = {
   sidebar: {
     employees: 'Staff Directory',
     staffList: 'Staff List',
+    staff: 'Staff',
     addEmployee: 'Add Personnel',
     departments: 'Departments',
+    faculties: 'Faculties & Depts',
     classes: 'Manage Classes',
     sessions: 'Sessions',
     absences: 'Absences',

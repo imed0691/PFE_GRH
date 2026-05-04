@@ -77,7 +77,6 @@ function DashboardViceDean({ user, onLogout }) {
 
   const menuItems = [
     { id: 'overview', label: t('sidebar.overview') || 'Aperçu' },
-    { id: 'sessions', label: t('sidebar.sessions') || 'Scolarité' },
     { id: 'absences', label: t('sidebar.absences') || 'Absences', badge: unreadAbsences },
     { id: 'reminders', label: t('sidebar.reminders') || 'Communications' },
     { id: 'settings', label: t('settings.title') },
@@ -113,18 +112,12 @@ function DashboardViceDean({ user, onLogout }) {
                 <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>Total Teachers</h3>
                 <p style={{ fontSize: '32px', fontWeight: '900', color: 'var(--p-indigo)', margin: 0 }}>{teachersCount}</p>
               </div>
-              <div className="card-academic" style={{ borderTop: '4px solid #10b981' }}>
-                <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>Active Sessions</h3>
-                <p style={{ fontSize: '32px', fontWeight: '900', color: '#10b981', margin: 0 }}>{sessionsCount}</p>
-              </div>
               <div className="card-academic" style={{ borderTop: `4px solid ${unreadAbsences > 0 ? '#ef4444' : '#8b5cf6'}` }}>
                 <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>New Absences</h3>
                 <p style={{ fontSize: '32px', fontWeight: '900', color: unreadAbsences > 0 ? '#ef4444' : '#8b5cf6', margin: 0 }}>{unreadAbsences}</p>
               </div>
             </div>
           )
-        ) : view === 'sessions' ? (
-          <ManageSessions />
         ) : view === 'absences' ? (
           <ManageAbsences user={user} />
         ) : view === 'reminders' ? (
