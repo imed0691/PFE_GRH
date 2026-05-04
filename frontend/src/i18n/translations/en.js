@@ -261,6 +261,8 @@ const en = {
     teacherAssignments: 'Teacher Assignments',
     noLevels: 'No study levels defined for this department.',
     filterByLevel: 'Filter by Level:',
+    subtitle: 'Organize the academic structure and manage assignments.',
+    selectTeacherFirst: 'Please select a teacher from the list first.',
   },
 
   // ── HR Dashboard ──
