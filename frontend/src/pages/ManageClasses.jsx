@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
 import ConfirmModal from '../components/ConfirmModal';
+import './ManageClasses.css';
 
 function ManageClasses({ user }) {
   const { t } = useLanguage();
@@ -249,8 +250,8 @@ function ManageClasses({ user }) {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#1e293b' }}>
+    <div className="manage-classes-container">
+      <h2 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '32px', color: '#0f172a', letterSpacing: '-0.02em' }}>
         {t('classes.title')}
       </h2>
 
@@ -456,15 +457,18 @@ function ManageClasses({ user }) {
 
 
       {(user.role === 'CHEF_DEPARTEMENT' || user.role === 'DEPARTMENT_HEAD') && (
-        <div className="grid-responsive" style={{ gridTemplateColumns: 'minmax(250px, 300px) 1fr' }}>
+        <div className="mc-grid">
           
-          <div style={{ padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>{t('classes.chooseTeacher')}</h3>
+          {/* Left Column: Teacher Selection */}
+          <div className="teacher-selection-card">
+            <h3 className="section-header-pro" style={{ marginBottom: '20px', fontSize: '18px', fontWeight: '800' }}>
+              {t('classes.chooseTeacher')}
+            </h3>
             
-            {/* Search Bar for Teachers */}
-            <div className="mnadm-search-wrapper" style={{ marginBottom: '15px' }}>
+            {/* Premium Search Bar */}
+            <div className="mnadm-search-wrapper" style={{ marginBottom: '20px' }}>
               <span className="search-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               </span>
               <input 
                 type="text" 
@@ -472,81 +476,160 @@ function ManageClasses({ user }) {
                 placeholder={t('common.search') || 'Rechercher...'} 
                 value={teacherSearch}
                 onChange={(e) => setTeacherSearch(e.target.value)}
-                style={{ fontSize: '13px', padding: '8px 12px 8px 35px' }}
+                style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px' }}
               />
             </div>
 
-            <div style={{ paddingRight: '10px', maxHeight: '500px', overflowY: 'auto' }}>
+            <div className="teacher-list-scroll">
               {filteredTeachers.map(prof => (
-                <div key={prof.id} onClick={() => setSelectedTeacherId(prof.id)} style={{ padding: '12px', marginBottom: '8px', borderRadius: '8px', cursor: 'pointer', background: selectedTeacherId === prof.id ? '#eff6ff' : '#f8fafc', border: selectedTeacherId === prof.id ? '1px solid #bfdbfe' : '1px solid transparent' }}>
-                  <div style={{ fontWeight: 'bold', color: '#1e293b' }}>{prof.nom} {prof.prenom}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--p-gold)', fontWeight: '700' }}>{t('grades.' + (prof.grade || 'Teacher'))}</div>
+                <div 
+                  key={prof.id} 
+                  className={`teacher-item-card ${selectedTeacherId === prof.id ? 'active' : ''}`}
+                  onClick={() => setSelectedTeacherId(prof.id)}
+                >
+                  <div className="teacher-avatar-pro">
+                    {prof.profile_image ? (
+                      <img src={`http://localhost:5000${prof.profile_image}`} alt="" style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} />
+                    ) : (
+                      <>{prof.nom?.[0]}{prof.prenom?.[0]}</>
+                    )}
+                  </div>
+                  <div className="teacher-info-pro">
+                    <span className="name">{prof.nom} {prof.prenom}</span>
+                    <span className="grade">{t('grades.' + (prof.grade || 'Teacher'))}</span>
+                  </div>
+                  {selectedTeacherId === prof.id && (
+                    <div style={{ marginLeft: 'auto', color: 'var(--p-indigo)' }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                  )}
                 </div>
               ))}
+              {filteredTeachers.length === 0 && (
+                <div className="empty-state-pro" style={{ padding: '20px' }}>
+                   <p style={{ fontSize: '13px' }}>{t('common.noResults')}</p>
+                </div>
+              )}
             </div>
           </div>
 
-          <div style={{ opacity: selectedTeacherId ? 1 : 0.5, pointerEvents: selectedTeacherId ? 'auto' : 'none', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>{t('classes.assignModules')}</h3>
+          {/* Right Column: Module Assignment */}
+          <div className="assignment-section">
             
-            <div style={{ marginBottom: '20px', padding: '15px', background: '#f8fafc', borderRadius: '8px' }}>
-              <label className="mnadm-label">{t('classes.studyLevel')}</label>
-              <select className="mnadm-input" value={selectedLevelId} onChange={e => setSelectedLevelId(e.target.value)} style={{ marginBottom: '15px' }}>
-                <option value="">{t('common.all')}</option>
-                {levels.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-              </select>
-              
-              {modules.length > 0 && (
+            {/* Step 1: Available Modules */}
+            <div className="assignment-card amber">
+              <div className="section-header-pro">
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <label style={{ margin: 0, fontWeight: '600' }}>{t('classes.availableModules')}</label>
+                  <h3>{t('classes.assignModules')}</h3>
+                  <p style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
+                    {selectedTeacherId ? t('classes.assignModulesSubtitle') || 'Sélectionnez des modules pour ce professeur' : t('classes.selectTeacherFirst')}
+                  </p>
+                </div>
+                {selectedTeacherId && (
+                  <div className="badge-pro badge-pro-info" style={{ textTransform: 'none', fontSize: '12px' }}>
+                    {filteredTeachers.find(p => p.id === selectedTeacherId)?.nom} {filteredTeachers.find(p => p.id === selectedTeacherId)?.prenom}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ opacity: selectedTeacherId ? 1 : 0.5, pointerEvents: selectedTeacherId ? 'auto' : 'none' }}>
+                <div style={{ marginBottom: '24px', display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <label className="mnadm-label">{t('classes.studyLevel')}</label>
+                    <select className="mnadm-input" value={selectedLevelId} onChange={e => setSelectedLevelId(e.target.value)} style={{ borderRadius: '14px', background: '#f8fafc' }}>
+                      <option value="">{t('common.all')}</option>
+                      {levels.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label className="mnadm-label">{t('common.search')}</label>
                     <input 
                       type="text" 
-                      placeholder={t('common.search')} 
+                      placeholder={t('common.searchModule') || 'Filtrer les modules...'} 
                       className="mnadm-input" 
-                      style={{ maxWidth: '180px', padding: '4px 10px', fontSize: '12px', height: '30px' }}
+                      style={{ borderRadius: '14px', background: '#f8fafc' }}
                       onChange={(e) => {
                         const term = e.target.value.toLowerCase();
-                        const container = e.target.parentElement.nextSibling;
-                        const buttons = container.querySelectorAll('button');
-                        buttons.forEach(btn => {
-                          const text = btn.textContent.toLowerCase();
-                          btn.style.display = text.includes(term) ? 'inline-block' : 'none';
-                        });
+                        const container = document.getElementById('available-modules-container');
+                        if (container) {
+                          const pills = container.querySelectorAll('.module-pill');
+                          pills.forEach(pill => {
+                            const text = pill.textContent.toLowerCase();
+                            pill.style.display = text.includes(term) ? 'flex' : 'none';
+                          });
+                        }
                       }}
                     />
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                </div>
+                
+                {modules.length > 0 ? (
+                  <div id="available-modules-container" className="module-grid-pro">
                     {modules.map(m => {
                       const isAssigned = teacherModules.some(tm => tm.id === m.id);
                       return (
-                        <button key={m.id} onClick={() => isAssigned ? handleUnassignModule(m.id) : handleAssignModule(m.id)} style={{ padding: '8px 15px', borderRadius: '20px', border: 'none', cursor: 'pointer', background: isAssigned ? 'var(--p-indigo)' : '#e2e8f0', color: isAssigned ? 'white' : '#475569', fontWeight: '600' }}>
-                          {isAssigned ? '✓ ' : '+ '} {m.name}
+                        <button 
+                          key={m.id} 
+                          onClick={() => isAssigned ? handleUnassignModule(m.id) : handleAssignModule(m.id)} 
+                          className={`module-pill ${isAssigned ? 'active' : ''}`}
+                        >
+                          <span style={{ fontSize: '16px' }}>{isAssigned ? '✓' : '+'}</span>
+                          {m.name}
                         </button>
                       );
                     })}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="empty-state-pro" style={{ padding: '20px', border: '1px dashed #e2e8f0', borderRadius: '16px' }}>
+                    <p style={{ fontSize: '13px' }}>{selectedLevelId ? t('classes.noModulesInLevel') : t('classes.selectLevelToSeeModules')}</p>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <h4 style={{ fontWeight: 'bold', marginBottom: '10px', color: '#1e293b' }}>{t('classes.taughtModules')}</h4>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              {teacherModules.map(tm => (
-                <li key={tm.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#f1f5f9', marginBottom: '8px', borderRadius: '8px' }}>
-                  <div>
-                    <strong style={{ color: '#0f172a' }}>{tm.name}</strong>
-                    <span style={{ marginLeft: '10px', fontSize: '13px', color: '#64748b', background: '#e2e8f0', padding: '2px 8px', borderRadius: '12px' }}>{tm.study_level}</span>
+            {/* Step 2: Taught Modules */}
+            <div className="assignment-card emerald">
+              <div className="section-header-pro">
+                <h3>{t('classes.taughtModules')}</h3>
+                <div className="badge-pro badge-pro-success">
+                  {teacherModules.length} Modules
+                </div>
+              </div>
+
+              <div className="taught-list-pro" style={{ opacity: selectedTeacherId ? 1 : 0.5 }}>
+                {teacherModules.map(tm => (
+                  <div key={tm.id} className="taught-item-pro">
+                    <div className="taught-info-pro">
+                      <div className="taught-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                      </div>
+                      <div className="taught-details-pro">
+                        <strong>{tm.name}</strong>
+                        <span>{tm.study_level}</span>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => handleUnassignModule(tm.id)} 
+                      className="btn-confirm-pro" 
+                      style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '12px', background: '#ef4444', border: 'none' }}
+                    >
+                      {t('common.delete')}
+                    </button>
                   </div>
-                  <button onClick={() => handleUnassignModule(tm.id)} className="btn-delete-pro" style={{ padding: '6px 12px', fontSize: '11px' }}>{t('common.delete')}</button>
-                </li>
-              ))}
-              {teacherModules.length === 0 && <li style={{ color: '#94a3b8', fontStyle: 'italic' }}>{t('classes.noModulesAssigned')}</li>}
-            </ul>
+                ))}
+                {teacherModules.length === 0 && (
+                  <div className="empty-state-pro">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }}><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                    <p style={{ fontStyle: 'italic' }}>{t('classes.noModulesAssigned')}</p>
+                  </div>
+                )}
+              </div>
+            </div>
 
           </div>
 
         </div>
+
       )}
 
       <ConfirmModal 
