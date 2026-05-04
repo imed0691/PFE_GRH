@@ -6,6 +6,7 @@ import ManageApprovals from './ManageApprovals';
 import ManageAbsences from './ManageAbsences';
 import ManageReminders from './ManageReminders';
 import Settings from './Settings';
+import ManagePromotions from './ManagePromotions';
 import './DashboardViceDean.css';
 
 function DashboardViceDean({ user, onLogout }) {
@@ -78,6 +79,7 @@ function DashboardViceDean({ user, onLogout }) {
   const menuItems = [
     { id: 'overview', label: t('sidebar.overview') || 'Aperçu' },
     { id: 'approvals', label: t('sidebar.approvals') || 'Approbations' },
+    { id: 'promotions', label: t('sidebar.promotions') || 'Promotions' },
     { id: 'absences', label: t('sidebar.absences') || 'Absences', badge: unreadAbsences },
     { id: 'reminders', label: t('sidebar.reminders') || 'Communications' },
     { id: 'settings', label: t('settings.title') },
@@ -87,6 +89,7 @@ function DashboardViceDean({ user, onLogout }) {
     switch(view) {
       case 'overview': return t('sidebar.overview') || 'Tableau de Bord Pédagogie';
       case 'approvals': return t('sidebar.approvals') || 'Approbations';
+      case 'promotions': return t('sidebar.promotions') || 'Validations Académiques';
       case 'absences': return t('sidebar.absences') || 'Suivi des Absences';
       case 'reminders': return t('sidebar.reminders') || 'Communications & Rappels';
       case 'settings': return t('settings.title');
@@ -121,6 +124,8 @@ function DashboardViceDean({ user, onLogout }) {
           )
         ) : view === 'approvals' ? (
           <ManageApprovals user={user} />
+        ) : view === 'promotions' ? (
+          <ManagePromotions user={user} />
         ) : view === 'absences' ? (
           <ManageAbsences user={user} />
         ) : view === 'reminders' ? (

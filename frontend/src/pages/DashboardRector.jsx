@@ -6,6 +6,7 @@ import ManageDepartments from './ManageDepartments';
 import ManageApprovals from './ManageApprovals';
 import ManageReminders from './ManageReminders';
 import Settings from './Settings';
+import ManagePromotions from './ManagePromotions';
 import './DashboardRector.css';
 
 function DashboardRector({ user, onLogout }) {
@@ -72,6 +73,7 @@ function DashboardRector({ user, onLogout }) {
     { id: 'overview', label: t('sidebar.overview') || 'Vue d\'ensemble' },
     { id: 'analytics', label: t('sidebar.analytics') || 'Analytique Universitaire' },
     { id: 'approvals', label: t('sidebar.approvals') || 'Approbations' },
+    { id: 'promotions', label: t('sidebar.promotions') || 'Promotions' },
     { id: 'directory', label: t('sidebar.staff') || 'Personnel' },
     { id: 'departments', label: t('sidebar.faculties') || 'Structure' },
     { id: 'reminders', label: t('sidebar.reminders') || 'Communications' },
@@ -83,6 +85,7 @@ function DashboardRector({ user, onLogout }) {
       case 'overview': return t('sidebar.overview') || 'Tableau de Bord Recteur';
       case 'analytics': return t('sidebar.analytics') || 'Centre d\'Intelligence Universitaire';
       case 'approvals': return t('sidebar.approvals') || 'Approbations Stratégiques';
+      case 'promotions': return t('sidebar.promotions') || 'Décisions de Promotion';
       case 'directory': return t('sidebar.staff') || 'Annuaire Global du Personnel';
       case 'departments': return t('sidebar.faculties') || 'Structure Universitaire';
       case 'reminders': return t('sidebar.reminders') || 'Communications Rectorat';
@@ -215,6 +218,8 @@ function DashboardRector({ user, onLogout }) {
           </div>
         ) : view === 'approvals' ? (
           <ManageApprovals user={user} />
+        ) : view === 'promotions' ? (
+          <ManagePromotions user={user} />
         ) : view === 'directory' ? (
           <div className="card-academic">
             <h2 className="academic-title" style={{ marginBottom: '24px' }}>{t('sidebar.staff') || 'Staff Directory'}</h2>

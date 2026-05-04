@@ -6,6 +6,7 @@ import ManageSessions from './ManageSessions';
 import ManageAbsences from './ManageAbsences';
 import ManageReminders from './ManageReminders';
 import Settings from './Settings';
+import ManagePromotions from './ManagePromotions';
 import './DashboardViceRector.css';
 
 function DashboardViceRector({ user, onLogout }) {
@@ -78,6 +79,7 @@ function DashboardViceRector({ user, onLogout }) {
   const menuItems = [
     { id: 'overview', label: t('sidebar.overview') || 'Aperçu' },
     { id: 'sessions', label: t('sidebar.sessions') || 'Scolarité Globale' },
+    { id: 'promotions', label: t('sidebar.promotions') || 'Promotions' },
     { id: 'absences', label: t('sidebar.absences') || 'Absences Globales', badge: unreadAbsences },
     { id: 'reminders', label: t('sidebar.reminders') || 'Communications' },
     { id: 'settings', label: t('settings.title') },
@@ -87,6 +89,7 @@ function DashboardViceRector({ user, onLogout }) {
     switch(view) {
       case 'overview': return t('sidebar.overview') || 'Tableau de Bord Vice-Recteur';
       case 'sessions': return t('sidebar.sessions') || 'Affaires Académiques Globales';
+      case 'promotions': return t('sidebar.promotions') || 'Gestion des Promotions';
       case 'absences': return t('sidebar.absences') || 'Gestion Globale des Absences';
       case 'reminders': return t('sidebar.reminders') || 'Communications Officielles';
       case 'settings': return t('settings.title');
@@ -125,6 +128,8 @@ function DashboardViceRector({ user, onLogout }) {
           )
         ) : view === 'sessions' ? (
           <ManageSessions />
+        ) : view === 'promotions' ? (
+          <ManagePromotions user={user} />
         ) : view === 'absences' ? (
           <ManageAbsences user={user} />
         ) : view === 'reminders' ? (

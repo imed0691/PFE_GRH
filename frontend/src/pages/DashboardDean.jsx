@@ -6,6 +6,7 @@ import ManageDepartments from './ManageDepartments';
 import ManageApprovals from './ManageApprovals';
 import ManageReminders from './ManageReminders';
 import Settings from './Settings';
+import ManagePromotions from './ManagePromotions';
 import './DashboardDean.css';
 
 function DashboardDean({ user, onLogout }) {
@@ -80,6 +81,7 @@ function DashboardDean({ user, onLogout }) {
     { id: 'overview', label: t('sidebar.overview') || 'Aperçu' },
     { id: 'analytics', label: t('sidebar.analytics') || 'Analytique' },
     { id: 'approvals', label: t('sidebar.approvals') || 'Approbations' },
+    { id: 'promotions', label: t('sidebar.promotions') || 'Promotions' },
     { id: 'departments', label: t('sidebar.departments') || 'Départements' },
     { id: 'staff', label: t('sidebar.staff') || 'Personnel' },
     { id: 'reminders', label: t('sidebar.reminders') || 'Communications' },
@@ -91,6 +93,7 @@ function DashboardDean({ user, onLogout }) {
       case 'overview': return t('sidebar.overview') || 'Tableau de Bord Doyen';
       case 'analytics': return t('sidebar.analytics') || 'Centre d\'Analyse';
       case 'approvals': return t('sidebar.approvals') || 'Approbations';
+      case 'promotions': return t('sidebar.promotions') || 'Gestion des Promotions';
       case 'departments': return t('sidebar.departments') || 'Gestion des Départements';
       case 'staff': return t('sidebar.staff') || 'Personnel de la Faculté';
       case 'reminders': return t('sidebar.reminders') || 'Notifications & Rappels';
@@ -298,6 +301,8 @@ function DashboardDean({ user, onLogout }) {
           </div>
         ) : view === 'approvals' ? (
           <ManageApprovals user={user} />
+        ) : view === 'promotions' ? (
+          <ManagePromotions user={user} />
         ) : view === 'departments' ? (
           <ManageDepartments />
         ) : view === 'reminders' ? (
