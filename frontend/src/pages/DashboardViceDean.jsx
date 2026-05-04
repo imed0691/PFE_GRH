@@ -1,112 +1,174 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { useLanguage } from '../i18n/LanguageContext';
-import DashboardLayout from '../components/DashboardLayout';
-import ManageClasses from './ManageClasses';
+import ManageSessions from './ManageSessions';
 import ManageAbsences from './ManageAbsences';
-import ManagePromotions from './ManagePromotions';
-import ManageDocuments from './ManageDocuments';
-import ManageEvaluations from './ManageEvaluations';
-import ReminderInbox from './ReminderInbox';
-import useNotificationBadges from '../hooks/useNotificationBadges';
-import Settings from './Settings';
+import ManageReminders from './ManageReminders';
+import './DashboardViceDean.css';
 
 function DashboardViceDean({ user, onLogout }) {
-  const [stats, setStats] = useState({ total_teachers: 0, pending_absences: 0 });
-  const [view, setViewRaw] = useState(localStorage.getItem('vicedean_dashboard_view') || 'overview');
-  const { badges, markSeen } = useNotificationBadges();
-  const { t } = useLanguage();
-  const lastClearedView = useRef(null);
+  const [sessionsCount, setSessionsCount] = useState(0);
+  const [unreadAbsences, setUnreadAbsences] = useState(0);
+  const [teachersCount, setTeachersCount] = useState(0);
 
-  const handleProfileUpdate = (newData) => {
-    const updatedUser = { ...user, ...newData };
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    window.location.reload();
-  };
+  const [view, setView] = useState('overview'); // 'overview', 'sessions', 'absences', 'reminders'
+  const [loading, setLoading] = useState(true);
 
-  const setView = (newView) => { 
-    setViewRaw(newView); 
-    localStorage.setItem('vicedean_dashboard_view', newView);
-    if (badges[newView] && badges[newView] > 0) markSeen(newView); 
-  };
-
-  const fetchStats = async () => {
+  const fetchOverviewData = async () => {
+    setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/users', { headers: { 'Authorization': `Bearer ${token}` } });
-      const data = await res.ok ? await res.json() : [];
-      const absencesRes = await fetch('http://localhost:5000/api/absences', { headers: { 'Authorization': `Bearer ${token}` } });
-      const absences = await absencesRes.ok ? await absencesRes.json() : [];
-      
-      setStats({
-        total_teachers: data.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT').length,
-        pending_absences: absences.filter(a => a.justification_status === 'Pending').length
-      });
-    } catch (e) { console.error(e); }
+      const headers = { 'Authorization': `Bearer ${token}` };
+
+      // Fetch users, sessions, and absences for the overview
+      const [resUsers, resSessions, resAbsences] = await Promise.all([
+        fetch('http://localhost:5000/api/users', { headers }),
+        fetch('http://localhost:5000/api/sessions', { headers }),
+        fetch('http://localhost:5000/api/absences', { headers })
+      ]);
+
+      if (resUsers.ok) {
+        const users = await resUsers.json();
+        setTeachersCount(users.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT').length);
+      }
+      if (resSessions.ok) {
+        const sessions = await resSessions.json();
+        setSessionsCount(sessions.length);
+      }
+      if (resAbsences.ok) {
+        const absences = await resAbsences.json();
+        const unreadCount = absences.filter(a => !a.is_read_by_admin).length;
+        setUnreadAbsences(unreadCount);
+      }
+    } catch (error) {
+      console.error("Error fetching overview data", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { 
-    fetchStats();
-    if (badges[view] > 0) markSeen(view);
-  }, []);
+  const markAbsencesAsRead = async () => {
+    if (unreadAbsences === 0) return;
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('http://localhost:5000/api/absences/read-admin', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setUnreadAbsences(0);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
-    if (view !== lastClearedView.current && badges[view] > 0) {
-      markSeen(view);
-      lastClearedView.current = view;
+    if (view === 'overview') {
+      fetchOverviewData();
     }
-  }, [view, badges[view]]);
-
-  const menuItems = [
-    { id: 'overview', label: t('sidebar.overview'), icon: '📊' },
-    { id: 'classes', label: t('sidebar.classes'), icon: '🏫' }, 
-    { id: 'absences', label: t('sidebar.absences'), icon: '⚠️', badge: badges.absences },
-    { id: 'promotions', label: t('sidebar.promotions'), icon: '📈', badge: badges.promotions },
-    { id: 'documents', label: t('sidebar.documents'), icon: '📄', badge: badges.documents },
-    { id: 'evaluations', label: t('sidebar.evaluations'), icon: '⭐', badge: badges.evaluations },
-    { id: 'reminders', label: t('sidebar.notifications'), icon: '🔔', badge: badges.reminders },
-    { id: 'settings', label: t('settings.title'), icon: '⚙️' },
-  ];
+    if (view === 'absences') {
+      markAbsencesAsRead();
+    }
+  }, [view]);
 
   return (
-    <DashboardLayout
-      user={user}
-      activeView={view}
-      setView={setView}
-      menuItems={menuItems}
-      onLogout={onLogout}
-      title={view === 'settings' ? t('settings.title') : 'Vice Dean Dashboard'}
-    >
-      <div className="animate-academic">
-        {view === 'classes' ? <ManageClasses /> :
-         view === 'absences' ? <ManageAbsences user={user} /> : 
-         view === 'promotions' ? <ManagePromotions user={user} /> : 
-         view === 'documents' ? <ManageDocuments user={user} /> : 
-         view === 'evaluations' ? <ManageEvaluations user={user} /> : 
-         view === 'reminders' ? <ReminderInbox user={user} /> : 
-         view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : (
-           <div className="vicedean-view">
-              <div className="stats-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px', marginBottom: '40px' }}>
-                <div className="card-academic">
-                  <h4 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px' }}>Faculty Staff</h4>
-                  <p style={{ fontSize: '42px', fontWeight: '800', color: 'var(--navy)' }}>{stats.total_teachers}</p>
+    <div className="dashboard-container">
+      {/* Sidebar */}
+      <aside className="sidebar" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
+        <div className="sidebar-header">
+          <div className="logo-icon">🎓</div>
+          <h2>PFE_GRH</h2>
+        </div>
+
+        <div className="user-profile">
+          <div className="avatar" style={{ background: 'linear-gradient(135deg, #0d9488, #14b8a6)' }}>
+            {user.prenom[0]}{user.nom[0]}
+          </div>
+          <div className="user-info">
+            <h4>{user.prenom} {user.nom}</h4>
+            <span className="badge-role" style={{ background: 'rgba(20, 184, 166, 0.2)', color: '#5eead4' }}>
+              Vice Dean
+            </span>
+          </div>
+        </div>
+
+        <nav className="sidebar-nav">
+          <button
+            className={`nav-item ${view === 'overview' ? 'active' : ''}`}
+            onClick={() => setView('overview')}
+          >
+            📊 Overview
+          </button>
+          <button
+            className={`nav-item ${view === 'sessions' ? 'active' : ''}`}
+            onClick={() => setView('sessions')}
+          >
+            📚 Academic Affairs
+          </button>
+          <button
+            className={`nav-item ${view === 'absences' ? 'active' : ''}`}
+            onClick={() => setView('absences')}
+          >
+            🏖️ Absences Management
+            {unreadAbsences > 0 && (
+              <span style={{ background: '#ef4444', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '10px', marginLeft: 'auto' }}>
+                {unreadAbsences}
+              </span>
+            )}
+          </button>
+          <button
+            className={`nav-item ${view === 'reminders' ? 'active' : ''}`}
+            onClick={() => setView('reminders')}
+          >
+            📢 Communications
+          </button>
+        </nav>
+
+        <button className="btn-logout" onClick={onLogout}>
+          🚪 Logout
+        </button>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="main-content">
+        <header className="topbar">
+          <h1>
+            {view === 'overview' ? 'Pedagogy Dashboard' :
+              view === 'sessions' ? 'Schedules & Sessions' :
+                view === 'absences' ? 'Teacher Absences' :
+                  'Communications & Reminders'}
+          </h1>
+          <div className="date-display">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+        </header>
+
+        <div className="content-area">
+          {view === 'overview' ? (
+            loading ? (
+              <div className="loading-spinner">Loading...</div>
+            ) : (
+              <div className="overview-grid">
+                <div className="stat-card">
+                  <h3>Total Teachers</h3>
+                  <p className="stat-value">{teachersCount}</p>
                 </div>
-                <div className="card-academic">
-                  <h4 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px' }}>Pending Validations</h4>
-                  <p style={{ fontSize: '42px', fontWeight: '800', color: 'var(--gold)' }}>{stats.pending_absences}</p>
+                <div className="stat-card">
+                  <h3>Active Sessions</h3>
+                  <p className="stat-value">{sessionsCount}</p>
+                </div>
+                <div className="stat-card" style={{ borderBottomColor: unreadAbsences > 0 ? '#ef4444' : 'var(--vice-primary)' }}>
+                  <h3>New Absences</h3>
+                  <p className="stat-value" style={{ color: unreadAbsences > 0 ? '#ef4444' : 'var(--text-main)' }}>{unreadAbsences}</p>
                 </div>
               </div>
-              <div className="card-academic">
-                <h3 className="academic-title">Vice Dean Administrative Portal</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '16px', lineHeight: '1.8' }}>
-                  Assisting in the management of faculty affairs, academic tracking, and staff evaluations. 
-                  Please use the navigation menu to process pending requests and monitor institutional performance.
-                </p>
-              </div>
-           </div>
-         )}
-      </div>
-    </DashboardLayout>
+            )
+          ) : view === 'sessions' ? (
+            <ManageSessions />
+          ) : view === 'absences' ? (
+            <ManageAbsences />
+          ) : view === 'reminders' ? (
+            <ManageReminders />
+          ) : null}
+        </div>
+      </main>
+    </div>
   );
 }
 

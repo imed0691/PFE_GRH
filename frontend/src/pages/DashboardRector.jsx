@@ -1,132 +1,194 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { useLanguage } from '../i18n/LanguageContext';
-import DashboardLayout from '../components/DashboardLayout';
-import ManageAbsences from './ManageAbsences';
-import ManagePromotions from './ManagePromotions';
-import ManageDocuments from './ManageDocuments';
-import ManageEvaluations from './ManageEvaluations';
+import ManageDepartments from './ManageDepartments';
 import ManageReminders from './ManageReminders';
-import ReminderInbox from './ReminderInbox';
-import useNotificationBadges from '../hooks/useNotificationBadges';
-import Settings from './Settings';
 import './DashboardRector.css';
 
 function DashboardRector({ user, onLogout }) {
-  const [stats, setStats] = useState({ total_users: 0, total_teachers: 0, total_departments: 0 });
-  const [view, setViewRaw] = useState(localStorage.getItem('rector_dashboard_view') || 'overview');
-  const { badges, markSeen } = useNotificationBadges();
-  const { t } = useLanguage();
-  const lastClearedView = useRef(null);
+  const [users, setUsers] = useState([]);
+  const [departments, setDepartments] = useState([]);
 
-  const handleProfileUpdate = (newData) => {
-    const updatedUser = { ...user, ...newData };
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    window.location.reload();
-  };
+  // Overview stats
+  const [teachersCount, setTeachersCount] = useState(0);
+  const [deansCount, setDeansCount] = useState(0);
+  const [sessionsCount, setSessionsCount] = useState(0);
 
-  const setView = (newView) => { 
-    setViewRaw(newView); 
-    localStorage.setItem('rector_dashboard_view', newView);
-    if (badges[newView] && badges[newView] > 0) markSeen(newView); 
-  };
+  const [view, setView] = useState('overview'); // 'overview', 'directory', 'departments', 'reminders'
+  const [loading, setLoading] = useState(true);
 
-  const fetchGlobalStats = async () => {
+  const fetchData = async () => {
+    setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/users', { headers: { 'Authorization': `Bearer ${token}` } });
-      const data = await res.json();
-      if (res.ok) {
-        setStats({
-          total_users: data.length,
-          total_teachers: data.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT').length,
-          total_departments: [...new Set(data.map(u => u.department_name).filter(Boolean))].length
-        });
+      const headers = { 'Authorization': `Bearer ${token}` };
+
+      // Fetch users, sessions, and departments for the overview
+      const [resUsers, resSessions, resDepts] = await Promise.all([
+        fetch('http://localhost:5000/api/users', { headers }),
+        fetch('http://localhost:5000/api/sessions', { headers }),
+        fetch('http://localhost:5000/api/departments', { headers })
+      ]);
+
+      if (resUsers.ok) {
+        const usersData = await resUsers.json();
+        setUsers(usersData);
+        setTeachersCount(usersData.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT').length);
+        setDeansCount(usersData.filter(u => ['DEAN', 'DOYEN', 'VICE_DEAN', 'VICE_DOYEN'].includes(u.role)).length);
       }
-    } catch (e) { console.error(e); }
+      if (resSessions.ok) {
+        const sessions = await resSessions.json();
+        setSessionsCount(sessions.length);
+      }
+      if (resDepts.ok) {
+        const deptsData = await resDepts.json();
+        setDepartments(deptsData);
+      }
+    } catch (error) {
+      console.error("Error fetching data", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchGlobalStats(); }, []);
-  
   useEffect(() => {
-    if (view !== lastClearedView.current && badges[view] > 0) {
-      markSeen(view);
-      lastClearedView.current = view;
+    if (view === 'overview' || view === 'directory') {
+      fetchData();
     }
-  }, [view, badges[view]]);
-
-  const menuItems = [
-    { id: 'overview', label: t('sidebar.overview') },
-    { id: 'absences', label: t('sidebar.absences'), badge: badges.absences },
-    { id: 'promotions', label: t('sidebar.promotions'), badge: badges.promotions },
-    { id: 'documents', label: t('sidebar.documents'), badge: badges.documents },
-    { id: 'evaluations', label: t('sidebar.evaluations'), badge: badges.evaluations },
-    { id: 'reminders', label: t('sidebar.notifications'), badge: badges.reminders },
-    { id: 'settings', label: t('settings.title') },
-  ];
-
-  const getPageTitle = () => {
-    switch(view) {
-      case 'overview': return t('topbar.institutionalOverview');
-      case 'absences': return t('topbar.absenceTracking');
-      case 'promotions': return t('topbar.academicAdvancements');
-      case 'documents': return t('topbar.institutionalDocuments');
-      case 'evaluations': return t('topbar.academicPerformance');
-      case 'reminders': return t('topbar.officialCommunications');
-      case 'settings': return t('settings.title');
-      default: return 'Dashboard';
-    }
-  };
+  }, [view]);
 
   return (
-    <DashboardLayout
-      user={user}
-      activeView={view}
-      setView={setView}
-      menuItems={menuItems}
-      onLogout={onLogout}
-      title={getPageTitle()}
-    >
-      <div className="animate-academic">
-        {view === 'absences' ? <ManageAbsences user={user} /> : 
-         view === 'promotions' ? <ManagePromotions user={user} /> : 
-         view === 'documents' ? <ManageDocuments user={user} /> : 
-         view === 'evaluations' ? <ManageEvaluations user={user} /> : 
-         view === 'reminders' ? <ManageReminders user={user} /> : 
-         view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : (
-           <div className="rector-view">
-              <div className="stats-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px', marginBottom: '40px' }}>
-                <div className="card-academic">
-                  <h4 style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px' }}>{t('hr.totalStaff')}</h4>
-                  <p style={{ fontSize: '42px', fontWeight: '800', color: 'var(--navy)' }}>{stats.total_users}</p>
-                </div>
-                <div className="card-academic">
-                  <h4 style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px' }}>{t('hr.faculty')}</h4>
-                  <p style={{ fontSize: '42px', fontWeight: '800', color: 'var(--navy)' }}>{stats.total_teachers}</p>
-                </div>
-                <div className="card-academic">
-                  <h4 style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px' }}>{t('sidebar.departments')}</h4>
-                  <p style={{ fontSize: '42px', fontWeight: '800', color: 'var(--navy)' }}>{stats.total_departments}</p>
-                </div>
-              </div>
+    <div className="dashboard-container">
+      {/* Sidebar */}
+      <aside className="sidebar" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
+        <div className="sidebar-header">
+          <div className="logo-icon">🏛️</div>
+          <h2>PFE_GRH</h2>
+        </div>
 
-              <div className="card-academic">
-                <h3 className="academic-title">{t('rector.summaryTitle')}</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '17px', lineHeight: '1.8' }}>
-                  {t('rector.summaryText')}
-                </p>
-                <div style={{ marginTop: '40px', borderTop: '1px solid #eee', paddingTop: '32px', display: 'flex', gap: '24px' }}>
-                   <div style={{ flex: 1 }}>
-                      <h5 style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold)', marginBottom: '16px' }}>{t('rector.recentActivity')}</h5>
-                      <p style={{ fontSize: '14px', color: '#666' }}>{t('rector.noAlerts')}</p>
-                   </div>
-                   <button className="btn-confirm-pro" style={{ padding: '10px 24px' }}>{t('rector.reports')}</button>
+        <div className="user-profile">
+          <div className="avatar" style={{ background: 'linear-gradient(135deg, #4f46e5, #6366f1)' }}>
+            {user.prenom[0]}{user.nom[0]}
+          </div>
+          <div className="user-info">
+            <h4>{user.prenom} {user.nom}</h4>
+            <span className="badge-role" style={{ background: 'rgba(79, 70, 229, 0.2)', color: '#c7d2fe' }}>
+              Rector
+            </span>
+          </div>
+        </div>
+
+        <nav className="sidebar-nav">
+          <button
+            className={`nav-item ${view === 'overview' ? 'active' : ''}`}
+            onClick={() => setView('overview')}
+          >
+            📊 University Overview
+          </button>
+          <button
+            className={`nav-item ${view === 'directory' ? 'active' : ''}`}
+            onClick={() => setView('directory')}
+          >
+            👥 Staff Directory
+          </button>
+          <button
+            className={`nav-item ${view === 'departments' ? 'active' : ''}`}
+            onClick={() => setView('departments')}
+          >
+            🏢 Faculties & Depts
+          </button>
+          <button
+            className={`nav-item ${view === 'reminders' ? 'active' : ''}`}
+            onClick={() => setView('reminders')}
+          >
+            📢 Official Communications
+          </button>
+        </nav>
+
+        <button className="btn-logout" onClick={onLogout}>
+          🚪 Logout
+        </button>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="main-content">
+        <header className="topbar">
+          <h1>
+            {view === 'overview' ? 'University Overview' :
+              view === 'directory' ? 'Global Staff Directory' :
+                view === 'departments' ? 'University Structure' :
+                  'Official Communications'}
+          </h1>
+          <div className="date-display">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+        </header>
+
+        <div className="content-area">
+          {view === 'overview' ? (
+            loading ? (
+              <div className="loading-spinner">Loading...</div>
+            ) : (
+              <div className="overview-grid">
+                <div className="stat-card">
+                  <h3>Total Staff</h3>
+                  <p className="stat-value">{users.length}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Teachers</h3>
+                  <p className="stat-value">{teachersCount}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Deans & Vice-Deans</h3>
+                  <p className="stat-value">{deansCount}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Departments</h3>
+                  <p className="stat-value">{departments.length}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Active Sessions</h3>
+                  <p className="stat-value">{sessionsCount}</p>
                 </div>
               </div>
-           </div>
-         )}
-      </div>
-    </DashboardLayout>
+            )
+          ) : view === 'directory' ? (
+            <div className="table-card">
+              {loading ? (
+                <div className="loading-spinner">Loading directory...</div>
+              ) : (
+                <table className="modern-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Full Name</th>
+                      <th>Email</th>
+                      <th>Department</th>
+                      <th>Role</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map(u => (
+                      <tr key={u.id}>
+                        <td>#{u.id}</td>
+                        <td><strong>{u.nom}</strong> {u.prenom}</td>
+                        <td>{u.email}</td>
+                        <td>{u.department_name || '-'}</td>
+                        <td><span className={`role-tag role-${u.role.toLowerCase()}`}>{u.role}</span></td>
+                      </tr>
+                    ))}
+                    {users.length === 0 && (
+                      <tr><td colSpan="5" className="empty-state">No staff found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          ) : view === 'departments' ? (
+            <ManageDepartments />
+          ) : view === 'reminders' ? (
+            <ManageReminders />
+          ) : null}
+        </div>
+      </main>
+    </div>
   );
 }
 

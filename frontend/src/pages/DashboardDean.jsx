@@ -1,127 +1,184 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { useLanguage } from '../i18n/LanguageContext';
-import DashboardLayout from '../components/DashboardLayout';
-import ManageAbsences from './ManageAbsences';
-import ManagePromotions from './ManagePromotions';
-import ManageDocuments from './ManageDocuments';
-import ManageEvaluations from './ManageEvaluations';
+import ManageDepartments from './ManageDepartments';
+import ManageSessions from './ManageSessions';
 import ManageReminders from './ManageReminders';
-import ReminderInbox from './ReminderInbox';
-import useNotificationBadges from '../hooks/useNotificationBadges';
-import Settings from './Settings';
 import './DashboardDean.css';
 
 function DashboardDean({ user, onLogout }) {
-  const [stats, setStats] = useState({ total_teachers: 0, total_departments: 0 });
-  const [view, setViewRaw] = useState(localStorage.getItem('dean_dashboard_view') || 'overview');
-  const { badges, markSeen } = useNotificationBadges();
-  const { t } = useLanguage();
-  const lastClearedView = useRef(null);
+  const [users, setUsers] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [view, setView] = useState('overview'); // 'overview', 'departments', 'sessions', 'staff', 'reminders'
+  const [loading, setLoading] = useState(true);
 
-  const handleProfileUpdate = (newData) => {
-    const updatedUser = { ...user, ...newData };
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    window.location.reload();
-  };
-
-  const setView = (newView) => { 
-    setViewRaw(newView); 
-    localStorage.setItem('dean_dashboard_view', newView);
-    if (badges[newView] && badges[newView] > 0) markSeen(newView); 
-  };
-
-  const fetchDeanStats = async () => {
+  const fetchUsers = async () => {
+    setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/users', { headers: { 'Authorization': `Bearer ${token}` } });
+      const res = await fetch('http://localhost:5000/api/users', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const data = await res.json();
       if (res.ok) {
-        setStats({
-          total_teachers: data.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT').length,
-          total_departments: [...new Set(data.map(u => u.department_name).filter(Boolean))].length
-        });
+        setUsers(data);
       }
-    } catch (e) { console.error(e); }
+    } catch (error) {
+      toast.error("Error fetching staff data");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { 
-    fetchDeanStats(); 
-    if (badges[view] > 0) markSeen(view);
-  }, []);
+  const fetchDepartments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/departments', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDepartments(data);
+      }
+    } catch (error) {
+      console.error("Error fetching departments", error);
+    }
+  };
 
   useEffect(() => {
-    if (view !== lastClearedView.current && badges[view] > 0) {
-      markSeen(view);
-      lastClearedView.current = view;
+    if (view === 'staff' || view === 'overview') {
+      fetchUsers();
     }
-  }, [view, badges[view]]);
-
-  const menuItems = [
-    { id: 'overview', label: t('sidebar.overview') },
-    { id: 'absences', label: t('sidebar.absences'), badge: badges.absences },
-    { id: 'promotions', label: t('sidebar.promotions'), badge: badges.promotions },
-    { id: 'documents', label: t('sidebar.documents'), badge: badges.documents },
-    { id: 'evaluations', label: t('sidebar.evaluations'), badge: badges.evaluations },
-    { id: 'reminders', label: t('sidebar.notifications'), badge: badges.reminders },
-    { id: 'settings', label: t('settings.title') },
-  ];
-
-  const getPageTitle = () => {
-    switch(view) {
-      case 'overview': return t('topbar.facultyOverview');
-      case 'absences': return t('topbar.absenceTracking');
-      case 'promotions': return t('topbar.academicPromotions');
-      case 'documents': return t('topbar.officialDocuments');
-      case 'evaluations': return t('topbar.teachingQuality');
-      case 'reminders': return t('topbar.officialCommunications');
-      case 'settings': return t('settings.title');
-      default: return 'Dashboard';
+    if (view === 'overview') {
+      fetchDepartments();
     }
-  };
+  }, [view]);
 
   return (
-    <DashboardLayout
-      user={user}
-      activeView={view}
-      setView={setView}
-      menuItems={menuItems}
-      onLogout={onLogout}
-      title={getPageTitle()}
-    >
-      <div className="animate-academic">
-        {view === 'absences' ? <ManageAbsences user={user} /> : 
-         view === 'promotions' ? <ManagePromotions user={user} /> : 
-         view === 'documents' ? <ManageDocuments user={user} /> : 
-         view === 'evaluations' ? <ManageEvaluations user={user} /> : 
-         view === 'reminders' ? <ManageReminders user={user} /> : 
-         view === 'settings' ? <Settings user={user} onProfileUpdate={handleProfileUpdate} /> : (
-           <div className="dean-view">
-              <div className="stats-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px', marginBottom: '40px' }}>
-                <div className="card-academic">
-                  <h4 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px' }}>{t('dean.facultyStrength')}</h4>
-                  <p style={{ fontSize: '42px', fontWeight: '800', color: 'var(--navy)' }}>{stats.total_teachers}</p>
-                </div>
-                <div className="card-academic">
-                  <h4 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px' }}>{t('dean.activeDepts')}</h4>
-                  <p style={{ fontSize: '42px', fontWeight: '800', color: 'var(--navy)' }}>{stats.total_departments}</p>
-                </div>
-              </div>
+    <div className="dashboard-container">
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          <div className="logo-icon">🏛️</div>
+          <h2>PFE_GRH</h2>
+        </div>
 
-              <div className="card-academic">
-                <h3 className="academic-title">{t('dean.adminHighlights')}</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '16px', lineHeight: '1.8' }}>
-                  {t('dean.welcomeText')}
-                </p>
-                <div style={{ marginTop: '32px', display: 'flex', gap: '20px' }}>
-                   <button className="btn-confirm-pro" onClick={() => setView('evaluations')} style={{ padding: '10px 24px' }}>{t('dean.reviewEvals')}</button>
-                   <button className="btn-cancel-pro" onClick={() => setView('promotions')} style={{ padding: '10px 24px' }}>{t('dean.careerTracking')}</button>
-                </div>
+        <div className="user-profile">
+          <div className="avatar">{user.prenom[0]}{user.nom[0]}</div>
+          <div className="user-info">
+            <h4>{user.prenom} {user.nom}</h4>
+            <span className="badge-role" style={{ background: 'rgba(254, 243, 199, 0.2)', color: '#fef3c7' }}>Dean</span>
+          </div>
+        </div>
+
+        <nav className="sidebar-nav">
+          <button
+            className={`nav-item ${view === 'overview' ? 'active' : ''}`}
+            onClick={() => setView('overview')}
+          >
+            📊 Overview
+          </button>
+          <button
+            className={`nav-item ${view === 'departments' ? 'active' : ''}`}
+            onClick={() => setView('departments')}
+          >
+            🏢 Departments
+          </button>
+          <button
+            className={`nav-item ${view === 'sessions' ? 'active' : ''}`}
+            onClick={() => setView('sessions')}
+          >
+            📚 Academic Affairs
+          </button>
+          <button
+            className={`nav-item ${view === 'staff' ? 'active' : ''}`}
+            onClick={() => setView('staff')}
+          >
+            👥 Human Resources
+          </button>
+          <button
+            className={`nav-item ${view === 'reminders' ? 'active' : ''}`}
+            onClick={() => setView('reminders')}
+          >
+            📢 Communications
+          </button>
+        </nav>
+
+        <button className="btn-logout" onClick={onLogout}>
+          🚪 Logout
+        </button>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="main-content">
+        <header className="topbar">
+          <h1>
+            {view === 'overview' ? 'Faculty Dashboard' :
+              view === 'departments' ? 'Manage Departments' :
+                view === 'sessions' ? 'Schedules & Sessions' :
+                  view === 'staff' ? 'Faculty Staff' :
+                    'Communications & Reminders'}
+          </h1>
+          <div className="date-display">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+        </header>
+
+        <div className="content-area">
+          {view === 'overview' ? (
+            <div className="overview-grid">
+              <div className="stat-card">
+                <h3>Total Departments</h3>
+                <p className="stat-value">{departments.length || 0}</p>
               </div>
-           </div>
-         )}
-      </div>
-    </DashboardLayout>
+              <div className="stat-card">
+                <h3>Total Staff</h3>
+                <p className="stat-value">{users.length || 0}</p>
+              </div>
+              <div className="stat-card">
+                <h3>Teachers</h3>
+                <p className="stat-value">{users.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT').length || 0}</p>
+              </div>
+            </div>
+          ) : view === 'departments' ? (
+            <ManageDepartments />
+          ) : view === 'sessions' ? (
+            <ManageSessions />
+          ) : view === 'reminders' ? (
+            <ManageReminders />
+          ) : (
+            <div className="table-card">
+              {loading ? (
+                <div className="loading-spinner">Loading...</div>
+              ) : (
+                <table className="modern-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Full Name</th>
+                      <th>Email</th>
+                      <th>Department</th>
+                      <th>Role</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map(u => (
+                      <tr key={u.id}>
+                        <td>#{u.id}</td>
+                        <td><strong>{u.nom}</strong> {u.prenom}</td>
+                        <td>{u.email}</td>
+                        <td>{u.department_name || '-'}</td>
+                        <td><span className={`role-tag role-${u.role.toLowerCase()}`}>{u.role}</span></td>
+                      </tr>
+                    ))}
+                    {users.length === 0 && (
+                      <tr><td colSpan="5" className="empty-state">No employees found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
   );
 }
 
