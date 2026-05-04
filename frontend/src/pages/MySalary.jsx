@@ -80,6 +80,29 @@ function MySalary({ user }) {
           </div>
         </div>
       </div>
+      
+      {/* ── DÉTAILS DES SÉANCES SUPPLÉMENTAIRES ── */}
+      {current.extra_sessions && current.extra_sessions.length > 0 && (
+        <div className="card-academic" style={{ marginBottom: '32px' }}>
+          <h3 style={{ fontSize: '18px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></span>
+            {t('teacher.extraSessions') || 'Détails des Séances SUPP Effectuées'}
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+            {current.extra_sessions.map((s, idx) => (
+              <div key={idx} style={{ padding: '12px 16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                <p style={{ fontWeight: '700', color: 'var(--text-main)', margin: 0 }}>{s.module_name}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--p-indigo)', fontWeight: '600' }}>
+                    {new Date(s.date).toLocaleDateString()} • {t(`days.${s.day}`)}
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{s.time?.substring(0,5)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── HISTORIQUE DES PAIEMENTS ── */}
       <div className="card-academic">

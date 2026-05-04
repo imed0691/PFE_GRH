@@ -154,6 +154,7 @@ const calculateSalaryForMonth = (teacher, month, year, sessions, now) => {
   const monthName = monthNames[month];
   
   let totalExtraSessions = 0;
+  let countedSessions = [];
   sessions.forEach(s => {
     if (s.session_date) {
       const sDate = new Date(s.session_date);
@@ -164,6 +165,13 @@ const calculateSalaryForMonth = (teacher, month, year, sessions, now) => {
       }
       if (sDate.getMonth() === month && sDate.getFullYear() === year && sessionEnd <= now) {
         totalExtraSessions++;
+        countedSessions.push({
+          id: s.id,
+          module_name: s.module_name,
+          date: s.session_date,
+          day: s.day_of_week,
+          time: s.start_time
+        });
       }
     }
   });
@@ -210,6 +218,7 @@ const calculateSalaryForMonth = (teacher, month, year, sessions, now) => {
         total_penalty: penaltyAmount,
         extra_pay: extraPay,
         net_salary: netSalary > 0 ? netSalary : 0,
+        extra_sessions: countedSessions,
         status: 'Paid'
       });
     });
