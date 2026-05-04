@@ -66,7 +66,16 @@ function DashboardTeacher({ user, onLogout }) {
     // Align with backend: Look back to Jan 1st 2026 OR teacher creation date
     const janFirst = new Date(today.getFullYear(), 0, 1); 
     const teacherCreated = stats.teacher_created_at ? new Date(stats.teacher_created_at) : janFirst;
-    const semesterStart = teacherCreated > janFirst ? teacherCreated : janFirst;
+    let semesterStart = teacherCreated > janFirst ? teacherCreated : janFirst;
+    
+    // Academic week starts on Saturday. Calculate days since last Saturday.
+    const day = semesterStart.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    const daysSinceSaturday = (day + 1) % 7;
+    
+    const startOfAcademicWeek = new Date(semesterStart);
+    startOfAcademicWeek.setDate(startOfAcademicWeek.getDate() - daysSinceSaturday);
+    semesterStart = startOfAcademicWeek;
+    semesterStart.setHours(0,0,0,0);
 
     // Helper to check if a session at a specific date/time was an unjustified absence
     const isUnjustifiedAbsence = (sessionId, dateStr, startTime) => {

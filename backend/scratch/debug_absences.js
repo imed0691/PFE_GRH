@@ -1,24 +1,37 @@
 const mysql = require('mysql2');
-require('dotenv').config();
+
 const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'pfe_db'
 });
 
-const teacherId = 27;
-const query = `
-  SELECT 
-    SUM(CASE WHEN is_extra = 0 THEN 1 ELSE 0 END) as reg_unjustified,
-    SUM(CASE WHEN is_extra = 1 THEN 1 ELSE 0 END) as extra_unjustified
-  FROM absences 
-  WHERE teacher_id = ? 
-    AND (justification_status IS NULL OR justification_status != 'Accepted')
-`;
+const teacherId = 1; // Assuming ID 1 for now, but we'll try to find the actual teacher
+const month = 4; // May
+const year = 2026;
 
-db.query(query, [teacherId], (err, results) => {
-  if (err) console.error(err);
-  console.log('Absence Totals for Teacher 27:', results[0]);
+const runDebug = async () => {
+  // 1. Get Teacher Info
+  const [teachers] = await db.promise().query("SELECT id, nom, prenom FROM users WHERE role IN ('TEACHER', 'ENSEIGNANT')");
+  console.log('Teachers found:', teachers.map(t => `${t.id}: ${t.nom}`));
+
+  for (const t of teachers) {
+    console.log(`\n--- Debugging Teacher ${t.id} (${t.nom}) ---`);
+    
+    // 2. Get Absences
+    const [absences] = await db.promise().query("SELECT * FROM absences WHERE teacher_id = ?", [t.id]);
+    console.log('All Absences count:', absences.length);
+    
+    absences.forEach(a => {
+      const aDate = new Date(a.date);
+      const m = aDate.getMonth();
+      const y = aDate.getFullYear();
+      console.log(`Absence ID ${a.id}: Date=${a.date} (M:${m} Y:${y}), is_extra=${a.is_extra}, status=${a.justification_status}, is_caught_up=${a.is_caught_up}`);
+    });
+  }
+  
   db.end();
-});
+};
+
+runDebug();

@@ -187,15 +187,26 @@ exports.getTeacherDashboardData = (req, res) => {
       teacherCreatedAt.setHours(0, 0, 0, 0); // Start of the joining day
       
       const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const today = new Date();
       const currentHour = today.getHours() + today.getMinutes() / 60;
       
       let completedSessionsCount = 0;
       let completedExtraCount = 0;
-      const actualStart = teacherCreatedAt > semesterStart ? teacherCreatedAt : semesterStart;
+      let actualStart = teacherCreatedAt > semesterStart ? teacherCreatedAt : semesterStart;
+      // Academic week starts on Saturday. Calculate days since last Saturday.
+      const day = actualStart.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+      const daysSinceSaturday = (day + 1) % 7;
+      
+      const startOfAcademicWeek = new Date(actualStart);
+      startOfAcademicWeek.setDate(startOfAcademicWeek.getDate() - daysSinceSaturday);
+      actualStart = startOfAcademicWeek;
 
       sessions.forEach(s => {
-        const [eh, em] = s.end_time.split(':').map(Number);
+        let eh = 0, em = 0;
+        if (s.end_time && typeof s.end_time === 'string') {
+          [eh, em] = s.end_time.split(':').map(Number);
+        } else {
+          eh = 23; em = 59;
+        }
         const sessionEndHour = eh + em/60;
 
         if (s.session_date) {
@@ -347,7 +358,12 @@ exports.getRecentPastSessions = (req, res) => {
       const pastSessions = [];
 
       sessions.forEach(s => {
-        const [eh, em] = s.end_time.split(':').map(Number);
+        let eh = 0, em = 0;
+        if (s.end_time && typeof s.end_time === 'string') {
+          [eh, em] = s.end_time.split(':').map(Number);
+        } else {
+          eh = 23; em = 59;
+        }
         const sessionEndHour = eh + em / 60;
 
         let occ;
@@ -358,8 +374,11 @@ exports.getRecentPastSessions = (req, res) => {
           occ = getLastOccurrence(s.day_of_week);
         }
 
-        // Only keep if it's in the past (before 'now') AND after the teacher joined
+        // Only keep if it's in the past (before 'now') AND after the teacher joined (allowing the full week of joining)
         const teacherJoinDate = new Date(s.teacher_created_at);
+        const dayJoin = teacherJoinDate.getDay();
+        const daysSinceSaturday = (dayJoin + 1) % 7;
+        teacherJoinDate.setDate(teacherJoinDate.getDate() - daysSinceSaturday);
         teacherJoinDate.setHours(0,0,0,0);
         
         const isToday = occ.toDateString() === now.toDateString();

@@ -21,6 +21,8 @@ const ar = {
     fullName: 'الاسم الكامل',
     teacher: 'أستاذ',
     noData: 'لا توجد بيانات.',
+    module: 'الوحدة',
+    refresh: 'تحديث',
     serverError: 'خطأ في الخادم',
     errorLoading: 'خطأ في التحميل',
     confirm: 'هل أنت متأكد؟',
@@ -83,8 +85,10 @@ const ar = {
   },
   sidebar: {
     staffList: 'قائمة الموظفين',
+    staff: 'الموظفين',
     addEmployee: 'إضافة موظف',
     departments: 'الأقسام',
+    faculties: 'الكليات والأقسام',
     classes: 'إدارة الفصول',
     sessions: 'الحصص',
     absences: 'الغيابات',
@@ -106,6 +110,7 @@ const ar = {
     schedules: 'الجداول الزمنية',
     notifications: 'الإشعارات',
     mySchedule: 'جدولي الزمني',
+    salary: 'راتبي',
   },
   topbar: {
     personnelManagement: 'إدارة الموظفين',
@@ -570,6 +575,7 @@ const ar = {
     adjustFor: 'تعديل راتب',
     hourlyRate: 'سعر الساعة الإضافية (دج/سا)',
     absencePenalty: 'خصم الغياب (دج)',
+    absenceDetails: 'تفاصيل خصومات الغياب',
   },
   sessions: {
     moduleSubject: 'الوحدة / المادة',

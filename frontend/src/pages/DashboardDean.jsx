@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { useLanguage } from '../i18n/LanguageContext';
+import DashboardLayout from '../components/DashboardLayout';
 import ManageDepartments from './ManageDepartments';
 import ManageSessions from './ManageSessions';
 import ManageReminders from './ManageReminders';
+import Settings from './Settings';
 import './DashboardDean.css';
 
 function DashboardDean({ user, onLogout }) {
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [view, setView] = useState('overview'); // 'overview', 'departments', 'sessions', 'staff', 'reminders'
+  const { t } = useLanguage();
+  
+  const [view, setView] = useState(localStorage.getItem('dean_view') || 'overview');
   const [loading, setLoading] = useState(true);
 
   const fetchUsers = async () => {
@@ -45,110 +50,77 @@ function DashboardDean({ user, onLogout }) {
   };
 
   useEffect(() => {
-    if (view === 'staff' || view === 'overview') {
-      fetchUsers();
+    fetchUsers();
+    fetchDepartments();
+  }, []);
+
+  const handleViewChange = (newView) => {
+    setView(newView);
+    localStorage.setItem('dean_view', newView);
+  };
+
+  const menuItems = [
+    { id: 'overview', label: t('sidebar.overview') || 'Aperçu' },
+    { id: 'departments', label: t('sidebar.departments') || 'Départements' },
+    { id: 'sessions', label: t('sidebar.sessions') || 'Scolarité' },
+    { id: 'staff', label: t('sidebar.staff') || 'Personnel' },
+    { id: 'reminders', label: t('sidebar.reminders') || 'Communications' },
+    { id: 'settings', label: t('settings.title') },
+  ];
+
+  const getPageTitle = () => {
+    switch(view) {
+      case 'overview': return t('sidebar.overview') || 'Tableau de Bord Doyen';
+      case 'departments': return t('sidebar.departments') || 'Gestion des Départements';
+      case 'sessions': return t('sidebar.sessions') || 'Affaires Académiques';
+      case 'staff': return t('sidebar.staff') || 'Personnel de la Faculté';
+      case 'reminders': return t('sidebar.reminders') || 'Notifications & Rappels';
+      case 'settings': return t('settings.title');
+      default: return 'Dashboard';
     }
-    if (view === 'overview') {
-      fetchDepartments();
-    }
-  }, [view]);
+  };
 
   return (
-    <div className="dashboard-container">
-      {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <div className="logo-icon">🏛️</div>
-          <h2>PFE_GRH</h2>
-        </div>
-
-        <div className="user-profile">
-          <div className="avatar">{user.prenom[0]}{user.nom[0]}</div>
-          <div className="user-info">
-            <h4>{user.prenom} {user.nom}</h4>
-            <span className="badge-role" style={{ background: 'rgba(254, 243, 199, 0.2)', color: '#fef3c7' }}>Dean</span>
-          </div>
-        </div>
-
-        <nav className="sidebar-nav">
-          <button
-            className={`nav-item ${view === 'overview' ? 'active' : ''}`}
-            onClick={() => setView('overview')}
-          >
-            📊 Overview
-          </button>
-          <button
-            className={`nav-item ${view === 'departments' ? 'active' : ''}`}
-            onClick={() => setView('departments')}
-          >
-            🏢 Departments
-          </button>
-          <button
-            className={`nav-item ${view === 'sessions' ? 'active' : ''}`}
-            onClick={() => setView('sessions')}
-          >
-            📚 Academic Affairs
-          </button>
-          <button
-            className={`nav-item ${view === 'staff' ? 'active' : ''}`}
-            onClick={() => setView('staff')}
-          >
-            👥 Human Resources
-          </button>
-          <button
-            className={`nav-item ${view === 'reminders' ? 'active' : ''}`}
-            onClick={() => setView('reminders')}
-          >
-            📢 Communications
-          </button>
-        </nav>
-
-        <button className="btn-logout" onClick={onLogout}>
-          🚪 Logout
-        </button>
-      </aside>
-
-      {/* Main Content Area */}
-      <main className="main-content">
-        <header className="topbar">
-          <h1>
-            {view === 'overview' ? 'Faculty Dashboard' :
-              view === 'departments' ? 'Manage Departments' :
-                view === 'sessions' ? 'Schedules & Sessions' :
-                  view === 'staff' ? 'Faculty Staff' :
-                    'Communications & Reminders'}
-          </h1>
-          <div className="date-display">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
-        </header>
-
-        <div className="content-area">
-          {view === 'overview' ? (
-            <div className="overview-grid">
-              <div className="stat-card">
-                <h3>Total Departments</h3>
-                <p className="stat-value">{departments.length || 0}</p>
-              </div>
-              <div className="stat-card">
-                <h3>Total Staff</h3>
-                <p className="stat-value">{users.length || 0}</p>
-              </div>
-              <div className="stat-card">
-                <h3>Teachers</h3>
-                <p className="stat-value">{users.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT').length || 0}</p>
-              </div>
+    <DashboardLayout
+      user={user}
+      activeView={view}
+      setView={handleViewChange}
+      menuItems={menuItems}
+      onLogout={onLogout}
+      title={getPageTitle()}
+    >
+      <div className="animate-mnadm">
+        {view === 'overview' ? (
+          <div className="overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
+            <div className="card-academic" style={{ borderTop: '4px solid var(--p-indigo)' }}>
+              <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>Total Departments</h3>
+              <p style={{ fontSize: '32px', fontWeight: '900', color: 'var(--p-indigo)', margin: 0 }}>{departments.length || 0}</p>
             </div>
-          ) : view === 'departments' ? (
-            <ManageDepartments />
-          ) : view === 'sessions' ? (
-            <ManageSessions />
-          ) : view === 'reminders' ? (
-            <ManageReminders />
-          ) : (
-            <div className="table-card">
+            <div className="card-academic" style={{ borderTop: '4px solid #10b981' }}>
+              <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>Total Staff</h3>
+              <p style={{ fontSize: '32px', fontWeight: '900', color: '#10b981', margin: 0 }}>{users.length || 0}</p>
+            </div>
+            <div className="card-academic" style={{ borderTop: '4px solid #f59e0b' }}>
+              <h3 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>Teachers</h3>
+              <p style={{ fontSize: '32px', fontWeight: '900', color: '#f59e0b', margin: 0 }}>{users.filter(u => u.role === 'TEACHER' || u.role === 'ENSEIGNANT').length || 0}</p>
+            </div>
+          </div>
+        ) : view === 'departments' ? (
+          <ManageDepartments />
+        ) : view === 'sessions' ? (
+          <ManageSessions />
+        ) : view === 'reminders' ? (
+          <ManageReminders />
+        ) : view === 'settings' ? (
+          <Settings user={user} onProfileUpdate={() => window.location.reload()} />
+        ) : (
+          <div className="card-academic">
+            <h2 className="academic-title">{t('sidebar.staff') || 'Faculty Staff'}</h2>
+            <div className="table-academic-wrapper">
               {loading ? (
-                <div className="loading-spinner">Loading...</div>
+                <div className="loading-spinner-academic"></div>
               ) : (
-                <table className="modern-table">
+                <table className="table-academic">
                   <thead>
                     <tr>
                       <th>ID</th>
@@ -161,24 +133,21 @@ function DashboardDean({ user, onLogout }) {
                   <tbody>
                     {users.map(u => (
                       <tr key={u.id}>
-                        <td>#{u.id}</td>
-                        <td><strong>{u.nom}</strong> {u.prenom}</td>
+                        <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>#{u.id}</td>
+                        <td style={{ fontWeight: '700' }}>{u.nom} {u.prenom}</td>
                         <td>{u.email}</td>
                         <td>{u.department_name || '-'}</td>
-                        <td><span className={`role-tag role-${u.role.toLowerCase()}`}>{u.role}</span></td>
+                        <td><span className="badge-academic badge-gold">{u.role}</span></td>
                       </tr>
                     ))}
-                    {users.length === 0 && (
-                      <tr><td colSpan="5" className="empty-state">No employees found.</td></tr>
-                    )}
                   </tbody>
                 </table>
               )}
             </div>
-          )}
-        </div>
-      </main>
-    </div>
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
   );
 }
 

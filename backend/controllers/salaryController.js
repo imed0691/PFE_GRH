@@ -12,7 +12,9 @@ const countPastDayOccurrences = (dayName, month, year, endTime = '23:59:00', now
   const sDate = new Date(startDate);
   sDate.setHours(0,0,0,0);
 
-  const [eh, em] = endTime.split(':').map(Number);
+  const [eh, em] = (endTime && typeof endTime === 'string') 
+    ? endTime.split(':').map(Number)
+    : [23, 59];
   const sessionEndHour = eh + em/60;
   const currentHour = now.getHours() + now.getMinutes() / 60;
 
@@ -59,7 +61,7 @@ exports.calculateSalaries = (req, res) => {
     const salaryPromises = teachers.map(t => {
       return new Promise((resolve, reject) => {
         // 1. Get Extra Sessions scheduled
-        const sessionsQuery = "SELECT *, created_at FROM academic_sessions WHERE teacher_id = ? AND is_extra = TRUE";
+        const sessionsQuery = "SELECT * FROM academic_sessions WHERE teacher_id = ? AND is_extra = TRUE";
         db.query(sessionsQuery, [t.id], (err, sessions) => {
           if (err) return reject(err);
 
@@ -69,9 +71,11 @@ exports.calculateSalaries = (req, res) => {
               const sDate = new Date(s.session_date);
               const sessionCreatedAt = new Date(s.created_at);
               const sessionEnd = new Date(s.session_date);
-              if (s.end_time) {
+              if (s.end_time && typeof s.end_time === 'string') {
                 const [h, m] = s.end_time.split(':');
                 sessionEnd.setHours(parseInt(h), parseInt(m), 0, 0);
+              } else {
+                sessionEnd.setHours(23, 59, 59, 999);
               }
               if (sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear && sessionEnd <= now) {
                 totalExtraSessionsThisMonth++;
@@ -155,72 +159,107 @@ const calculateSalaryForMonth = (teacher, month, year, sessions, now) => {
   
   let totalExtraSessions = 0;
   let countedSessions = [];
-  sessions.forEach(s => {
-    if (s.session_date) {
-      const sDate = new Date(s.session_date);
-      const sessionEnd = new Date(s.session_date);
-      if (s.end_time) {
-        const [h, m] = s.end_time.split(':');
-        sessionEnd.setHours(parseInt(h), parseInt(m), 0, 0);
+  
+  try {
+    sessions.forEach(s => {
+      if (s.session_date) {
+        const sDate = new Date(s.session_date);
+        const sessionEnd = new Date(s.session_date);
+        
+        if (s.end_time && typeof s.end_time === 'string') {
+          const [h, m] = s.end_time.split(':');
+          sessionEnd.setHours(parseInt(h), parseInt(m), 0, 0);
+        } else {
+          sessionEnd.setHours(23, 59, 59, 999);
+        }
+        
+        if (sDate.getMonth() === month && sDate.getFullYear() === year && sessionEnd <= now) {
+          totalExtraSessions++;
+          countedSessions.push({
+            id: s.id,
+            module_name: s.module_name,
+            date: s.session_date,
+            day: s.day_of_week,
+            time: s.start_time
+          });
+        }
       }
-      if (sDate.getMonth() === month && sDate.getFullYear() === year && sessionEnd <= now) {
-        totalExtraSessions++;
-        countedSessions.push({
-          id: s.id,
-          module_name: s.module_name,
-          date: s.session_date,
-          day: s.day_of_week,
-          time: s.start_time
-        });
-      }
-    }
-  });
+    });
+  } catch (loopErr) {
+    console.error("[Salary] Error in sessions loop:", loopErr);
+    return Promise.reject(new Error("Loop Error: " + loopErr.message));
+  }
 
   return new Promise((resolve, reject) => {
     const absQuery = `
       SELECT is_extra, date, justification_status, is_caught_up
       FROM absences 
       WHERE teacher_id = ? 
-        AND date <= DATE(?) 
     `;
-    db.query(absQuery, [teacher.id, now], (err, absences) => {
-      if (err) return reject(err);
+    db.query(absQuery, [teacher.id], (err, absences) => {
+      if (err) {
+        console.error("[Salary] DB Error (Absences Query):", err);
+        return reject(err);
+      }
       
-      let regUnjustified = 0;
-      let extraUnjustified = 0;
+      try {
+        let regUnjustified = 0;
+        let extraUnjustified = 0;
+        let absenceDetails = [];
 
-      absences.forEach(a => {
-        const aDate = new Date(a.date);
-        if (aDate.getMonth() === month && aDate.getFullYear() === year) {
-          if (a.justification_status !== 'Accepted' && !a.is_caught_up) {
-            if (a.is_extra) extraUnjustified++;
-            else regUnjustified++;
+        absences.forEach(a => {
+          if (!a.date) return;
+          const aDate = new Date(a.date);
+          if (aDate.getMonth() === month && aDate.getFullYear() === year) {
+            if (a.justification_status !== 'Accepted' && !a.is_caught_up) {
+              if (a.is_extra) {
+                extraUnjustified++;
+                absenceDetails.push({
+                  id: a.id,
+                  date: a.date,
+                  reason: a.reason || 'Non justifié',
+                  is_extra: true
+                });
+              } else {
+                regUnjustified++;
+                absenceDetails.push({
+                  id: a.id,
+                  date: a.date,
+                  reason: a.reason || 'Non justifié',
+                  is_extra: false
+                });
+              }
+            }
           }
-        }
-      });
+        });
 
-      let finalExtraSessions = totalExtraSessions - extraUnjustified;
-      if (finalExtraSessions < 0) finalExtraSessions = 0;
+        let finalExtraSessions = totalExtraSessions - extraUnjustified;
+        if (finalExtraSessions < 0) finalExtraSessions = 0;
 
-      const extraPay = finalExtraSessions * (teacher.hourly_rate || 0);
-      const penaltyAmount = regUnjustified * (teacher.absence_penalty || 0);
-      const netSalary = (teacher.base_salary || 0) + extraPay - penaltyAmount;
+        const extraPay = finalExtraSessions * (teacher.hourly_rate || 0);
+        const penaltyAmount = regUnjustified * (teacher.absence_penalty || 0);
+        const netSalary = (teacher.base_salary || 0) + extraPay - penaltyAmount;
 
-      resolve({
-        date: `${monthName} ${year}`,
-        month: monthName,
-        year: year,
-        base_salary: teacher.base_salary || 0,
-        extra_hours: finalExtraSessions,
-        hourly_rate: teacher.hourly_rate || 0,
-        absences: regUnjustified,
-        absence_penalty: teacher.absence_penalty || 0,
-        total_penalty: penaltyAmount,
-        extra_pay: extraPay,
-        net_salary: netSalary > 0 ? netSalary : 0,
-        extra_sessions: countedSessions,
-        status: 'Paid'
-      });
+        resolve({
+          date: `${monthName} ${year}`,
+          month: monthName,
+          year: year,
+          base_salary: teacher.base_salary || 0,
+          extra_hours: finalExtraSessions,
+          hourly_rate: teacher.hourly_rate || 0,
+          absences: regUnjustified,
+          absence_details: absenceDetails,
+          absence_penalty: teacher.absence_penalty || 0,
+          total_penalty: penaltyAmount,
+          extra_pay: extraPay,
+          net_salary: netSalary > 0 ? netSalary : 0,
+          extra_sessions: countedSessions,
+          status: 'Paid'
+        });
+      } catch (procErr) {
+        console.error("[Salary] Error processing data:", procErr);
+        reject(procErr);
+      }
     });
   });
 };
@@ -229,43 +268,66 @@ const calculateSalaryForMonth = (teacher, month, year, sessions, now) => {
 exports.getMySalary = (req, res) => {
   const teacherId = req.user.id;
   const now = new Date();
+  console.log(`[Salary] Fetching for teacher ${teacherId} at ${now.toISOString()}`);
   
   const userQuery = "SELECT id, nom, prenom, grade, base_salary, hourly_rate, absence_penalty, created_at FROM users WHERE id = ?";
   db.query(userQuery, [teacherId], async (err, users) => {
-    if (err || users.length === 0) return res.status(500).json({ error: "User not found" });
-    
-    const t = users[0];
-    const teacherJoined = new Date(t.created_at);
-    
-    // Get all sessions once to use in history calculation
-    const sessionsQuery = "SELECT *, created_at FROM academic_sessions WHERE teacher_id = ? AND is_extra = TRUE";
-    db.query(sessionsQuery, [t.id], async (err, sessions) => {
-      if (err) return res.status(500).json({ error: err.message });
-
-      // 1. Calculate Current Month (Dynamic)
-      const currentData = await calculateSalaryForMonth(t, now.getMonth(), now.getFullYear(), sessions, now);
-
-      // 2. Calculate History (All months since joining up to last month)
-      const history = [];
-      let iterDate = new Date(teacherJoined.getFullYear(), teacherJoined.getMonth(), 1);
-      const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-
-      const historyPromises = [];
-      while (iterDate <= lastMonthDate) {
-        // Only if it's in the past
-        historyPromises.push(calculateSalaryForMonth(t, iterDate.getMonth(), iterDate.getFullYear(), sessions, new Date(iterDate.getFullYear(), iterDate.getMonth() + 1, 0, 23, 59, 59)));
-        iterDate.setMonth(iterDate.getMonth() + 1);
+    try {
+      if (err) {
+        console.error("[Salary] DB Error (User):", err);
+        return res.status(500).json({ error: "Database error fetching user info" });
       }
+      if (users.length === 0) {
+        console.warn("[Salary] User not found:", teacherId);
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      const t = users[0];
+      const teacherJoined = t.created_at ? new Date(t.created_at) : now;
+      console.log(`[Salary] Teacher ${t.nom} joined at ${teacherJoined.toISOString()}`);
+      
+      // Get all sessions once to use in history calculation
+      const sessionsQuery = "SELECT * FROM academic_sessions WHERE teacher_id = ? AND is_extra = TRUE";
+      db.query(sessionsQuery, [t.id], async (err, sessions) => {
+        if (err) {
+          console.error("[Salary] DB Error (Sessions):", err);
+          return res.status(500).json({ error: "Database error fetching sessions" });
+        }
 
-      const historyResults = await Promise.all(historyPromises);
-      // Sort history descending (most recent first)
-      historyResults.reverse();
+        try {
+          console.log(`[Salary] Calculating current month for ${t.nom}`);
+          // 1. Calculate Current Month (Dynamic)
+          const currentData = await calculateSalaryForMonth(t, now.getMonth(), now.getFullYear(), sessions, now);
 
-      res.json({ 
-        current: currentData, 
-        history: historyResults 
+          // 2. Calculate History (All months since joining up to last month)
+          const historyPromises = [];
+          let iterDate = new Date(teacherJoined.getFullYear(), teacherJoined.getMonth(), 1);
+          const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+          console.log(`[Salary] Calculating history from ${iterDate.toISOString()} to ${lastMonthDate.toISOString()}`);
+          while (iterDate <= lastMonthDate) {
+            historyPromises.push(calculateSalaryForMonth(t, iterDate.getMonth(), iterDate.getFullYear(), sessions, new Date(iterDate.getFullYear(), iterDate.getMonth() + 1, 0, 23, 59, 59)));
+            iterDate.setMonth(iterDate.getMonth() + 1);
+          }
+
+          console.log(`[Salary] Waiting for ${historyPromises.length} history months...`);
+          const historyResults = await Promise.all(historyPromises);
+          historyResults.reverse();
+
+          console.log(`[Salary] Success for teacher ${t.nom}`);
+          res.json({ 
+            current: currentData, 
+            history: historyResults 
+          });
+        } catch (calcErr) {
+          console.error("[Salary] Calculation error details:", calcErr);
+          res.status(500).json({ error: "Calculation Error: " + calcErr.message });
+        }
       });
-    });
+    } catch (dbErr) {
+      console.error("[Salary] Global parsing error:", dbErr);
+      res.status(500).json({ error: "System Error: " + dbErr.message });
+    }
   });
 };
 
@@ -305,9 +367,11 @@ exports.finalizeMonth = (req, res) => {
             if (s.session_date) {
               const sDate = new Date(s.session_date);
               const sessionEnd = new Date(s.session_date);
-              if (s.end_time) {
+              if (s.end_time && typeof s.end_time === 'string') {
                 const [h, m] = s.end_time.split(':');
                 sessionEnd.setHours(parseInt(h), parseInt(m), 0, 0);
+              } else {
+                sessionEnd.setHours(23, 59, 59, 999);
               }
               const now = new Date();
               if (sDate.getMonth() === mIndex && sDate.getFullYear() === Number(year) && sessionEnd <= now) extraSessions++;

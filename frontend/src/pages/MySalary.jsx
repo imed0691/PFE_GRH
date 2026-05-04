@@ -17,7 +17,9 @@ function MySalary({ user }) {
         const result = await res.json();
         setData(result);
       } else {
-        toast.error(`${t('salary.errorLoad')} (${res.status})`);
+        const errorData = await res.json().catch(() => ({}));
+        const msg = errorData.error || t('salary.errorLoad');
+        toast.error(`${msg} (${res.status})`);
       }
     } catch (e) {
       console.error(e);
@@ -81,6 +83,36 @@ function MySalary({ user }) {
         </div>
       </div>
       
+      {/* ── DÉTAILS DES ABSENCES RETENUES ── */}
+      {current.absence_details && current.absence_details.length > 0 && (
+        <div className="card-academic" style={{ marginBottom: '32px' }}>
+          <h3 style={{ fontSize: '18px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }}></span>
+            {t('salary.absenceDetails') || 'Détails des Absences Retenues'}
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+            {current.absence_details.map((a, idx) => (
+              <div key={idx} style={{ padding: '12px 16px', background: 'rgba(239, 68, 68, 0.02)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <p style={{ fontWeight: '700', color: 'var(--text-main)', margin: 0 }}>{a.reason}</p>
+                  {a.is_extra && (
+                    <span className="badge-pro" style={{ fontSize: '10px', background: 'var(--p-indigo-light)', color: 'var(--p-indigo)' }}>EXTRA</span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                  <span style={{ fontSize: '12px', color: '#ef4444', fontWeight: '600' }}>
+                    {new Date(a.date).toLocaleDateString()}
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase' }}>
+                    -{a.is_extra ? current.hourly_rate : current.absence_penalty} DA
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── DÉTAILS DES SÉANCES SUPPLÉMENTAIRES ── */}
       {current.extra_sessions && current.extra_sessions.length > 0 && (
         <div className="card-academic" style={{ marginBottom: '32px' }}>

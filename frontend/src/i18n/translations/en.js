@@ -23,6 +23,9 @@ const en = {
     grade: 'Grade',
     teacher: 'Teacher',
     noData: 'No data found.',
+    module: 'Module',
+    refresh: 'Refresh',
+    serverError: 'Server error',
     serverError: 'Server error',
     errorLoading: 'Error loading data',
     confirm: 'Are you sure?',
@@ -89,6 +92,24 @@ const en = {
     personalSpace: 'Personal Space',
     welcomeUser: 'Welcome !',
     loggedInAs: 'Logged in as:',
+  },
+
+  // ── Sidebar ──
+  sidebar: {
+    overview: 'Overview',
+    staff: 'Staff',
+    faculties: 'Faculties & Depts',
+    departments: 'Departments',
+    sessions: 'Academic Affairs',
+    absences: 'Absences',
+    reminders: 'Communications',
+    documents: 'Documents',
+    promotions: 'Promotions',
+    evaluations: 'Evaluations',
+    salary: 'My Salary',
+    teachers: 'Teachers',
+    notifications: 'Notifications',
+    mySchedule: 'My Schedule',
   },
 
   // ── Settings ──
@@ -688,6 +709,7 @@ const en = {
     noHistory: 'No payment history available.',
     errorLoad: 'Error loading salary data',
     extraPayShort: 'Extra Gain',
+    absenceDetails: 'Absence Penalty Details',
     finalizeMonth: 'Finalize Month',
   },
 

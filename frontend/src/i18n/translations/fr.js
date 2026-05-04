@@ -23,6 +23,9 @@ const fr = {
     grade: 'Grade',
     teacher: 'Enseignant',
     noData: 'Aucune donnée trouvée.',
+    module: 'Module',
+    refresh: 'Actualiser',
+    serverError: 'Erreur serveur',
     serverError: 'Erreur serveur',
     errorLoading: 'Erreur de chargement',
     confirm: 'Êtes-vous sûr ?',
@@ -99,8 +102,10 @@ const fr = {
   sidebar: {
     employees: 'Annuaire du personnel',
     staffList: 'Liste du personnel',
+    staff: 'Personnel',
     addEmployee: 'Ajouter un employé',
     departments: 'Départements',
+    faculties: 'Facultés & Dépts',
     classes: 'Gérer les Classes',
     sessions: 'Séances',
     absences: 'Absences',
@@ -694,6 +699,7 @@ const fr = {
     noHistory: 'Aucun historique de paiement disponible.',
     errorLoad: 'Erreur lors du chargement des données salariales',
     extraPayShort: 'Gain Supp.',
+    absenceDetails: 'Détails des Retenues pour Absences',
     finalizeMonth: 'Clôturer le Mois',
   },
 
