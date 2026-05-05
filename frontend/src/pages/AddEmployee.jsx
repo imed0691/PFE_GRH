@@ -162,7 +162,7 @@ function AddEmployee({ onCancel, onSuccess }) {
             
             <div className="mnadm-form-row" style={{ display: 'grid', gridTemplateColumns: formData.role === 'TEACHER' ? '1.5fr 1fr 1fr' : '1fr', gap: '24px', marginBottom: '24px' }}>
               <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
-                <label className="mnadm-label">{t('salaries.baseSalary') || 'Salaire de Base (DA)'}</label>
+                <label className="mnadm-label">{t('salary.baseSalary') || 'Salaire de Base (DA)'}</label>
                 <input type="number" className="mnadm-input" name="base_salary" value={formData.base_salary} onChange={handleChange} required placeholder="e.g. 65000" style={{ borderRadius: '12px', fontWeight: '800' }} />
               </div>
               {formData.role === 'TEACHER' && (

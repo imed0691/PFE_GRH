@@ -151,7 +151,7 @@ function ManageSalaries() {
                     </td>
                   </tr>
                 ))}
-                {salaries.length === 0 && <tr><td colSpan="7" className="empty-state-cell" style={{ padding: '60px', textAlign: 'center', color: '#94a3b8' }}>{t('salaries.noTeachers')}</td></tr>}
+                {salaries.length === 0 && <tr><td colSpan="7" className="empty-state-cell" style={{ padding: '60px', textAlign: 'center', color: '#94a3b8' }}>{t('salary.noTeachers')}</td></tr>}
               </tbody>
             </table>
           </div>

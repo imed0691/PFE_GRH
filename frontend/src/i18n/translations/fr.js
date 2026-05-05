@@ -413,6 +413,9 @@ const fr = {
   addEmployee: {
     title: 'Ajouter un nouvel employé',
     subtitle: 'Les identifiants de connexion seront générés automatiquement.',
+    personalInfo: 'Informations Personnelles',
+    accountInfo: 'Identifiants & Rôle',
+    payrollInfo: 'Paramètres de Paie',
     lastName: 'Nom',
     firstName: 'Prénom',
     universityEmail: 'Email universitaire',
@@ -623,12 +626,6 @@ const fr = {
     syncRequired: 'Veuillez contacter le service des Ressources Humaines pour synchroniser votre profil académique.',
   },
 
-  // ── Paramètres salariaux ──
-  salary: {
-    baseSalary: 'Salaire de base (DA)',
-    hourlyRate: 'Taux des heures supp',
-    absencePenalty: 'Pénalité d\'absence',
-  },
 
   // ── Gestion des recrutements ──
   recruitments: {

@@ -415,6 +415,9 @@ const en = {
   addEmployee: {
     title: 'Add New Employee',
     subtitle: 'Login credentials will be generated automatically.',
+    personalInfo: 'Personal Information',
+    accountInfo: 'Account Information',
+    payrollInfo: 'Payroll Information',
     lastName: 'Last Name',
     firstName: 'First Name',
     universityEmail: 'University Email',
