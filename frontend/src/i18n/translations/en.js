@@ -599,6 +599,7 @@ const en = {
   promotions: {
     title: 'Promotion & Career Management',
     requestPromotion: 'Request a Grade Promotion',
+    evaluate: 'Evaluate Request',
     currentGrade: 'Current Grade',
     requestedGrade: 'Requested Grade',
     selectNextGrade: '-- Select next grade --',

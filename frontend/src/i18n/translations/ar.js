@@ -515,6 +515,7 @@ const ar = {
   promotions: {
     title: 'إدارة الترقيات والمسار المهني',
     requestPromotion: 'طلب ترقية',
+    evaluate: 'تقييم الطلب',
     currentGrade: 'الرتبة الحالية',
     requestedGrade: 'الرتبة المطلوبة',
     selectNextGrade: '-- اختر الرتبة التالية --',

@@ -134,7 +134,8 @@ function ManagePromotions({ user }) {
         }) 
       });
       if (res.ok) { 
-        toast.success(status === 'Approved' ? t('promotions.gradeUpdated') : t('promotions.promotionRejected')); 
+        const isSuccess = ['Approved', 'Promoted', 'Dean Validated', 'Vice-Rector Approved', 'HR Processed', 'Head Approved', 'Pre-validated'].includes(status);
+        toast.success(isSuccess ? (t('promotions.gradeUpdated') || 'Status Updated') : t('promotions.promotionRejected')); 
         fetchPromotions(); 
       } else { 
         toast.error(t('promotions.errorStatus')); 
@@ -241,12 +242,13 @@ function ManagePromotions({ user }) {
             <tbody>
               {promotions.map((p) => {
                 const style = getStatusStyle(p.status);
-                const isViceDean = (user.role === 'VICE_DEAN' || user.role === 'VICE_DOYEN');
-                const isDean = (user.role === 'DEAN' || user.role === 'DOYEN');
-                const isHR = (user.role === 'HR' || user.role === 'RH' || user.role === 'HR_MANAGER' || user.role === 'RH_MANAGER');
-                const isViceRector = (user.role === 'VICE_RECTOR');
-                const isRector = (user.role === 'RECTOR' || user.role === 'RECTEUR');
-                const isDeptHead = (user.role === 'DEPARTMENT_HEAD' || user.role === 'CHEF_DEPARTEMENT');
+                const roleUpper = (user.role || '').toUpperCase();
+                const isViceDean = roleUpper.includes('VICE_DEAN') || roleUpper.includes('VICE_DOYEN');
+                const isDean = roleUpper.includes('DEAN') || roleUpper.includes('DOYEN');
+                const isHR = roleUpper.includes('HR') || roleUpper.includes('RH');
+                const isViceRector = roleUpper.includes('VICE_RECTOR') || roleUpper.includes('VICE_RECTEUR');
+                const isRector = roleUpper.includes('RECTOR') || roleUpper.includes('RECTEUR');
+                const isDeptHead = roleUpper.includes('HEAD') || roleUpper.includes('CHEF');
 
                 const canRecommend = 
                   (isDeptHead && p.status === 'Submitted') ||
@@ -309,7 +311,7 @@ function ManagePromotions({ user }) {
                             className={activePromoId === p.id ? "btn-cancel-pro" : "btn-confirm-pro"}
                             style={{ padding: '0 16px', height: '40px', fontSize: '11px', fontWeight: '800', borderRadius: '12px', minWidth: '100px' }}
                           >
-                            {(activePromoId === p.id ? t('common.cancel') : t('common.evaluate')).toUpperCase()}
+                            {(activePromoId === p.id ? t('common.cancel') : t('promotions.evaluate')).toUpperCase()}
                           </button>
                         )}
 
@@ -333,20 +335,63 @@ function ManagePromotions({ user }) {
                         )}
                       </div>
 
-                      {activePromoId === p.id && (
-                        <div className="card-academic animate-slide-up" style={{ marginTop: '12px', padding: '20px', background: 'white', border: '1px solid var(--p-indigo-light)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', textAlign: 'left' }}>
-                          <textarea className="mnadm-input" value={recommendation} onChange={e => setRecommendation(e.target.value)} placeholder={t('promotions.writeRecommendation')} rows="2" style={{ marginBottom: '12px', fontSize: '13px' }} />
-                          {isViceDean && <input type="number" className="mnadm-input" value={evaluationScore} onChange={e => setEvaluationScore(e.target.value)} placeholder="Score / 100" style={{ marginBottom: '12px' }} />}
-                          {isHR && (
-                            <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
-                              <input type="number" placeholder="Salaire Base" onChange={e => setNewBaseSalary(e.target.value)} className="mnadm-input" />
-                              <input type="number" placeholder="Taux Horaire" onChange={e => setNewHourlyRate(e.target.value)} className="mnadm-input" />
-                              <input type="number" placeholder="Pénalité Absence" onChange={e => setNewAbsencePenalty(e.target.value)} className="mnadm-input" />
+                        {activePromoId === p.id && createPortal(
+                          <div className="modal-overlay-academic" onClick={() => setActivePromoId(null)}>
+                            <div className="modal-content-academic animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+                              <div className="modal-header-academic">
+                                <h3>{t('promotions.evaluate') || 'Promotion Evaluation'}</h3>
+                                <button className="btn-close-modal" onClick={() => setActivePromoId(null)}>&times;</button>
+                              </div>
+                              <div className="modal-body-academic" style={{ padding: '24px' }}>
+                                <div style={{ marginBottom: '20px' }}>
+                                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', marginBottom: '8px', color: '#475569' }}>{t('promotions.writeRecommendation')}</label>
+                                  <textarea 
+                                    className="mnadm-input" 
+                                    value={recommendation} 
+                                    onChange={e => setRecommendation(e.target.value)} 
+                                    placeholder="Write your official recommendation..." 
+                                    rows="4" 
+                                    style={{ width: '100%', resize: 'none' }} 
+                                  />
+                                </div>
+
+                                {isViceDean && (
+                                  <div style={{ marginBottom: '20px' }}>
+                                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', marginBottom: '8px', color: '#475569' }}>Evaluation Score (/100)</label>
+                                    <input type="number" className="mnadm-input" value={evaluationScore} onChange={e => setEvaluationScore(e.target.value)} placeholder="0 - 100" />
+                                  </div>
+                                )}
+
+                                {isHR && (
+                                  <div className="salary-inputs-grid" style={{ display: 'grid', gap: '16px', marginBottom: '20px', background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                    <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', textTransform: 'uppercase', color: 'var(--p-indigo)' }}>Administrative Settings</h4>
+                                    <div>
+                                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', marginBottom: '4px' }}>Base Salary</label>
+                                      <input type="number" value={newBaseSalary} onChange={e => setNewBaseSalary(e.target.value)} className="mnadm-input" />
+                                    </div>
+                                    <div>
+                                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', marginBottom: '4px' }}>Hourly Rate</label>
+                                      <input type="number" value={newHourlyRate} onChange={e => setNewHourlyRate(e.target.value)} className="mnadm-input" />
+                                    </div>
+                                    <div>
+                                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', marginBottom: '4px' }}>Absence Penalty</label>
+                                      <input type="number" value={newAbsencePenalty} onChange={e => setNewAbsencePenalty(e.target.value)} className="mnadm-input" />
+                                    </div>
+                                  </div>
+                                )}
+
+                                <button 
+                                  onClick={() => handleRecommendation(p.id)} 
+                                  className="btn-confirm-pro" 
+                                  style={{ width: '100%', height: '48px', fontWeight: '800', marginTop: '12px' }}
+                                >
+                                  {t('common.approve').toUpperCase()}
+                                </button>
+                              </div>
                             </div>
-                          )}
-                          <button onClick={() => handleRecommendation(p.id)} className="btn-confirm-pro" style={{ width: '100%', height: '40px', fontWeight: '800' }}>{t('common.approve').toUpperCase()}</button>
-                        </div>
-                      )}
+                          </div>,
+                          document.body
+                        )}
                     </td>
                   </tr>
                 );
@@ -355,31 +400,15 @@ function ManagePromotions({ user }) {
           </table>
         </div>
 
-        {/* Modal History Detail - Using Portal for absolute z-index isolation */}
         {showHistory && createPortal(
-          <div style={{ 
-            position: 'fixed', 
-            top: 0, left: 0, width: '100vw', height: '100vh', 
-            background: 'rgba(15,23,42,0.85)', 
-            backdropFilter: 'blur(10px)', 
-            display: 'flex', alignItems: 'center', justifyContent: 'center', 
-            zIndex: 999999, 
-            padding: '20px' 
-          }}>
-            <div className="card-academic animate-slide-up" style={{ 
-              width: '100%', maxWidth: '580px', padding: '0', 
-              overflow: 'hidden', borderRadius: '28px', 
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)', 
-              border: 'none', background: 'white', position: 'relative' 
-            }}>
-                <div style={{ padding: '24px 32px', background: '#6366f1', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 className="serif" style={{ margin: 0, fontSize: '22px', fontWeight: '700', letterSpacing: '-0.5px' }}>{t('common.details')} - {showHistory.nom}</h3>
-                    <button onClick={() => setShowHistory(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', padding: '8px', borderRadius: '14px', cursor: 'pointer', transition: 'all 0.2s' }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
+          <div className="modal-overlay-academic" onClick={() => setShowHistory(null)}>
+            <div className="modal-content-academic animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+                <div className="modal-header-academic" style={{ background: 'var(--p-indigo)', color: 'white' }}>
+                    <h3 style={{ color: 'white' }}>{t('common.details')} - {showHistory.nom}</h3>
+                    <button className="btn-close-modal" onClick={() => setShowHistory(null)} style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}>&times;</button>
                 </div>
                 
-                <div style={{ padding: '40px', maxHeight: '75vh', overflowY: 'auto', background: '#ffffff' }}>
+                <div className="modal-body-academic" style={{ padding: '32px', maxHeight: '80vh', overflowY: 'auto' }}>
                     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '32px' }}>
                         {/* Vertical Timeline Line */}
                         <div style={{ position: 'absolute', left: '11px', top: '8px', bottom: '8px', width: '2px', background: '#f1f5f9', zIndex: 1 }}></div>
@@ -395,7 +424,8 @@ function ManagePromotions({ user }) {
                                     vd: /Vice-Doyen\s*:?/i,
                                     dean: /Doyen\s*:?/i,
                                     rh: /RH\s*:?/i,
-                                    vr: /Vice-Recteur\s*:?/i
+                                    vr: /Vice-Recteur\s*:?/i,
+                                    rector: /Recteur\s*:?/i
                                 };
                                 const currentPattern = markerPatterns[roleKey];
                                 if (!currentPattern.test(raw)) return null;
@@ -416,7 +446,9 @@ function ManagePromotions({ user }) {
                                 { key: 'chef', id: 'Submitted', label: t('roles.DEPARTMENT_HEAD'), color: '#6366f1', activeBg: '#f5f7ff', activeBorder: '#6366f1' },
                                 { key: 'vd', id: 'Head Approved', label: t('roles.VICE_DEAN'), color: '#22c55e', activeBg: '#f0fdf4', activeBorder: '#22c55e' },
                                 { key: 'dean', id: 'Pre-validated', label: t('roles.DEAN'), color: '#8b5cf6', activeBg: '#f5f3ff', activeBorder: '#8b5cf6' },
-                                { key: 'rh', id: 'Dean Validated', label: t('roles.HR_MANAGER'), color: '#f59e0b', activeBg: '#fffbeb', activeBorder: '#f59e0b' }
+                                { key: 'rh', id: 'Dean Validated', label: t('roles.HR_MANAGER'), color: '#f59e0b', activeBg: '#fffbeb', activeBorder: '#f59e0b' },
+                                { key: 'vr', id: 'HR Processed', label: t('roles.VICE_RECTOR'), color: '#ec4899', activeBg: '#fdf2f8', activeBorder: '#ec4899' },
+                                { key: 'rector', id: 'Vice Rector Approved', label: t('roles.RECTOR'), color: '#0f172a', activeBg: '#f1f5f9', activeBorder: '#0f172a' }
                             ];
 
                             const statusMap = {

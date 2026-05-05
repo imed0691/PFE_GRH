@@ -109,20 +109,32 @@ function ManageApprovals({ user }) {
     }
   };
 
-  const handlePromAction = async (id, status) => {
+  const handlePromAction = async (id, isApprove) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/promotions/${id}/status`, {
+      const role = user.role.toUpperCase();
+      
+      // If it's Rector, use the 'status' endpoint to finalize
+      // Others use 'recommend' to move to next level
+      const isRector = ['RECTOR', 'RECTEUR'].some(r => role.includes(r));
+      const endpoint = isRector ? 'status' : 'recommend';
+      const body = isApprove 
+        ? (isRector ? { status: 'Approved' } : { recommendation: 'Approved at Faculty Level', evaluation_score: 10 })
+        : { status: 'Rejected' };
+
+      const res = await fetch(`http://localhost:5000/api/promotions/${id}/${endpoint}`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ status })
+        body: JSON.stringify(body)
       });
       if (res.ok) {
-        toast.success(status === 'Approved' ? 'Promotion Approved' : 'Promotion Rejected');
+        toast.success(isApprove ? 'Promotion Validated' : 'Promotion Rejected');
         fetchData();
+      } else {
+        toast.error(t('common.errorUpdating') || 'Error updating status');
       }
     } catch (error) {
       toast.error('Action failed');
@@ -187,17 +199,34 @@ function ManageApprovals({ user }) {
               <div className="empty-state-pro">No pending promotions</div>
             ) : (
               promotions.map(prom => (
-                <div key={prom.id} className="approval-item-pro">
+                <div key={prom.id} className="approval-item-pro" style={{ alignItems: 'center' }}>
                   <div className="item-info">
-                    <strong>{prom.user_name || 'Teacher'}</strong>
-                    <span>Target: {prom.target_grade}</span>
-                    <small>Submitted: {new Date(prom.created_at).toLocaleDateString()}</small>
+                    <strong>{prom.nom} {prom.prenom}</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                      <span className="badge-pro" style={{ background: '#f1f5f9', color: '#475569', fontSize: '10px', padding: '4px 10px' }}>
+                        {t(`grades.${prom.current_grade}`) === `grades.${prom.current_grade}` ? prom.current_grade : t(`grades.${prom.current_grade}`)}
+                      </span>
+                      <span style={{ color: '#94a3b8', fontWeight: '900', fontSize: '12px' }}>→</span>
+                      <span className="badge-pro" style={{ background: 'var(--p-indigo-light)', color: 'var(--p-indigo)', fontSize: '10px', padding: '4px 10px' }}>
+                        {t(`grades.${prom.requested_grade}`) === `grades.${prom.requested_grade}` ? prom.requested_grade : t(`grades.${prom.requested_grade}`)}
+                      </span>
+                    </div>
+                    <small style={{ marginTop: '8px', display: 'block' }}>{new Date(prom.submission_date || prom.created_at).toLocaleDateString()}</small>
                   </div>
                   <div className="item-actions">
-                    <button className="btn-approve-mini" onClick={() => handlePromAction(prom.id, 'Approved')}>
+                    {prom.file_path && (
+                      <button 
+                        onClick={() => window.open(`http://localhost:5000/uploads/promotions/${prom.file_path}`, '_blank')} 
+                        className="btn-confirm-pro" 
+                        style={{ width: '32px', height: '32px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: '#f1f5f9', color: '#6366f1', border: '1px solid #e2e8f0', boxShadow: 'none' }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                      </button>
+                    )}
+                    <button className="btn-approve-mini" onClick={() => handlePromAction(prom.id, true)}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     </button>
-                    <button className="btn-reject-mini" onClick={() => handlePromAction(prom.id, 'Rejected')}>
+                    <button className="btn-reject-mini" onClick={() => handlePromAction(prom.id, false)}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                   </div>

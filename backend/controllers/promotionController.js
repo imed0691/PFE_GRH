@@ -88,11 +88,13 @@ exports.getAllPromotions = (req, res) => {
         }
 
         if (userRole === 'VICE_RECTOR' || userRole === 'VICE_RECTEUR') {
-            return res.json(results.filter(p => p.status === 'HR Processed'));
+            // Vice Rector sees everything from Dean Validated onwards
+            return res.json(results.filter(p => ['Dean Validated', 'HR Processed', 'Vice Rector Approved', 'Promoted'].includes(p.status)));
         }
 
         if (userRole === 'RECTOR' || userRole === 'RECTEUR') {
-            return res.json(results.filter(p => p.status === 'Vice Rector Approved'));
+            // Rector sees everything from HR Processed onwards
+            return res.json(results.filter(p => ['HR Processed', 'Vice Rector Approved', 'Promoted'].includes(p.status)));
         }
 
         res.json(results);
@@ -159,12 +161,17 @@ exports.approveRejectPromotion = (req, res) => {
     const handledBy = req.user.id;
     const userRole = req.user.role;
 
-    // Only Rector can Finalize to 'Promoted'
-    // Other roles use recommendPromotion to move forward
-    // But Rector can also 'Reject'
+    // Roles allowed to move status forward
+    const canUpdateStatus = ['RECTOR', 'RECTEUR', 'DEAN', 'DOYEN', 'VICE_RECTOR', 'VICE_RECTEUR', 'ADMIN'];
+    if (!canUpdateStatus.some(r => userRole.includes(r)) && status !== 'Rejected') {
+        return res.status(403).json({ message: 'Unauthorized to update status' });
+    }
 
-    if (userRole !== 'RECTOR' && userRole !== 'RECTEUR' && status !== 'Rejected') {
-        return res.status(403).json({ message: 'Only Rector can finalize promotion' });
+    // Only Rector can Finalize to 'Promoted'
+    if (status === 'Approved' || status === 'Promoted') {
+        if (!['RECTOR', 'RECTEUR', 'ADMIN'].some(r => userRole.includes(r))) {
+            return res.status(403).json({ message: 'Only Rector can finalize promotion' });
+        }
     }
 
     const finalStatus = (status === 'Approved') ? 'Promoted' : status;

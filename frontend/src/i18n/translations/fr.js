@@ -591,6 +591,7 @@ const fr = {
   promotions: {
     title: 'Gestion des promotions et carrières',
     requestPromotion: 'Demander une promotion de grade',
+    evaluate: 'Évaluer la Demande',
     currentGrade: 'Grade actuel',
     requestedGrade: 'Grade demandé',
     selectNextGrade: '-- Sélectionner le prochain grade --',
