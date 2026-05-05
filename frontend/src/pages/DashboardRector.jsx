@@ -17,6 +17,7 @@ function DashboardRector({ user, onLogout }) {
   // Overview stats
   const [teachersCount, setTeachersCount] = useState(0);
   const [deansCount, setDeansCount] = useState(0);
+  const [sessionsCount, setSessionsCount] = useState(0);
   const [absences, setAbsences] = useState([]);
 
   const [view, setView] = useState(localStorage.getItem('rector_view') || 'overview');
@@ -72,8 +73,7 @@ function DashboardRector({ user, onLogout }) {
   const menuItems = [
     { id: 'overview', label: t('sidebar.overview') || 'Vue d\'ensemble' },
     { id: 'analytics', label: t('sidebar.analytics') || 'Analytique Universitaire' },
-    { id: 'approvals', label: t('sidebar.approvals') || 'Approbations' },
-    { id: 'promotions', label: t('sidebar.promotions') || 'Promotions' },
+    { id: 'approvals', label: t('sidebar.approvals_and_promotions') || 'Approvals & Promotions' },
     { id: 'directory', label: t('sidebar.staff') || 'Personnel' },
     { id: 'departments', label: t('sidebar.faculties') || 'Structure' },
     { id: 'reminders', label: t('sidebar.reminders') || 'Communications' },
@@ -84,8 +84,7 @@ function DashboardRector({ user, onLogout }) {
     switch(view) {
       case 'overview': return t('sidebar.overview') || 'Tableau de Bord Recteur';
       case 'analytics': return t('sidebar.analytics') || 'Centre d\'Intelligence Universitaire';
-      case 'approvals': return t('sidebar.approvals') || 'Approbations Stratégiques';
-      case 'promotions': return t('sidebar.promotions') || 'Décisions de Promotion';
+      case 'approvals': return t('sidebar.approvals_and_promotions') || 'Approvals & Promotions';
       case 'directory': return t('sidebar.staff') || 'Annuaire Global du Personnel';
       case 'departments': return t('sidebar.faculties') || 'Structure Universitaire';
       case 'reminders': return t('sidebar.reminders') || 'Communications Rectorat';

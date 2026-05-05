@@ -78,8 +78,7 @@ function DashboardViceDean({ user, onLogout }) {
 
   const menuItems = [
     { id: 'overview', label: t('sidebar.overview') || 'Aperçu' },
-    { id: 'approvals', label: t('sidebar.approvals') || 'Approbations' },
-    { id: 'promotions', label: t('sidebar.promotions') || 'Promotions' },
+    { id: 'approvals', label: t('sidebar.approvals_and_promotions') || 'Approvals & Promotions' },
     { id: 'absences', label: t('sidebar.absences') || 'Absences', badge: unreadAbsences },
     { id: 'reminders', label: t('sidebar.reminders') || 'Communications' },
     { id: 'settings', label: t('settings.title') },
@@ -88,8 +87,7 @@ function DashboardViceDean({ user, onLogout }) {
   const getPageTitle = () => {
     switch(view) {
       case 'overview': return t('sidebar.overview') || 'Tableau de Bord Pédagogie';
-      case 'approvals': return t('sidebar.approvals') || 'Approbations';
-      case 'promotions': return t('sidebar.promotions') || 'Validations Académiques';
+      case 'approvals': return t('sidebar.approvals_and_promotions') || 'Approvals & Promotions';
       case 'absences': return t('sidebar.absences') || 'Suivi des Absences';
       case 'reminders': return t('sidebar.reminders') || 'Communications & Rappels';
       case 'settings': return t('settings.title');

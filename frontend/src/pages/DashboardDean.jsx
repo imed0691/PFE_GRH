@@ -80,8 +80,7 @@ function DashboardDean({ user, onLogout }) {
   const menuItems = [
     { id: 'overview', label: t('sidebar.overview') || 'Aperçu' },
     { id: 'analytics', label: t('sidebar.analytics') || 'Analytique' },
-    { id: 'approvals', label: t('sidebar.approvals') || 'Approbations' },
-    { id: 'promotions', label: t('sidebar.promotions') || 'Promotions' },
+    { id: 'approvals', label: t('sidebar.approvals_and_promotions') || 'Approvals & Promotions' },
     { id: 'departments', label: t('sidebar.departments') || 'Départements' },
     { id: 'staff', label: t('sidebar.staff') || 'Personnel' },
     { id: 'reminders', label: t('sidebar.reminders') || 'Communications' },
@@ -92,8 +91,7 @@ function DashboardDean({ user, onLogout }) {
     switch(view) {
       case 'overview': return t('sidebar.overview') || 'Tableau de Bord Doyen';
       case 'analytics': return t('sidebar.analytics') || 'Centre d\'Analyse';
-      case 'approvals': return t('sidebar.approvals') || 'Approbations';
-      case 'promotions': return t('sidebar.promotions') || 'Gestion des Promotions';
+      case 'approvals': return t('sidebar.approvals_and_promotions') || 'Approvals & Promotions';
       case 'departments': return t('sidebar.departments') || 'Gestion des Départements';
       case 'staff': return t('sidebar.staff') || 'Personnel de la Faculté';
       case 'reminders': return t('sidebar.reminders') || 'Notifications & Rappels';

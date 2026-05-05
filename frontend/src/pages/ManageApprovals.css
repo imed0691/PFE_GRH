@@ -1,143 +1,227 @@
+/* ManageApprovals.css - Professional Academic Theme */
+
 .approvals-container {
-  padding: 20px 0;
+  padding: 40px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.approvals-header {
-  margin-bottom: 32px;
+.approvals-header-premium {
+  margin-bottom: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.academic-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
 }
 
 .academic-subtitle {
-  color: var(--text-muted);
-  font-size: 14px;
-  margin-top: 4px;
+  color: #64748b;
+  font-size: 15px;
 }
 
-.approvals-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 24px;
+.approval-tabs-wrapper {
+  display: flex;
+  background: #f1f5f9;
+  padding: 6px;
+  border-radius: 14px;
+  gap: 4px;
 }
 
-.section-header-pro {
+.transition-badges {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.section-header-pro h3 {
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--text-main);
-  margin: 0;
-}
-
-.icon-badge-pro {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.bg-blue { background: #eff6ff; color: #2563eb; }
-.bg-purple { background: #faf5ff; color: #7c3aed; }
-
-.approval-list {
-  display: flex;
-  flex-direction: column;
+  justify-content: center; /* Center the transition badges */
   gap: 12px;
 }
 
-.approval-item-pro {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-  background: #f8fafc;
-  border-radius: 14px;
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
+.grade-old { 
+  background: #f8fafc !important; 
+  color: #64748b !important; 
+  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
 }
 
-.approval-item-pro:hover {
-  background: white;
-  border-color: var(--p-indigo-light);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-  transform: translateX(4px);
+.grade-new { 
+  background: #eef2ff !important; 
+  color: #4f46e5 !important; 
+  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
 }
 
-.item-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.item-info strong {
+.arrow-pro {
+  color: #cbd5e1;
+  font-weight: 300; /* Thinner arrow like in screenshot */
   font-size: 14px;
-  color: var(--text-main);
 }
 
-.item-info span {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.item-info small {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-.item-actions {
+.approval-tab {
   display: flex;
-  gap: 8px;
-}
-
-.btn-approve-mini, .btn-reject-mini {
-  width: 36px;
-  height: 36px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
   border-radius: 10px;
   border: none;
+  background: transparent;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.approval-tab.active {
+  background: white;
+  color: var(--p-indigo);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.tab-count {
+  background: #e2e8f0;
+  color: #475569;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.approval-tab.active .tab-count {
+  background: var(--p-indigo-light);
+  color: var(--p-indigo);
+}
+
+/* THE LOGICAL TABLE SYSTEM */
+.table-responsive-pro {
+  background: white;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.modern-fixed-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* STOPS THE DECALAGE */
+}
+
+.modern-fixed-table th {
+  padding: 16px 0;
+  background: #fcfdfe;
+  border-bottom: 1px solid var(--border-soft);
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.modern-fixed-table th > div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.modern-fixed-table td {
+  padding: 16px 0;
+  border-bottom: 1px solid #f8fafc;
+  vertical-align: middle;
+}
+
+.modern-fixed-table td > div,
+.modern-fixed-table td .flex-actions-end,
+.modern-fixed-table td .transition-badges {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+.modern-fixed-table th.text-right {
+  text-align: center !important; /* Force center Actions header */
+}
+
+.flex-actions-end {
+  display: flex;
+  justify-content: center; /* Center Actions buttons */
+  align-items: center;
+  gap: 10px;
+}
+
+.candidate-name {
+  font-weight: 800;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.badge-pro {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.btn-icon-only {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #64748b;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
 }
 
-.btn-approve-mini {
-  background: #f0fdf4;
-  color: #10b981;
+.btn-icon-only:hover {
+  background: #f1f5f9;
+  color: var(--p-indigo);
+  border-color: var(--p-indigo-light);
+  transform: translateY(-2px);
 }
 
-.btn-approve-mini:hover {
-  background: #10b981;
-  color: white;
-  transform: scale(1.1);
-}
-
-.btn-reject-mini {
-  background: #fff1f2;
-  color: #ef4444;
-}
-
-.btn-reject-mini:hover {
-  background: #ef4444;
-  color: white;
-  transform: scale(1.1);
+.btn-evaluate {
+  height: 40px;
+  padding: 0 20px;
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 12px;
 }
 
 .empty-state-pro {
-  padding: 40px;
+  padding: 80px 40px;
   text-align: center;
-  color: var(--text-muted);
-  font-size: 14px;
-  font-style: italic;
-  background: #fcfdfe;
-  border: 2px dashed #f1f5f9;
-  border-radius: 16px;
+  color: #94a3b8;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* Mobile: We keep it a table but allow scrolling to avoid the 'stack' bug */
+@media (max-width: 1024px) {
+  .table-responsive-pro {
+    overflow-x: auto;
+  }
+  .modern-fixed-table {
+    min-width: 900px; /* Force scroll instead of stacking */
+  }
 }

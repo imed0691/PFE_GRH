@@ -124,6 +124,7 @@ const ar = {
     loggedInAs: 'متصل بصفة:',
   },
   sidebar: {
+    approvals_and_promotions: 'المصادقات والترقيات',
     staffList: 'قائمة الموظفين',
     staff: 'الموظفين',
     addEmployee: 'إضافة موظف',

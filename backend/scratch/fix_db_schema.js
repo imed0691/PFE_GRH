@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const mysql = require('mysql2');
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -10,7 +10,8 @@ const db = mysql.createConnection({
 const queries = [
   "ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
   "ALTER TABLE absences ADD COLUMN is_extra TINYINT(1) DEFAULT 0",
-  "ALTER TABLE absences ADD COLUMN start_time TIME NULL"
+  "ALTER TABLE absences ADD COLUMN start_time TIME NULL",
+  "ALTER TABLE promotions ADD COLUMN evaluation_score INT DEFAULT 0"
 ];
 
 const runQueries = async () => {

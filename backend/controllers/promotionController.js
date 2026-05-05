@@ -47,7 +47,7 @@ exports.requestPromotion = (req, res) => {
 };
 
 exports.getAllPromotions = (req, res) => {
-    const userRole = req.user.role;
+    const userRole = req.user.role ? req.user.role.toUpperCase().replace(/[-\s]/g, '_') : '';
     const userId = req.user.id;
 
     let query = `
@@ -104,7 +104,7 @@ exports.getAllPromotions = (req, res) => {
 exports.recommendPromotion = (req, res) => {
     const { id } = req.params;
     const { recommendation, evaluation_score } = req.body;
-    const userRole = req.user.role;
+    const userRole = req.user.role.toUpperCase().replace(/[-\s]/g, '_');
 
     let nextStatus = '';
     let rolePrefix = '';
@@ -125,31 +125,30 @@ exports.recommendPromotion = (req, res) => {
         nextStatus = 'Vice Rector Approved';
         rolePrefix = 'Vice-Recteur';
     } else {
-        return res.status(403).json({ message: 'Unauthorized to recommend' });
+        return res.status(403).json({ message: `Unauthorized to recommend (Role identified: ${userRole})` });
     }
 
     const newRecText = `${rolePrefix}: ${recommendation}`;
     
-    // Update score only if provided (typically by Vice Dean)
-    const updateScorePart = evaluation_score !== undefined ? ', evaluation_score = ?' : '';
-    const queryParams = [newRecText, newRecText, nextStatus];
-    if (evaluation_score !== undefined) queryParams.push(evaluation_score);
-    queryParams.push(id);
-
+    // Update score only if provided
+    const hasScore = evaluation_score !== undefined;
+    const updateScorePart = hasScore ? ', evaluation_score = ?' : '';
+    
     const query = `
         UPDATE promotions 
-        SET dept_head_recommendation = CASE 
-            WHEN dept_head_recommendation IS NULL OR dept_head_recommendation = '' THEN ? 
-            ELSE CONCAT(dept_head_recommendation, '\n', ?) 
-        END, 
-        status = ? 
-        ${updateScorePart}
+        SET dept_head_recommendation = IF(dept_head_recommendation IS NULL OR dept_head_recommendation = '', ?, CONCAT(dept_head_recommendation, '\n', ?)),
+            status = ? 
+            ${updateScorePart}
         WHERE id = ?`;
         
+    const queryParams = [newRecText, newRecText, nextStatus];
+    if (hasScore) queryParams.push(evaluation_score);
+    queryParams.push(id);
+
     db.query(query, queryParams, (err, results) => {
         if (err) {
             console.error("Error recommending promotion:", err);
-            return res.status(500).json({ message: 'Error recommending promotion' });
+            return res.status(500).json({ message: `Database error: ${err.message}` });
         }
         res.json({ message: `Promotion sent to next level: ${nextStatus}` });
     });
@@ -159,17 +158,17 @@ exports.approveRejectPromotion = (req, res) => {
     const { id } = req.params;
     const { status, finalGrade, hourly_rate, absence_penalty, base_salary } = req.body; 
     const handledBy = req.user.id;
-    const userRole = req.user.role;
+    const userRole = req.user.role.toUpperCase().replace(/[-\s]/g, '_');
 
     // Roles allowed to move status forward
     const canUpdateStatus = ['RECTOR', 'RECTEUR', 'DEAN', 'DOYEN', 'VICE_RECTOR', 'VICE_RECTEUR', 'ADMIN'];
-    if (!canUpdateStatus.some(r => userRole.includes(r)) && status !== 'Rejected') {
+    if (!canUpdateStatus.some(r => userRole === r) && status !== 'Rejected') {
         return res.status(403).json({ message: 'Unauthorized to update status' });
     }
 
     // Only Rector can Finalize to 'Promoted'
     if (status === 'Approved' || status === 'Promoted') {
-        if (!['RECTOR', 'RECTEUR', 'ADMIN'].some(r => userRole.includes(r))) {
+        if (!['RECTOR', 'RECTEUR', 'ADMIN'].some(r => userRole === r)) {
             return res.status(403).json({ message: 'Only Rector can finalize promotion' });
         }
     }

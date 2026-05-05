@@ -136,6 +136,7 @@ const en = {
 
   // ── Sidebar Navigation ──
   sidebar: {
+    approvals_and_promotions: 'Approvals & Promotions',
     employees: 'Staff Directory',
     staffList: 'Staff List',
     staff: 'Staff',

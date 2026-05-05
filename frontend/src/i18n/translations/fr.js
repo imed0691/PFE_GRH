@@ -107,6 +107,7 @@ const fr = {
 
   // ── Navigation latérale ──
   sidebar: {
+    approvals_and_promotions: 'Validations & Promotions',
     employees: 'Annuaire du personnel',
     staffList: 'Liste du personnel',
     staff: 'Personnel',
