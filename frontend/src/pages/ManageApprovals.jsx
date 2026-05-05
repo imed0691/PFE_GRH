@@ -22,13 +22,45 @@ function ManageApprovals({ user }) {
 
       if (resDocs.ok) {
         const data = await resDocs.json();
-        // Filter for pending documents
-        setDocuments(data.filter(d => d.status === 'Pending' || d.status === 'En attente'));
+        const role = user.role.toUpperCase();
+        
+        // Filter based on who acts next
+        let pendingDocs = [];
+        if (role.includes('CHEF') || role.includes('HEAD')) {
+          pendingDocs = data.filter(d => (d.status || '').toUpperCase().trim() === 'PENDING');
+        } else if (role.includes('HR') || role.includes('RH')) {
+          pendingDocs = data.filter(d => ['HEAD_APPROVED', 'PROCESSING'].includes((d.status || '').toUpperCase().trim()));
+        } else if (['DEAN', 'DOYEN', 'RECTOR', 'RECTEUR'].some(r => role.includes(r))) {
+          const isRector = ['RECTOR', 'RECTEUR', 'ADMIN'].some(r => role.includes(r));
+          const isDean = ['DEAN', 'DOYEN', 'ADMIN'].some(r => role.includes(r));
+          
+          pendingDocs = data.filter(d => {
+            const s = (d.status || '').toUpperCase().trim();
+            if (s !== 'HR_APPROVED') return false;
+            
+            const type = (d.type || '').toLowerCase();
+            // Rector Only
+            if (type.includes('mission')) return isRector;
+            // Dean Only
+            if (type.includes('leave') || type.includes('congé') || type.includes('administrative') || type.includes('teaching')) return isDean;
+            // Both
+            return isRector || isDean;
+          });
+        } else if (role === 'ADMIN') {
+          pendingDocs = data.filter(d => !['SIGNED', 'AVAILABLE', 'REJECTED'].includes((d.status || '').toUpperCase().trim()));
+        }
+        
+        setDocuments(pendingDocs);
       }
       if (resProms.ok) {
         const data = await resProms.json();
-        // Filter for pending promotions
-        setPromotions(data.filter(p => p.status === 'Pending' || p.status === 'En attente'));
+        const role = user.role.toUpperCase();
+        
+        // Similarly for promotions (Status strings might vary, keeping it safe)
+        setPromotions(data.filter(p => 
+          (p.status || '').toUpperCase().includes('PENDING') || 
+          (p.status || '').toUpperCase().includes('ATTENTE')
+        ));
       }
     } catch (error) {
       toast.error(t('common.errorLoading'));
@@ -41,19 +73,35 @@ function ManageApprovals({ user }) {
     fetchData();
   }, []);
 
-  const handleDocAction = async (id, status) => {
+  const handleDocAction = async (doc, isApprove) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/documents/${id}`, {
+      const role = user.role.toUpperCase();
+      const currentStatus = (doc.status || '').toUpperCase().trim();
+      let nextStatus = 'REJECTED';
+
+      if (isApprove) {
+        if (currentStatus === 'PENDING') nextStatus = 'HEAD_APPROVED';
+        else if (currentStatus === 'HR_APPROVED') nextStatus = 'SIGNED';
+        else if (role === 'ADMIN') {
+          // Admin override
+          if (currentStatus === 'PENDING') nextStatus = 'HEAD_APPROVED';
+          else if (currentStatus === 'HEAD_APPROVED') nextStatus = 'PROCESSING';
+          else if (currentStatus === 'PROCESSING') nextStatus = 'HR_APPROVED';
+          else if (currentStatus === 'HR_APPROVED') nextStatus = 'SIGNED';
+        }
+      }
+
+      const res = await fetch(`http://localhost:5000/api/documents/${doc.id}`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status: nextStatus })
       });
       if (res.ok) {
-        toast.success(status === 'Approved' ? 'Document Approved' : 'Document Rejected');
+        toast.success(isApprove ? 'Status Updated' : 'Document Rejected');
         fetchData();
       }
     } catch (error) {
@@ -112,10 +160,10 @@ function ManageApprovals({ user }) {
                     <small>{new Date(doc.created_at).toLocaleDateString()}</small>
                   </div>
                   <div className="item-actions">
-                    <button className="btn-approve-mini" onClick={() => handleDocAction(doc.id, 'Approved')}>
+                    <button className="btn-approve-mini" onClick={() => handleDocAction(doc, true)}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     </button>
-                    <button className="btn-reject-mini" onClick={() => handleDocAction(doc.id, 'Rejected')}>
+                    <button className="btn-reject-mini" onClick={() => handleDocAction(doc, false)}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                   </div>

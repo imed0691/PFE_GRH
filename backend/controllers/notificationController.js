@@ -116,32 +116,31 @@ exports.getCounts = (req, res) => {
     });
   }
 
-  // Documents - New Routing & Persistence Logic
+  // Documents - New Routing & Workflow Badge Logic
   let docFilter = '';
   let docQuery = '';
   let docParams = [userId];
 
-  if (['DEAN', 'DOYEN'].includes(userRole)) {
-    // Persistent badge for items to process
-    docFilter = `AND (d.type = 'Work Certificate (Attestation de travail)' OR d.type = 'Mission Order (Ordre de mission)') AND d.status IN ('Pending', 'Processing')`;
+  if (['DEAN', 'DOYEN', 'RECTOR', 'RECTEUR'].some(r => userRole.includes(r))) {
+    // Authority sees documents waiting for signature
+    docFilter = `AND d.status = 'HR_APPROVED'`;
     docQuery = `SELECT COUNT(*) as count FROM documents d WHERE 1=1 ${docFilter}`;
   } else if (['DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT'].includes(userRole)) {
-    // Persistent badge for items to process in their department
-    docFilter = `AND d.type = 'Teaching Load Certificate' AND d.status IN ('Pending', 'Processing') AND u.department_id = (SELECT department_id FROM users WHERE id = ?)`;
+    // Dept Head sees initial pending requests
+    docFilter = `AND d.status = 'PENDING' AND u.department_id = (SELECT department_id FROM users WHERE id = ?)`;
     docQuery = `SELECT COUNT(*) as count FROM documents d JOIN users u ON d.teacher_id = u.id WHERE 1=1 ${docFilter}`;
     docParams.push(userId);
-  } else if (['HR', 'RH', 'HR_MANAGER', 'RH_MANAGER'].includes(userRole)) {
-    // Persistent badge for items to process
-    docFilter = `AND d.type = 'Salary Slip (Fiche de paie)' AND d.status IN ('Pending', 'Processing')`;
+  } else if (['HR', 'RH', 'HR_MANAGER', 'RH_MANAGER', 'ADMIN'].includes(userRole)) {
+    // HR sees items to process
+    docFilter = `AND d.status IN ('HEAD_APPROVED', 'PROCESSING')`;
     docQuery = `SELECT COUNT(*) as count FROM documents d WHERE 1=1 ${docFilter}`;
   } else if (['TEACHER', 'ENSEIGNANT'].includes(userRole)) {
-    // Feedback badge when a doc becomes "Ready"
-    docFilter = `AND d.teacher_id = ? AND d.status = 'Ready'`;
+    // Teacher sees finished documents they haven't acknowledged yet
+    docFilter = `AND d.teacher_id = ? AND d.status = 'AVAILABLE'`;
     docQuery = `SELECT COUNT(*) as count FROM documents d WHERE d.updated_at > COALESCE((SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'documents'), '2000-01-01') ${docFilter}`;
     docParams.push(userId);
   } else {
-    // Rectors / Admins - Generic count of recent requests
-    docQuery = `SELECT COUNT(*) as count FROM documents d WHERE d.request_date > COALESCE((SELECT last_viewed_at FROM user_section_views WHERE user_id = ? AND section_name = 'documents'), '2000-01-01')`;
+    docQuery = `SELECT COUNT(*) as count FROM documents d WHERE 1=0`; // Default none
   }
 
   sections.push({
