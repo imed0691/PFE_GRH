@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -238,258 +239,256 @@ function ManagePromotions({ user }) {
               </tr>
             </thead>
             <tbody>
-                  {promotions.map((p) => {
-                    const style = getStatusStyle(p.status);
-                    const isViceDean = (user.role === 'VICE_DEAN' || user.role === 'VICE_DOYEN');
-                    const isDean = (user.role === 'DEAN' || user.role === 'DOYEN');
-                    const isHR = (user.role === 'HR' || user.role === 'RH' || user.role === 'HR_MANAGER' || user.role === 'RH_MANAGER');
-                    const isViceRector = (user.role === 'VICE_RECTOR');
-                    const isRector = (user.role === 'RECTOR' || user.role === 'RECTEUR');
-                    const isDeptHead = (user.role === 'DEPARTMENT_HEAD' || user.role === 'CHEF_DEPARTEMENT');
+              {promotions.map((p) => {
+                const style = getStatusStyle(p.status);
+                const isViceDean = (user.role === 'VICE_DEAN' || user.role === 'VICE_DOYEN');
+                const isDean = (user.role === 'DEAN' || user.role === 'DOYEN');
+                const isHR = (user.role === 'HR' || user.role === 'RH' || user.role === 'HR_MANAGER' || user.role === 'RH_MANAGER');
+                const isViceRector = (user.role === 'VICE_RECTOR');
+                const isRector = (user.role === 'RECTOR' || user.role === 'RECTEUR');
+                const isDeptHead = (user.role === 'DEPARTMENT_HEAD' || user.role === 'CHEF_DEPARTEMENT');
 
-                    const canRecommend = 
-                      (isDeptHead && p.status === 'Submitted') ||
-                      (isViceDean && p.status === 'Head Approved') ||
-                      (isHR && p.status === 'Dean Validated');
+                const canRecommend = 
+                  (isDeptHead && p.status === 'Submitted') ||
+                  (isViceDean && p.status === 'Head Approved') ||
+                  (isHR && p.status === 'Dean Validated');
 
-                    const canFinalize = 
-                      (isDean && p.status === 'Pre-validated') ||
-                      (isViceRector && p.status === 'HR Processed') ||
-                      (isRector && p.status === 'Vice-Rector Approved');
+                const canFinalize = 
+                  (isDean && p.status === 'Pre-validated') ||
+                  (isViceRector && p.status === 'HR Processed') ||
+                  (isRector && p.status === 'Vice-Rector Approved');
 
-                    return (
-                      <tr key={p.id} className="table-row-animate">
-                        <td style={{ padding: '20px 16px' }}>
-                          <div style={{ fontWeight: '800', color: '#0f172a', fontSize: '15px' }}>{p.nom} {p.prenom}</div>
-                        </td>
-                        <td style={{ textAlign: 'center', padding: '20px 16px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-                            <span className="badge-pro" style={{ background: '#f1f5f9', color: '#475569', fontSize: '11px', fontWeight: '800' }}>
-                                {t(`grades.${p.current_grade}`) === `grades.${p.current_grade}` ? p.current_grade : t(`grades.${p.current_grade}`)}
-                            </span>
-                            <span style={{ color: '#94a3b8', fontWeight: '900' }}>→</span>
-                            <span className="badge-pro" style={{ background: 'var(--p-indigo-light)', color: 'var(--p-indigo)', fontSize: '11px', fontWeight: '800' }}>
-                                {t(`grades.${p.requested_grade}`) === `grades.${p.requested_grade}` ? p.requested_grade : t(`grades.${p.requested_grade}`)}
-                            </span>
+                return (
+                  <tr key={p.id} className="table-row-animate">
+                    <td style={{ padding: '20px 16px' }}>
+                      <div style={{ fontWeight: '800', color: '#0f172a', fontSize: '15px' }}>{p.nom} {p.prenom}</div>
+                    </td>
+                    <td style={{ textAlign: 'center', padding: '20px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                        <span className="badge-pro" style={{ background: '#f1f5f9', color: '#475569', fontSize: '11px', fontWeight: '800' }}>
+                          {t(`grades.${p.current_grade}`) === `grades.${p.current_grade}` ? p.current_grade : t(`grades.${p.current_grade}`)}
+                        </span>
+                        <span style={{ color: '#94a3b8', fontWeight: '900' }}>→</span>
+                        <span className="badge-pro" style={{ background: 'var(--p-indigo-light)', color: 'var(--p-indigo)', fontSize: '11px', fontWeight: '800' }}>
+                          {t(`grades.${p.requested_grade}`) === `grades.${p.requested_grade}` ? p.requested_grade : t(`grades.${p.requested_grade}`)}
+                        </span>
+                      </div>
+                    </td>
+                    <td style={{ textAlign: 'center', padding: '20px 16px' }}>
+                      <span className="badge-pro" style={{ background: style.bg, color: style.color, padding: '6px 14px', fontSize: '11px', borderRadius: '10px', fontWeight: '800' }}>
+                        {style.label}
+                      </span>
+                    </td>
+                    <td style={{ padding: '20px 16px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                        {p.file_path && (
+                          <button 
+                            onClick={() => window.open(`http://localhost:5000/uploads/promotions/${p.file_path}`, '_blank')} 
+                            className="btn-confirm-pro" 
+                            title={t('absences.viewAttachment')}
+                            style={{ width: '40px', height: '40px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                          </button>
+                        )}
+
+                        {(p.dept_head_recommendation || p.evaluation_score) && (
+                          <button 
+                            onClick={() => setShowHistory(p)} 
+                            className="btn-action-pro" 
+                            title={t('common.details')}
+                            style={{ width: '40px', height: '40px', padding: '0', background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                          </button>
+                        )}
+                        
+                        {canRecommend && (
+                          <button 
+                            onClick={() => activePromoId === p.id ? setActivePromoId(null) : setActivePromoId(p.id)} 
+                            className={activePromoId === p.id ? "btn-cancel-pro" : "btn-confirm-pro"}
+                            style={{ padding: '0 16px', height: '40px', fontSize: '11px', fontWeight: '800', borderRadius: '12px', minWidth: '100px' }}
+                          >
+                            {(activePromoId === p.id ? t('common.cancel') : t('common.evaluate')).toUpperCase()}
+                          </button>
+                        )}
+
+                        {canFinalize && (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button 
+                              onClick={() => handleStatusUpdate(p.id, isRector ? 'Promoted' : (isDean ? 'Dean Validated' : 'Vice-Rector Approved'))} 
+                              className="btn-confirm-pro" 
+                              style={{ height: '40px', padding: '0 16px', fontSize: '11px', fontWeight: '800', borderRadius: '12px' }}
+                            >
+                              {t('common.approve').toUpperCase()}
+                            </button>
+                            <button 
+                              onClick={() => handleStatusUpdate(p.id, 'Rejected')} 
+                              className="btn-cancel-pro" 
+                              style={{ height: '40px', padding: '0 16px', fontSize: '11px', fontWeight: '800', borderRadius: '12px' }}
+                            >
+                              {t('common.reject').toUpperCase()}
+                            </button>
                           </div>
-                        </td>
-                        <td style={{ textAlign: 'center', padding: '20px 16px' }}>
-                          <span className="badge-pro" style={{ background: style.bg, color: style.color, padding: '6px 14px', fontSize: '11px', borderRadius: '10px', fontWeight: '800' }}>
-                            {style.label}
-                          </span>
-                        </td>
-                        <td style={{ padding: '20px 16px', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                                {p.file_path && (
-                                    <button 
-                                        onClick={() => window.open(`http://localhost:5000/uploads/promotions/${p.file_path}`, '_blank')} 
-                                        className="btn-confirm-pro" 
-                                        title={t('absences.viewAttachment')}
-                                        style={{ width: '40px', height: '40px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
-                                    >
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-                                    </button>
-                                )}
+                        )}
+                      </div>
 
-                                {(p.dept_head_recommendation || p.evaluation_score) && (
-                                    <button 
-                                        onClick={() => setShowHistory(p)} 
-                                        className="btn-action-pro" 
-                                        title={t('common.details')}
-                                        style={{ width: '40px', height: '40px', padding: '0', background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
-                                    >
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                                    </button>
-                                )}
-                                
-                                {canRecommend && (
-                                    <button 
-                                        onClick={() => activePromoId === p.id ? setActivePromoId(null) : setActivePromoId(p.id)} 
-                                        className={activePromoId === p.id ? "btn-cancel-pro" : "btn-confirm-pro"}
-                                        style={{ padding: '0 16px', height: '40px', fontSize: '11px', fontWeight: '800', borderRadius: '12px', minWidth: '100px' }}
-                                    >
-                                        {(activePromoId === p.id ? t('common.cancel') : t('common.evaluate')).toUpperCase()}
-                                    </button>
-                                )}
-
-                                {canFinalize && (
-                                    <div style={{ display: 'flex', gap: '6px' }}>
-                                        <button 
-                                            onClick={() => handleStatusUpdate(p.id, isRector ? 'Promoted' : (isDean ? 'Dean Validated' : 'Vice-Rector Approved'))} 
-                                            className="btn-confirm-pro" 
-                                            style={{ height: '40px', padding: '0 16px', fontSize: '11px', fontWeight: '800', borderRadius: '12px' }}
-                                        >
-                                            {t('common.approve').toUpperCase()}
-                                        </button>
-                                        <button 
-                                            onClick={() => handleStatusUpdate(p.id, 'Rejected')} 
-                                            className="btn-cancel-pro" 
-                                            style={{ height: '40px', padding: '0 16px', fontSize: '11px', fontWeight: '800', borderRadius: '12px' }}
-                                        >
-                                            {t('common.reject').toUpperCase()}
-                                        </button>
-                                    </div>
-                                )}
-                          </div>
-
-                          {activePromoId === p.id && (
-                            <div className="card-academic animate-slide-up" style={{ marginTop: '12px', padding: '20px', background: 'white', border: '1px solid var(--p-indigo-light)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', textAlign: 'left' }}>
-                              <textarea className="mnadm-input" value={recommendation} onChange={e => setRecommendation(e.target.value)} placeholder={t('promotions.writeRecommendation')} rows="2" style={{ marginBottom: '12px', fontSize: '13px' }} />
-                              {isViceDean && <input type="number" className="mnadm-input" value={evaluationScore} onChange={e => setEvaluationScore(e.target.value)} placeholder="Score / 100" style={{ marginBottom: '12px' }} />}
-                              {isHR && (
-                                <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
-                                  <input type="number" placeholder="Salaire Base" onChange={e => setNewBaseSalary(e.target.value)} className="mnadm-input" />
-                                  <input type="number" placeholder="Taux Horaire" onChange={e => setNewHourlyRate(e.target.value)} className="mnadm-input" />
-                                  <input type="number" placeholder="Pénalité Absence" onChange={e => setNewAbsencePenalty(e.target.value)} className="mnadm-input" />
-                                </div>
-                              )}
-                              <button onClick={() => handleRecommendation(p.id)} className="btn-confirm-pro" style={{ width: '100%', height: '40px', fontWeight: '800' }}>{t('common.approve').toUpperCase()}</button>
+                      {activePromoId === p.id && (
+                        <div className="card-academic animate-slide-up" style={{ marginTop: '12px', padding: '20px', background: 'white', border: '1px solid var(--p-indigo-light)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', textAlign: 'left' }}>
+                          <textarea className="mnadm-input" value={recommendation} onChange={e => setRecommendation(e.target.value)} placeholder={t('promotions.writeRecommendation')} rows="2" style={{ marginBottom: '12px', fontSize: '13px' }} />
+                          {isViceDean && <input type="number" className="mnadm-input" value={evaluationScore} onChange={e => setEvaluationScore(e.target.value)} placeholder="Score / 100" style={{ marginBottom: '12px' }} />}
+                          {isHR && (
+                            <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
+                              <input type="number" placeholder="Salaire Base" onChange={e => setNewBaseSalary(e.target.value)} className="mnadm-input" />
+                              <input type="number" placeholder="Taux Horaire" onChange={e => setNewHourlyRate(e.target.value)} className="mnadm-input" />
+                              <input type="number" placeholder="Pénalité Absence" onChange={e => setNewAbsencePenalty(e.target.value)} className="mnadm-input" />
                             </div>
                           )}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          <button onClick={() => handleRecommendation(p.id)} className="btn-confirm-pro" style={{ width: '100%', height: '40px', fontWeight: '800' }}>{t('common.approve').toUpperCase()}</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
-        {/* Modal History Detail */}
-        {showHistory && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-            <div className="card-academic animate-slide-up" style={{ width: '100%', maxWidth: '600px', padding: '0', overflow: 'hidden', borderRadius: '24px' }}>
-                <div style={{ padding: '24px 32px', background: 'var(--p-indigo)', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 className="serif" style={{ margin: 0, fontSize: '20px' }}>{t('common.details')} - {showHistory.nom}</h3>
-                    <button onClick={() => setShowHistory(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', padding: '8px', borderRadius: '12px', cursor: 'pointer' }}>✕</button>
+        {/* Modal History Detail - Using Portal for absolute z-index isolation */}
+        {showHistory && createPortal(
+          <div style={{ 
+            position: 'fixed', 
+            top: 0, left: 0, width: '100vw', height: '100vh', 
+            background: 'rgba(15,23,42,0.85)', 
+            backdropFilter: 'blur(10px)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            zIndex: 999999, 
+            padding: '20px' 
+          }}>
+            <div className="card-academic animate-slide-up" style={{ 
+              width: '100%', maxWidth: '580px', padding: '0', 
+              overflow: 'hidden', borderRadius: '28px', 
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)', 
+              border: 'none', background: 'white', position: 'relative' 
+            }}>
+                <div style={{ padding: '24px 32px', background: '#6366f1', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 className="serif" style={{ margin: 0, fontSize: '22px', fontWeight: '700', letterSpacing: '-0.5px' }}>{t('common.details')} - {showHistory.nom}</h3>
+                    <button onClick={() => setShowHistory(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', padding: '8px', borderRadius: '14px', cursor: 'pointer', transition: 'all 0.2s' }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                 </div>
-                <div style={{ padding: '32px 40px', maxHeight: '70vh', overflowY: 'auto', background: '#ffffff' }}>
+                
+                <div style={{ padding: '40px', maxHeight: '75vh', overflowY: 'auto', background: '#ffffff' }}>
                     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                        {/* Vertical Progress Line */}
-                        <div style={{ position: 'absolute', left: '11px', top: '5px', bottom: '5px', width: '2px', background: '#e2e8f0', zIndex: 1 }}></div>
+                        {/* Vertical Timeline Line */}
+                        <div style={{ position: 'absolute', left: '11px', top: '8px', bottom: '8px', width: '2px', background: '#f1f5f9', zIndex: 1 }}></div>
 
                         {(() => {
-                             const getRoleText = (raw, roleType) => {
-                                 if (!raw) return null;
-                                 
-                                 // Normalize strings to remove accents for matching
-                                 const normalize = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-                                 const nRaw = normalize(raw);
-                                 
-                                 const markers = [
-                                     { key: 'vr', labels: ['vice-recteur', 'vice recteur'] },
-                                     { key: 'vd', labels: ['vice-doyen', 'vice doyen', 'vicedoyen'] },
-                                     { key: 'chef', labels: ['chef dept', 'chef de departement', 'chef dept:'] },
-                                     { key: 'dean', labels: ['doyen', 'dean'] },
-                                     { key: 'rh', labels: ['rh', 'hr', 'ressources humaines'] }
-                                 ];
+                            const raw = showHistory.dept_head_recommendation || '';
+                            const status = showHistory.status;
+                            
+                            const getCleanContent = (roleKey) => {
+                                if (!raw) return null;
+                                const markerPatterns = {
+                                    chef: /Chef\s*D\u00e9pt\s*:?/i,
+                                    vd: /Vice-Doyen\s*:?/i,
+                                    dean: /Doyen\s*:?/i,
+                                    rh: /RH\s*:?/i,
+                                    vr: /Vice-Recteur\s*:?/i
+                                };
+                                const currentPattern = markerPatterns[roleKey];
+                                if (!currentPattern.test(raw)) return null;
+                                const allMarkersRegex = /(Chef\s*D\u00e9pt|Vice-Doyen|Doyen|RH|Vice-Recteur)\s*:?/i;
+                                const parts = raw.split(allMarkersRegex);
+                                for (let i = 0; i < parts.length; i++) {
+                                    if (parts[i] && currentPattern.test(parts[i])) {
+                                        let content = parts[i+1] || '';
+                                        const nextMarkerIndex = content.search(allMarkersRegex);
+                                        if (nextMarkerIndex !== -1) content = content.substring(0, nextMarkerIndex);
+                                        return content.trim().replace(/^[:\s\-]+/, '').trim() || null;
+                                    }
+                                }
+                                return null;
+                            };
 
-                                 const currentMarker = markers.find(m => m.key === roleType);
-                                 if (!currentMarker) return null;
+                            const steps = [
+                                { key: 'chef', id: 'Submitted', label: t('roles.DEPARTMENT_HEAD'), color: '#6366f1', activeBg: '#f5f7ff', activeBorder: '#6366f1' },
+                                { key: 'vd', id: 'Head Approved', label: t('roles.VICE_DEAN'), color: '#22c55e', activeBg: '#f0fdf4', activeBorder: '#22c55e' },
+                                { key: 'dean', id: 'Pre-validated', label: t('roles.DEAN'), color: '#8b5cf6', activeBg: '#f5f3ff', activeBorder: '#8b5cf6' },
+                                { key: 'rh', id: 'Dean Validated', label: t('roles.HR_MANAGER'), color: '#f59e0b', activeBg: '#fffbeb', activeBorder: '#f59e0b' }
+                            ];
 
-                                 // Find where current role starts, ensuring we don't match "Doyen" inside "Vice-Doyen"
-                                 let startIdx = -1;
-                                 for (const lbl of currentMarker.labels) {
-                                     let found = nRaw.indexOf(lbl);
-                                     
-                                     // SPECIAL FIX: If we are looking for "Doyen", check it's not "Vice-Doyen"
-                                     if (roleType === 'dean' && found !== -1) {
-                                         const isViceDoyen = nRaw.indexOf('vice-doyen') !== -1 && nRaw.indexOf('vice-doyen') <= found && found < nRaw.indexOf('vice-doyen') + 10;
-                                         if (isViceDoyen) {
-                                             // Try to find the REAL "Doyen" later in the string
-                                             found = nRaw.indexOf(lbl, found + 10);
-                                         }
-                                     }
+                            const statusMap = {
+                                'Submitted': 0, 'Head Approved': 1, 'Pre-validated': 2, 'Dean Validated': 3,
+                                'HR Processed': 4, 'Vice Rector Approved': 5, 'Promoted': 6
+                            };
+                            const currentStepIdx = statusMap[status] ?? 0;
 
-                                     if (found !== -1) {
-                                         const colonIdx = raw.indexOf(':', found);
-                                         if (colonIdx !== -1) {
-                                             startIdx = colonIdx + 1;
-                                             break;
-                                         }
-                                     }
-                                 }
+                            return steps.map((step, idx) => {
+                                const val = getCleanContent(step.key) || (step.key === 'vd' && showHistory.evaluation_score ? `Score: ${showHistory.evaluation_score} / 100` : null);
+                                let displayVal = val;
+                                if (step.key === 'rh' && currentStepIdx >= 4) displayVal = 'DOSSIER ADMINISTRATIF VÉRIFIÉ ET CONFORME';
 
-                                 if (startIdx === -1) {
-                                     // If the raw string is just the value (no markers), return it if it matches the field
-                                     if (!raw.includes(':')) return raw;
-                                     return null;
-                                 }
+                                const isCompleted = currentStepIdx > idx;
+                                const isActive = currentStepIdx === idx;
+                                const isPending = currentStepIdx < idx;
 
-                                 // Find where ANY other marker starts after startIdx
-                                 let endIdx = raw.length;
-                                 markers.forEach(m => {
-                                     m.labels.forEach(lbl => {
-                                         const found = nRaw.indexOf(lbl, startIdx);
-                                         if (found !== -1 && found < endIdx) {
-                                             endIdx = found;
-                                         }
-                                     });
-                                 });
-
-                                 const result = raw.substring(startIdx, endIdx).trim();
-                                 return result || null;
-                             };
-
-                            const rawDept = showHistory.dept_head_recommendation;
-                            const rawVD = showHistory.evaluation_score_text || rawDept;
-                            const rawDean = showHistory.dean_recommendation || rawDept;
-
-                            const deptText = getRoleText(rawDept, 'chef');
-                            const vdText = getRoleText(rawVD, 'vd') || getRoleText(rawDept, 'vd');
-                            const deanText = getRoleText(rawDean, 'dean') || getRoleText(rawDept, 'dean');
-
-                            return (
-                                <>
-                                    {/* Step 1: Head of Dept */}
-                                    <div style={{ position: 'relative', zIndex: 2, paddingLeft: '40px' }}>
-                                        <div style={{ position: 'absolute', left: '0', top: '2px', width: '24px', height: '24px', background: deptText ? 'var(--p-indigo)' : '#cbd5e1', borderRadius: '50%', border: '4px solid white', boxShadow: '0 0 0 2px #f1f5f9' }}></div>
-                                        <div style={{ fontWeight: '800', color: '#1e293b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{t('roles.DEPARTMENT_HEAD')}</div>
-                                        <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', color: '#475569', fontSize: '14px', lineHeight: '1.6', minHeight: '40px' }}>
-                                            {deptText || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>{t('promotions.pendingEvaluation')}</span>}
-                                        </div>
-                                    </div>
-
-                                    {/* Step 2: Vice-Dean Evaluation */}
-                                    <div style={{ position: 'relative', zIndex: 2, paddingLeft: '40px' }}>
-                                        <div style={{ position: 'absolute', left: '0', top: '2px', width: '24px', height: '24px', background: (showHistory.evaluation_score || vdText) ? '#16a34a' : '#cbd5e1', borderRadius: '50%', border: '4px solid white', boxShadow: '0 0 0 2px #f1f5f9' }}></div>
-                                        <div style={{ fontWeight: '800', color: '#1e293b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{t('roles.VICE_DEAN')}</div>
-                                        <div style={{ background: (showHistory.evaluation_score || vdText) ? '#f0fdf4' : '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', color: '#166534', fontSize: '14px', minHeight: '40px' }}>
-                                            {showHistory.evaluation_score ? (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                    <span style={{ fontSize: '18px', fontWeight: '900' }}>{showHistory.evaluation_score} / 100</span>
-                                                    <span style={{ background: '#16a34a', color: 'white', padding: '2px 8px', borderRadius: '6px', fontSize: '10px' }}>SCORE ACADÉMIQUE</span>
+                                return (
+                                    <div key={idx} style={{ position: 'relative', zIndex: 2, paddingLeft: '44px', opacity: isPending ? 0.5 : 1, transition: 'all 0.4s' }}>
+                                        {/* Circle */}
+                                        <div style={{ 
+                                            position: 'absolute', left: '0', top: '4px', width: '24px', height: '24px', 
+                                            background: (isCompleted || isActive) ? step.color : '#e2e8f0', 
+                                            borderRadius: '50%', border: '5px solid white', 
+                                            boxShadow: isActive ? `0 0 0 4px ${step.color}30` : (isCompleted ? '0 0 0 1px #e2e8f0' : 'none'),
+                                            zIndex: 3
+                                        }}>
+                                            {isCompleted && (
+                                                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                                 </div>
-                                            ) : (vdText || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>{t('promotions.pendingEvaluation')}</span>)}
+                                            )}
                                         </div>
-                                    </div>
 
-                                    {/* Step 3: Dean Validation */}
-                                    <div style={{ position: 'relative', zIndex: 2, paddingLeft: '40px' }}>
-                                        <div style={{ position: 'absolute', left: '0', top: '2px', width: '24px', height: '24px', background: deanText ? '#8b5cf6' : '#cbd5e1', borderRadius: '50%', border: '4px solid white', boxShadow: '0 0 0 2px #f1f5f9' }}></div>
-                                        <div style={{ fontWeight: '800', color: '#1e293b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{t('roles.DEAN')}</div>
-                                        <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', color: '#475569', fontSize: '14px', lineHeight: '1.6', minHeight: '40px' }}>
-                                            {deanText || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>{t('promotions.pendingEvaluation')}</span>}
+                                        {/* Label */}
+                                        <div style={{ fontWeight: '800', color: isActive ? '#1e293b' : (isCompleted ? '#64748b' : '#cbd5e1'), fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.5px' }}>
+                                            {step.label} {isCompleted && <span style={{ color: '#22c55e', marginLeft: '8px', fontSize: '10px' }}>✓</span>}
+                                        </div>
+
+                                        {/* Content Box - MUTUALLY EXCLUSIVE STYLING */}
+                                        <div style={{ 
+                                            background: isActive ? step.activeBg : (isCompleted ? '#ffffff' : '#fafafa'), 
+                                            padding: '16px 20px', borderRadius: '16px', 
+                                            border: isActive ? `2px solid ${step.activeBorder}` : (isCompleted ? '1px solid #e2e8f0' : '1px dashed #f1f5f9'),
+                                            color: isActive ? (idx === 1 ? '#166534' : idx === 3 ? '#92400e' : '#1e293b') : (isCompleted ? '#475569' : '#cbd5e1'),
+                                            fontSize: '14px', fontWeight: isActive ? '700' : '500', minHeight: '52px',
+                                            display: 'flex', alignItems: 'center',
+                                            boxShadow: isActive ? '0 8px 20px -6px rgba(0,0,0,0.1)' : 'none',
+                                            transform: isActive ? 'scale(1.02)' : 'scale(1)',
+                                            transition: 'all 0.3s'
+                                        }}>
+                                            {displayVal || (isActive ? <span style={{ color: step.color, fontStyle: 'italic' }}>En attente de votre action...</span> : <span style={{ fontStyle: 'italic' }}>---</span>)}
                                         </div>
                                     </div>
-                                </>
-                            );
+                                );
+                            });
                         })()}
-
-                        {/* Step 4: HR Processing */}
-                        <div style={{ position: 'relative', zIndex: 2, paddingLeft: '40px' }}>
-                            <div style={{ position: 'absolute', left: '0', top: '2px', width: '24px', height: '24px', background: (showHistory.status === 'HR Processed' || showHistory.status === 'Promoted') ? '#f59e0b' : '#cbd5e1', borderRadius: '50%', border: '4px solid white', boxShadow: '0 0 0 2px #f1f5f9' }}></div>
-                            <div style={{ fontWeight: '800', color: '#1e293b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{t('roles.HR_MANAGER')}</div>
-                            <div style={{ background: '#fffbeb', padding: '16px', borderRadius: '12px', border: '1px solid #fde68a', color: '#92400e', fontSize: '13px', fontWeight: '600' }}>
-                                {showHistory.status === 'HR Processed' || showHistory.status === 'Promoted' ? 'DOSSIER ADMINISTRATIF VÉRIFIÉ ET CONFORME' : <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>{t('promotions.statusSubmitted')}</span>}
-                            </div>
-                        </div>
                     </div>
                 </div>
-                <div style={{ padding: '24px 32px', background: '#f8fafc', textAlign: 'right', borderTop: '1px solid #e2e8f0' }}>
-                    <button onClick={() => setShowHistory(null)} className="btn-confirm-pro" style={{ padding: '10px 24px' }}>{t('common.close')}</button>
+
+                <div style={{ padding: '30px 40px', background: '#f8fafc', textAlign: 'right', borderTop: '1px solid #f1f5f9' }}>
+                    <button 
+                        onClick={() => setShowHistory(null)} 
+                        className="btn-confirm-pro" 
+                        style={{ padding: '14px 48px', borderRadius: '16px', fontWeight: '800', background: '#6366f1', color: 'white', boxShadow: '0 8px 20px -4px rgba(99, 102, 241, 0.4)', border: 'none', cursor: 'pointer', fontSize: '15px' }}
+                    >
+                        {t('common.close')}
+                    </button>
                 </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>
