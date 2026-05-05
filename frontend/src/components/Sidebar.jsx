@@ -28,6 +28,17 @@ function Sidebar({ user, activeView, setView, menuItems, onLogout, isOpen }) {
       </nav>
 
       <div className="sidebar-footer-academic">
+        {/* Settings button first */}
+        {menuItems.find(item => item.id === 'settings') && (
+          <button 
+            className={`nav-item-academic ${activeView === 'settings' ? "active" : ""}`}
+            onClick={() => setView('settings')}
+            style={{ marginBottom: '16px', borderRadius: '12px' }}
+          >
+            <span style={{ flex: 1 }}>{menuItems.find(item => item.id === 'settings').label}</span>
+          </button>
+        )}
+
         <div className="user-profile-mini">
           <div className="user-avatar-mini">
             {user.profile_image ? (
@@ -42,17 +53,6 @@ function Sidebar({ user, activeView, setView, menuItems, onLogout, isOpen }) {
           </div>
         </div>
         
-        {/* Settings button moved here */}
-        {menuItems.find(item => item.id === 'settings') && (
-          <button 
-            className={`nav-item-academic ${activeView === 'settings' ? "active" : ""}`}
-            onClick={() => setView('settings')}
-            style={{ marginBottom: '8px', borderRadius: '8px' }}
-          >
-            {menuItems.find(item => item.id === 'settings').label}
-          </button>
-        )}
-
         <button onClick={onLogout} className="btn-logout-sidebar">
           {t('common.logout')}
         </button>
