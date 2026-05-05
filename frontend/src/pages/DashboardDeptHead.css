@@ -1,7 +1,7 @@
 /* Variables et couleurs modernes */
 :root {
-  --primary: #10b981;
-  --primary-hover: #059669;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
   --bg-sidebar: #0f172a;
   --bg-main: #f8fafc;
   --card-bg: #ffffff;
@@ -135,7 +135,7 @@
 }
 
 .nav-item.active {
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(99, 102, 241, 0.1);
   color: white;
   border-left: 4px solid var(--primary);
 }
@@ -282,13 +282,13 @@
   color: white;
   font-weight: 600;
   transition: var(--transition);
-  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
 }
 
 .btn-submit:hover { 
   background: var(--primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
 }
 
 .btn-submit:active {
