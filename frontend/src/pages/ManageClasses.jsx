@@ -680,6 +680,7 @@ function ManageClasses({ user }) {
 
       <ConfirmModal 
         isOpen={confirmModal.isOpen}
+        title={t('common.confirmation')}
         message={t('classes.confirmDelete')}
         onConfirm={performDelete}
         onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}

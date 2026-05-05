@@ -30,6 +30,7 @@ const fr = {
     errorLoading: 'Erreur de chargement',
     confirm: 'Êtes-vous sûr ?',
     areYouSure: 'Êtes-vous sûr ?',
+    confirmation: 'Confirmation',
     yes: 'Oui',
     no: 'Non',
     cancel: 'Annuler',
@@ -165,6 +166,7 @@ const fr = {
     profileSuccess: 'Profil mis à jour avec succès !',
     profileError: 'Échec de la mise à jour du profil.',
     errorOccurred: 'Une erreur inattendue est survenue.',
+    confirmation: 'Confirmation',
   },
 
   // ── Titres de la barre supérieure ──

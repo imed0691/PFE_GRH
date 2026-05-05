@@ -147,6 +147,7 @@ function ManageDepartments() {
 
       <ConfirmModal 
         isOpen={confirmModal.isOpen}
+        title={t('common.confirmation')}
         message={t('departments.confirmDelete').replace('{name}', confirmModal.name)}
         onConfirm={performDelete}
         onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}

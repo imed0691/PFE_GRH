@@ -195,6 +195,7 @@ function Settings({ user, onProfileUpdate }) {
 
       <ConfirmModal 
         isOpen={showConfirmModal}
+        title={t('common.confirmation')}
         message={t('settings.confirmRemovePhoto')}
         onConfirm={handleRemoveImage}
         onCancel={() => setShowConfirmModal(false)}

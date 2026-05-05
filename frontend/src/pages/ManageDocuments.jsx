@@ -267,6 +267,7 @@ function ManageDocuments({ user }) {
 
       <ConfirmModal 
         isOpen={confirmModal.isOpen}
+        title={t('common.confirmation')}
         message={confirmModal.isBulk ? (t('common.confirmClearAll') || 'Voulez-vous supprimer tout l\'historique traité ?') : t('common.confirmDelete')}
         onConfirm={confirmModal.isBulk ? performBulkDelete : performDelete}
         onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}

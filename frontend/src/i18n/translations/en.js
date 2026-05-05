@@ -30,6 +30,7 @@ const en = {
     errorLoading: 'Error loading data',
     confirm: 'Are you sure?',
     areYouSure: 'Are you sure?',
+    confirmation: 'Confirmation',
     yes: 'Yes',
     no: 'No',
     cancel: 'Cancel',
@@ -128,6 +129,7 @@ const en = {
     profileSuccess: 'Profile updated successfully!',
     profileError: 'Failed to update profile.',
     errorOccurred: 'An unexpected error occurred.',
+    confirmation: 'Confirmation',
   },
 
   // ── Sidebar Navigation ──

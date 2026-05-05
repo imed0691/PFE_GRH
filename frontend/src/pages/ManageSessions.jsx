@@ -340,6 +340,7 @@ function ManageSessions() {
 
       <ConfirmModal 
         isOpen={confirmModal.isOpen}
+        title={t('common.confirmation')}
         message={t('sessions.confirmCancel') || 'Voulez-vous vraiment annuler cette séance ?'}
         onConfirm={performDelete}
         onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
