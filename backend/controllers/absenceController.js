@@ -57,11 +57,16 @@ exports.getAllAbsences = (req, res) => {
            u.nom, u.prenom, u.department_id 
      FROM absences a
      JOIN users u ON a.teacher_id = u.id
-     WHERE 1=1
+     WHERE a.is_cleared = FALSE
   `;
 
   if (req.query.filter === 'week') {
-    query += " AND YEARWEEK(DATE_ADD(a.date, INTERVAL 2 DAY), 1) = YEARWEEK(DATE_ADD(CURDATE(), INTERVAL 2 DAY), 1)";
+    // Show current week OR anything that still needs action OR anything unread by the teacher
+    query += ` AND (
+      YEARWEEK(DATE_ADD(a.date, INTERVAL 2 DAY), 1) = YEARWEEK(DATE_ADD(CURDATE(), INTERVAL 2 DAY), 1) 
+      OR a.justification_status IN ('None', 'Pending')
+      ${userRole === 'TEACHER' || userRole === 'ENSEIGNANT' ? 'OR a.is_read_by_teacher = FALSE' : ''}
+    )`;
   }
 
   if (userRole === 'TEACHER' || userRole === 'ENSEIGNANT') {
@@ -74,6 +79,12 @@ exports.getAllAbsences = (req, res) => {
   }
 
   // Managers view (HR, Dept Head, Admin)
+  if (userRole === 'DEPARTMENT_HEAD' || userRole === 'CHEF_DEPARTEMENT') {
+    query += ` AND u.department_id = ${db.escape(req.user.department_id)}`;
+  } else if (req.query.department_id && req.query.department_id !== 'all') {
+    query += ` AND u.department_id = ${db.escape(req.query.department_id)}`;
+  }
+
   query += " ORDER BY a.created_at DESC";
   db.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -227,10 +238,23 @@ exports.deleteAbsence = (req, res) => {
     return res.status(403).json({ message: "Accès refusé. Seul un gestionnaire peut supprimer une absence." });
   }
 
-  const query = "DELETE FROM absences WHERE id = ?";
-  db.query(query, [id], (err, result) => {
+  // Pour une absence Refusée, on supprime (pour qu'elle remonte dans Recent Sessions)
+  // Pour une absence Acceptée, on cache (is_cleared = TRUE) pour qu'elle ne remonte PAS
+  db.query('SELECT justification_status FROM absences WHERE id = ?', [id], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Absence supprimée définitivement." });
+    if (row.length === 0) return res.status(404).json({ message: "Absence non trouvée" });
+
+    let query;
+    if (row[0].justification_status === 'Accepted') {
+      query = "UPDATE absences SET is_cleared = TRUE, is_read_by_teacher = TRUE, is_read_by_admin = TRUE WHERE id = ?";
+    } else {
+      query = "DELETE FROM absences WHERE id = ?";
+    }
+
+    db.query(query, [id], (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: "Absence traitée avec succès." });
+    });
   });
 };
 
@@ -239,10 +263,19 @@ exports.bulkDeleteAbsences = (req, res) => {
   const isManager = ['DEPARTMENT_HEAD', 'CHEF_DEPARTEMENT', 'RH_MANAGER', 'HR_MANAGER', 'ADMIN'].includes(userRole);
   if (!isManager) return res.status(403).json({ message: "Accès refusé." });
 
-  const query = "DELETE FROM absences WHERE justification_status != 'Pending'";
-  db.query(query, (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Historique supprimé." });
+  // 1. Supprimer les absences refusées (elles remonteront dans "Recent sessions to mark")
+  // 2. Cacher les absences acceptées (elles ne remonteront PAS)
+  const deleteRejected = "DELETE FROM absences WHERE justification_status = 'Rejected'";
+  const hideAccepted = "UPDATE absences SET is_cleared = TRUE, is_read_by_teacher = TRUE, is_read_by_admin = TRUE WHERE justification_status = 'Accepted' OR is_cleared = TRUE";
+
+  db.query(deleteRejected, (err1, res1) => {
+    if (err1) return res.status(500).json({ error: err1.message });
+    
+    db.query(hideAccepted, (err2, res2) => {
+      if (err2) return res.status(500).json({ error: err2.message });
+      console.log(`[BulkDelete] Deleted ${res1.affectedRows} rejected, Hid ${res2.affectedRows} accepted.`);
+      res.json({ message: "Historique traité nettoyé avec succès." });
+    });
   });
 };
 

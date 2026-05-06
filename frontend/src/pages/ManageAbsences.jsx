@@ -26,7 +26,7 @@ function ManageAbsences({ user: propUser }) {
   const [justificationText, setJustificationText] = useState('');
   const [justificationFile, setJustificationFile] = useState(null);
   const [absenceDate, setAbsenceDate] = useState(new Date().toISOString().split('T')[0]);
-  const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null, type: null });
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem('user'));
@@ -43,7 +43,8 @@ function ManageAbsences({ user: propUser }) {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/absences?filter=week', {
+      const deptParam = selectedDept !== 'all' ? `&department_id=${selectedDept}` : '';
+      const res = await fetch(`http://localhost:5000/api/absences?filter=week${deptParam}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -60,7 +61,8 @@ function ManageAbsences({ user: propUser }) {
     setLoadingPast(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/sessions/past', {
+      const deptParam = selectedDept !== 'all' ? `?department_id=${selectedDept}` : '';
+      const res = await fetch(`http://localhost:5000/api/sessions/past${deptParam}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) setPastSessions(await res.json());
@@ -113,7 +115,7 @@ function ManageAbsences({ user: propUser }) {
         fetchPastSessions();
       }
     }
-  }, [userRole]);
+  }, [userRole, selectedDept]);
 
   const handleMarkAbsence = async (teacherId, date, reason = t('absences.markAbsence'), startTime, endTime, isExtra) => {
     const loadToast = toast.loading(t('common.loading'));
@@ -153,12 +155,14 @@ function ManageAbsences({ user: propUser }) {
         setJustificationText('');
         setJustificationFile(null);
         fetchAbsences();
+        fetchPastSessions();
       }
     } catch (error) { toast.error(t('common.serverError')); } finally { setIsSubmitting(false); }
   };
 
-  const handleCancelJustification = async (id) => {
-    if (!window.confirm(t('absences.confirmCancelJustify'))) return;
+  const handleCancelJustification = async () => {
+    const id = confirmModal.id;
+    setConfirmModal({ isOpen: false, id: null, type: null });
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:5000/api/absences/${id}/justify`, {
@@ -168,6 +172,7 @@ function ManageAbsences({ user: propUser }) {
       if (res.ok) {
         toast.success(t('absences.justificationCancelled'));
         fetchAbsences();
+        fetchPastSessions();
       }
     } catch (error) { toast.error(t('common.serverError')); }
   };
@@ -188,13 +193,14 @@ function ManageAbsences({ user: propUser }) {
       if (res.ok) {
         toast.success(status === 'Accepted' ? t('common.approved') : t('common.rejected'));
         fetchAbsences();
+        fetchPastSessions();
       }
     } catch (error) { toast.error(t('common.serverError')); }
   };
 
   const handleDeleteAbsence = async () => {
-    const { id } = confirmModal;
-    setConfirmModal({ ...confirmModal, isOpen: false });
+    const id = confirmModal.id;
+    setConfirmModal({ isOpen: false, id: null, type: null });
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:5000/api/absences/${id}`, {
@@ -204,18 +210,20 @@ function ManageAbsences({ user: propUser }) {
       if (res.ok) {
         toast.success(t('common.deleted') || 'Absence supprimée');
         fetchAbsences();
+        fetchPastSessions();
       }
     } catch (error) { toast.error(t('common.serverError')); }
   };
 
   const handleClearHistory = () => {
-    const processed = absences.filter(a => a.justification_status !== 'Pending');
+    // On ne nettoie que ce qui est définitivement clos (Accepté ou Refusé)
+    const processed = absences.filter(a => a.justification_status === 'Accepted' || a.justification_status === 'Rejected');
     if (processed.length === 0) return toast.info(t('common.noData') || 'Aucune donnée à nettoyer');
-    setConfirmModal({ isOpen: true, id: 'all_processed', isBulk: true });
+    setConfirmModal({ isOpen: true, id: 'all_processed', type: 'bulk' });
   };
 
   const performBulkDelete = async () => {
-    setConfirmModal({ ...confirmModal, isOpen: false });
+    setConfirmModal({ isOpen: false, id: null, type: null });
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -226,6 +234,7 @@ function ManageAbsences({ user: propUser }) {
       if (res.ok) {
         toast.success(t('common.historyCleared') || 'Historique supprimé');
         fetchAbsences();
+        fetchPastSessions();
       }
     } catch (error) { toast.error(t('common.serverError')); } finally { setLoading(false); }
   };
@@ -239,7 +248,7 @@ function ManageAbsences({ user: propUser }) {
     label: `${t.prenom} ${t.nom} (${t.department_name || '-'})` 
   }));
 
-  if (loading) return <div className="loading-spinner">{t('common.loading')}</div>;
+  const isAnyRefreshing = loading || loadingPast;
 
   return (
     <>
@@ -258,15 +267,6 @@ function ManageAbsences({ user: propUser }) {
                 </p>
               </div>
             </div>
-            <button 
-              className="btn-confirm-pro" 
-              onClick={fetchPastSessions}
-              disabled={loadingPast}
-              style={{ padding: '12px 24px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '12px', fontWeight: '800' }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-              {t('common.refresh') || 'ACTUALISER'}
-            </button>
           </div>
 
           {loadingPast ? (
@@ -292,7 +292,9 @@ function ManageAbsences({ user: propUser }) {
                       <td>
                         <div style={{ fontWeight: '800', color: '#0f172a' }}>{s.module_name}</div>
                         <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                          <span className="badge-pro" style={{ fontSize: '10px', padding: '2px 8px' }}>{s.session_type}</span>
+                          <span className="badge-pro" style={{ fontSize: '10px', padding: '2px 8px' }}>
+                            {s.session_type === 'Lecture' ? 'COURS' : s.session_type === 'Tutorial' ? 'TD' : s.session_type === 'Practical' ? 'TP' : s.session_type}
+                          </span>
                           <span className="badge-pro badge-pro-info" style={{ fontSize: '10px', padding: '2px 8px' }}>{s.study_level}</span>
                         </div>
                       </td>
@@ -391,11 +393,11 @@ function ManageAbsences({ user: propUser }) {
                     )}
                   </td>
                   <td style={{ textAlign: 'center' }}>
-                    <span className={`badge-pro ${a.justification_status === 'Accepted' ? 'badge-pro-success' : a.justification_status === 'Pending' ? 'badge-pro-warning' : 'badge-pro-danger'}`} style={{ padding: '8px 16px', borderRadius: '12px', fontSize: '11px', fontWeight: '800' }}>
-                      {a.justification_status === 'Pending' ? (
+                    <span className={`badge-pro ${a.justification_status === 'Accepted' ? 'badge-pro-success' : (a.justification_status === 'Pending' || a.justification_status === 'None') ? 'badge-pro-warning' : 'badge-pro-danger'}`} style={{ padding: '8px 16px', borderRadius: '12px', fontSize: '11px', fontWeight: '800' }}>
+                      {(a.justification_status === 'Pending' || a.justification_status === 'None') ? (
                         <span style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                           <span className="status-pulse" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }}></span>
-                          {t('absences.pending')}
+                          {a.justification_status === 'None' ? (t('absences.waitingJustification') || 'En traitement (Initial)') : t('absences.pending')}
                         </span>
                       ) : a.justification_status === 'Accepted' ? t('absences.accepted') : t('absences.rejected')}
                     </span>
@@ -403,16 +405,28 @@ function ManageAbsences({ user: propUser }) {
                   <td>
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
                       {isTeacher && a.justification_status !== 'Accepted' && (
-                        <button 
-                          onClick={() => {
-                            setActiveJustifyId(a.id);
-                            if (a.justification_status === 'Pending') setJustificationText(a.justification_text || '');
-                          }} 
-                          className="btn-confirm-pro" 
-                          style={{ padding: '10px 20px', fontSize: '12px', borderRadius: '12px', fontWeight: '800' }}
-                        >
-                          {a.justification_status === 'Pending' ? (t('absences.updateJustification') || 'MODIFIER') : (t('absences.justify') || 'JUSTIFIER')}
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button 
+                            onClick={() => {
+                              setActiveJustifyId(a.id);
+                              if (a.justification_status === 'Pending') setJustificationText(a.justification_text || '');
+                            }} 
+                            className="btn-confirm-pro" 
+                            style={{ padding: '10px 20px', fontSize: '12px', borderRadius: '12px', fontWeight: '800' }}
+                          >
+                            {a.justification_status === 'Pending' ? (t('absences.updateJustification') || 'MODIFIER') : (t('absences.justify') || 'JUSTIFIER')}
+                          </button>
+                          {a.justification_status === 'Pending' && (
+                            <button 
+                              onClick={() => setConfirmModal({ isOpen: true, id: a.id, type: 'cancel' })}
+                              className="btn-cancel-pro"
+                              style={{ padding: '10px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              title={t('common.cancel')}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                          )}
+                        </div>
                       )}
                       {(isDeptHead || isHR || isAdmin) && a.justification_status === 'Pending' && (
                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -424,8 +438,8 @@ function ManageAbsences({ user: propUser }) {
                           </button>
                         </div>
                       )}
-                      {(isDeptHead || isHR || isAdmin) && a.justification_status !== 'Pending' && (
-                        <button onClick={() => setConfirmModal({ isOpen: true, id: a.id })} className="btn-delete-pro" style={{ padding: '10px', borderRadius: '10px' }}>
+                      {(isDeptHead || isHR || isAdmin) && (a.justification_status === 'Accepted' || a.justification_status === 'Rejected') && (
+                        <button onClick={() => setConfirmModal({ isOpen: true, id: a.id, type: 'delete' })} className="btn-delete-pro" style={{ padding: '10px', borderRadius: '10px' }}>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         </button>
                       )}
@@ -512,9 +526,10 @@ function ManageAbsences({ user: propUser }) {
 
     <ConfirmModal 
       isOpen={confirmModal.isOpen}
-      message={confirmModal.isBulk ? (t('common.confirmClearAll') || 'Voulez-vous supprimer tout l\'historique traité ?') : t('common.confirmDelete')}
-      onConfirm={confirmModal.isBulk ? performBulkDelete : handleDeleteAbsence}
-      onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+      title={t('common.confirmation')}
+      message={confirmModal.type === 'bulk' ? (t('common.confirmClearAll') || 'Voulez-vous supprimer tout l\'historique traité ?') : (confirmModal.type === 'cancel' ? (t('absences.confirmCancelJustify') || 'Voulez-vous annuler cette justification ?') : t('absences.confirmDelete'))}
+      onConfirm={confirmModal.type === 'bulk' ? performBulkDelete : (confirmModal.type === 'cancel' ? handleCancelJustification : handleDeleteAbsence)}
+      onCancel={() => setConfirmModal({ isOpen: false, id: null, type: null })}
     />
     </>
   );

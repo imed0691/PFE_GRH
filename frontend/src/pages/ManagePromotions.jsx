@@ -423,10 +423,6 @@ function ManagePromotions({ user }) {
                     const getCleanContent = (raw, roleKey) => {
                       if (!raw) return null;
                       const markerPatterns = {
-                        chef: /\bChef\s*D[.\u00e9e]pt\b\s*:?/i,
-                        vd: /\bVice-Doyen\b\s*:?/i,
-                        dean: /\bDoyen\b\s*:?/i,
-                        rh: /\bRH\b\s*:?/i,
                         chef: /(?:^|\n)\s*\bChef\s*D[.\u00e9e]pt\b\s*:?/i,
                         vd: /(?:^|\n)\s*\bVice-Doyen\b\s*:?/i,
                         dean: /(?:^|\n)\s*\bDoyen\b\s*:?/i,

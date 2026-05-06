@@ -620,7 +620,7 @@ function ManageClasses({ user }) {
                           key={m.id} 
                           onClick={() => isAssigned ? handleUnassignModule(m.id) : handleAssignModule(m.id)}
                           style={{ 
-                            padding: '16px', borderRadius: '16px', border: 'none', cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', fontSize: '13px', fontWeight: '800', textAlign: 'left',
+                            padding: '16px', borderRadius: '16px', cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', fontSize: '13px', fontWeight: '800', textAlign: 'left',
                             background: isAssigned ? 'var(--p-indigo)' : 'white',
                             color: isAssigned ? 'white' : '#475569',
                             boxShadow: isAssigned ? '0 10px 15px -3px rgba(99, 102, 241, 0.25)' : '0 2px 4px rgba(0,0,0,0.02)',

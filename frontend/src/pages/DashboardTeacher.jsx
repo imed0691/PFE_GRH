@@ -63,24 +63,13 @@ function DashboardTeacher({ user, onLogout }) {
     if (detailView === 'absences') return absences;
 
     let history = [];
-    // Align with backend: Look back to Jan 1st 2026 OR teacher creation date
     const janFirst = new Date(today.getFullYear(), 0, 1); 
     const teacherCreated = stats.teacher_created_at ? new Date(stats.teacher_created_at) : janFirst;
-    let semesterStart = teacherCreated > janFirst ? teacherCreated : janFirst;
-    
-    // Academic week starts on Saturday. Calculate days since last Saturday.
-    const day = semesterStart.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-    const daysSinceSaturday = (day + 1) % 7;
-    
-    const startOfAcademicWeek = new Date(semesterStart);
-    startOfAcademicWeek.setDate(startOfAcademicWeek.getDate() - daysSinceSaturday);
-    semesterStart = startOfAcademicWeek;
-    semesterStart.setHours(0,0,0,0);
+    teacherCreated.setHours(0,0,0,0);
 
     // Helper to check if a session at a specific date/time was an unjustified absence
     const isUnjustifiedAbsence = (sessionId, dateStr, startTime) => {
       return absences.find(a => {
-        // Robust time comparison (HH:mm)
         const aTime = a.start_time ? a.start_time.substring(0, 5) : null;
         const sTime = startTime ? startTime.substring(0, 5) : null;
         
@@ -100,16 +89,34 @@ function DashboardTeacher({ user, onLogout }) {
         // One-time session
         const d = new Date(s.session_date);
         const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        
+        // Match Backend: If detailView is 'extra', only show current month
+        if (detailView === 'extra') {
+          const isCurrentMonth = d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+          if (!isCurrentMonth) return;
+        }
+
         if (isSessionPassed(s) && !isUnjustifiedAbsence(s.id, dateStr, s.start_time)) {
           history.push(s);
         }
       } else {
         if (isExtra) return; // SUPP sessions should never be counted as recurring
-        // Recurring session: Generate past occurrences since joining
+        
+        // CRITICAL: Aligned with Backend - Count from max(teacherCreated, sessionCreatedAt, janFirst)
+        // Session creation date is rounded back to Saturday to allow current week counting
+        let sessionCreatedAt = s.created_at ? new Date(s.created_at) : teacherCreated;
+        const dayS = sessionCreatedAt.getDay();
+        const daysSinceSat = (dayS + 1) % 7;
+        sessionCreatedAt.setDate(sessionCreatedAt.getDate() - daysSinceSat);
+        sessionCreatedAt.setHours(0,0,0,0);
+
+        let sessionActualStart = teacherCreated > sessionCreatedAt ? teacherCreated : sessionCreatedAt;
+        if (janFirst > sessionActualStart) sessionActualStart = janFirst;
+
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const targetDayIndex = days.indexOf(s.day_of_week);
         
-        let tempDate = new Date(semesterStart);
+        let tempDate = new Date(sessionActualStart);
         tempDate.setHours(0,0,0,0);
         while (tempDate <= today) {
           if (tempDate.getDay() === targetDayIndex) {

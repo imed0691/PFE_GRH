@@ -56,6 +56,7 @@ exports.getCounts = (req, res) => {
       query: `SELECT COUNT(*) as count FROM absences a 
               JOIN users u ON a.teacher_id = u.id
               WHERE a.is_read_by_admin = FALSE 
+              AND a.is_cleared = FALSE
               AND a.justification_status = 'Pending'
               AND (
                 u.department_id = (SELECT department_id FROM users WHERE id = ?)
@@ -70,7 +71,7 @@ exports.getCounts = (req, res) => {
     sections.push({
       name: 'absences',
       query: `SELECT COUNT(*) as count FROM absences a 
-              WHERE a.teacher_id = ? AND a.is_read_by_teacher = FALSE`,
+              WHERE a.teacher_id = ? AND a.is_read_by_teacher = FALSE AND a.is_cleared = FALSE`,
       params: [userId]
     });
   }

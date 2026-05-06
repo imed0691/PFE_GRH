@@ -92,7 +92,13 @@ function MySalary({ user }) {
             {t('salary.absenceDetails') || 'Détails des Absences'}
           </h3>
           {current.absence_details && current.absence_details.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div 
+              className="custom-scrollbar"
+              style={{ 
+                display: 'flex', flexDirection: 'column', gap: '12px', 
+                maxHeight: '400px', overflowY: 'auto', paddingRight: '4px' 
+              }}
+            >
               {current.absence_details.map((a, idx) => (
                 <div key={idx} style={{ padding: '16px', background: '#fef2f2', borderRadius: '16px', border: '1px solid #fee2e2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
@@ -118,7 +124,13 @@ function MySalary({ user }) {
             {t('teacher.extraSessions') || 'Séances Supplémentaires'}
           </h3>
           {current.extra_sessions && current.extra_sessions.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div 
+              className="custom-scrollbar"
+              style={{ 
+                display: 'flex', flexDirection: 'column', gap: '12px', 
+                maxHeight: '400px', overflowY: 'auto', paddingRight: '4px' 
+              }}
+            >
               {current.extra_sessions.map((s, idx) => (
                 <div key={idx} style={{ padding: '16px', background: '#f0fdf4', borderRadius: '16px', border: '1px solid #dcfce7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>

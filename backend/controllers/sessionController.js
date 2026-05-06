@@ -120,7 +120,7 @@ exports.getTeacherDashboardData = (req, res) => {
 
   // 1. Get ALL sessions for the teacher
   const sessionsQuery = `
-    SELECT s.id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.end_time, s.is_extra, s.session_date,
+    SELECT s.id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.end_time, s.is_extra, s.session_date, s.created_at,
            sl.name as study_level, sec.name as section, sg.name as groupe,
            d.name as department_name
     FROM academic_sessions s
@@ -139,9 +139,9 @@ exports.getTeacherDashboardData = (req, res) => {
   // 2. Get teacher stats (absences and target volume)
   const statsQuery = `
     SELECT u.volume_horaire, u.created_at, 
-           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND is_extra = 0 AND date >= DATE(u.created_at)) as total_reg_absences,
+           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted') AND is_extra = 0 AND date >= DATE(u.created_at)) as total_reg_absences,
            (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted') AND is_extra = 0 AND date >= DATE(u.created_at)) as unjustified_count,
-           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted') AND is_extra = 1 AND date >= DATE(u.created_at)) as extra_unjustified_count
+           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted') AND is_extra = 1 AND MONTH(date) = MONTH(CURRENT_DATE()) AND YEAR(date) = YEAR(CURRENT_DATE())) as extra_unjustified_count
     FROM users u WHERE u.id = ?
   `;
 
@@ -164,7 +164,7 @@ exports.getTeacherDashboardData = (req, res) => {
   `;
 
   // 4. Get absences
-  const absencesQuery = "SELECT id, teacher_id, DATE_FORMAT(date, '%Y-%m-%d') as date, reason, status, has_justification, is_extra, start_time, justification_status, justification_file, is_caught_up, is_read_by_teacher, justification_text, catchup_date, catchup_start_time, catchup_end_time FROM absences WHERE teacher_id = ? ORDER BY created_at DESC";
+  const absencesQuery = "SELECT id, teacher_id, DATE_FORMAT(date, '%Y-%m-%d') as date, reason, status, has_justification, is_extra, start_time, justification_status, justification_file, is_caught_up, is_read_by_teacher, justification_text, catchup_date, catchup_start_time, catchup_end_time FROM absences WHERE teacher_id = ? AND is_cleared = FALSE ORDER BY created_at DESC";
 
   db.query(sessionsQuery, [teacherId], (err, sessions) => {
     if (err) {
@@ -191,14 +191,6 @@ exports.getTeacherDashboardData = (req, res) => {
       
       let completedSessionsCount = 0;
       let completedExtraCount = 0;
-      let actualStart = teacherCreatedAt > semesterStart ? teacherCreatedAt : semesterStart;
-      // Academic week starts on Saturday. Calculate days since last Saturday.
-      const day = actualStart.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-      const daysSinceSaturday = (day + 1) % 7;
-      
-      const startOfAcademicWeek = new Date(actualStart);
-      startOfAcademicWeek.setDate(startOfAcademicWeek.getDate() - daysSinceSaturday);
-      actualStart = startOfAcademicWeek;
 
       sessions.forEach(s => {
         let eh = 0, em = 0;
@@ -215,23 +207,43 @@ exports.getTeacherDashboardData = (req, res) => {
           const sessionDateNoTime = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
 
           if (sessionDateNoTime < todayNoTime || (sessionDateNoTime.getTime() === todayNoTime.getTime() && sessionEndHour <= currentHour)) {
-            if (!s.is_extra) completedSessionsCount++;
-            else completedExtraCount++;
+            if (!s.is_extra) {
+              completedSessionsCount++;
+            } else {
+              // Reset Extra Sessions Monthly: Only count if it's the current month
+              if (sessionDateNoTime.getMonth() === today.getMonth() && sessionDateNoTime.getFullYear() === today.getFullYear()) {
+                completedExtraCount++;
+              }
+            }
           }
         } else {
           if (s.is_extra) return; // SUPP sessions should never be counted as recurring
+          
+          // CRITICAL: A session should only be counted from the LATER of:
+          // 1. Teacher joining date
+          // 2. Session creation date (rounded back to Saturday to allow current week counting)
+          // 3. Semester start
+          let sessionCreatedAt = new Date(s.created_at);
+          const dayS = sessionCreatedAt.getDay();
+          const daysSinceSat = (dayS + 1) % 7;
+          sessionCreatedAt.setDate(sessionCreatedAt.getDate() - daysSinceSat);
+          sessionCreatedAt.setHours(0, 0, 0, 0);
+
+          let sessionActualStart = teacherCreatedAt > sessionCreatedAt ? teacherCreatedAt : sessionCreatedAt;
+          if (semesterStart > sessionActualStart) sessionActualStart = semesterStart;
+          
           const targetDayIndex = daysOfWeek.indexOf(s.day_of_week);
-          let tempDate = new Date(actualStart);
+          let tempDate = new Date(sessionActualStart);
+          tempDate.setHours(0, 0, 0, 0); // Start at the beginning of the day
+
           while (tempDate <= today) {
             if (tempDate.getDay() === targetDayIndex) {
               if (tempDate.toDateString() === today.toDateString()) {
                 if (sessionEndHour <= currentHour) {
-                  if (!s.is_extra) completedSessionsCount++;
-                  else completedExtraCount++;
+                  completedSessionsCount++;
                 }
               } else {
-                if (!s.is_extra) completedSessionsCount++;
-                else completedExtraCount++;
+                completedSessionsCount++;
               }
             }
             tempDate.setDate(tempDate.getDate() + 1);
@@ -335,7 +347,7 @@ exports.getRecentPastSessions = (req, res) => {
 
     // 2. Query ALL sessions that could have occurred recently
     let sessionsQuery = `
-      SELECT s.id, s.teacher_id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.end_time, s.session_date, s.is_extra,
+      SELECT s.id, s.teacher_id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.end_time, s.session_date, s.is_extra, s.created_at,
              u.nom as teacher_nom, u.prenom as teacher_prenom, u.created_at as teacher_created_at,
              sl.name as study_level, sec.name as section, sg.name as groupe
       FROM academic_sessions s
@@ -346,8 +358,11 @@ exports.getRecentPastSessions = (req, res) => {
       WHERE 1=1
     `;
     
-    if (userRole === 'DEPARTMENT_HEAD' || userRole === 'CHEF_DEPARTEMENT') {
-      sessionsQuery += " AND s.department_id = " + headDeptId;
+    // Priority to query param for Admin/HR, otherwise use user's department
+    let deptId = req.query.department_id || headDeptId;
+    
+    if (deptId && deptId !== 'all') {
+      sessionsQuery += ` AND s.department_id = ${db.escape(deptId)}`;
     }
 
     db.query(sessionsQuery, (err, sessions) => {
@@ -374,18 +389,20 @@ exports.getRecentPastSessions = (req, res) => {
           occ = getLastOccurrence(s.day_of_week);
         }
 
-        // Only keep if it's in the past (before 'now') AND after the teacher joined (allowing the full week of joining)
+        // Only keep if it's in the past (before 'now') AND after the teacher joined AND after session was created
         const teacherJoinDate = new Date(s.teacher_created_at);
-        const dayJoin = teacherJoinDate.getDay();
-        const daysSinceSaturday = (dayJoin + 1) % 7;
-        teacherJoinDate.setDate(teacherJoinDate.getDate() - daysSinceSaturday);
         teacherJoinDate.setHours(0,0,0,0);
+        const sessionCreatedAt = new Date(s.created_at);
+        const dayS = sessionCreatedAt.getDay();
+        const daysSinceSat = (dayS + 1) % 7;
+        sessionCreatedAt.setDate(sessionCreatedAt.getDate() - daysSinceSat);
+        sessionCreatedAt.setHours(0,0,0,0);
         
         const isToday = occ.toDateString() === now.toDateString();
         const isPast = occ < now || (isToday && sessionEndHour < currentHour);
-        const isAfterJoining = occ >= teacherJoinDate;
+        const isAfterValid = occ >= teacherJoinDate && occ >= sessionCreatedAt;
         
-        if (isPast && isAfterJoining) {
+        if (isPast && isAfterValid) {
           const y = occ.getFullYear();
           const m = String(occ.getMonth() + 1).padStart(2, '0');
           const d = String(occ.getDate()).padStart(2, '0');
@@ -399,16 +416,25 @@ exports.getRecentPastSessions = (req, res) => {
       // 3. Filter out those that already have an absence record
       if (pastSessions.length === 0) return res.json([]);
 
+      // Select teacher_id, date and start_time to identify already marked sessions
+      // We don't filter by is_cleared here because even cleared absences should prevent remounting
       const checkAbsenceQuery = "SELECT teacher_id, DATE_FORMAT(date, '%Y-%m-%d') as date, start_time FROM absences";
       db.query(checkAbsenceQuery, (err, absences) => {
         if (err) return res.status(500).json({ error: err.message });
 
         const filtered = pastSessions.filter(ps => {
-          return !absences.find(a => 
-            Number(a.teacher_id) === Number(ps.teacher_id) && 
-            a.date === ps.actual_date &&
-            a.start_time === ps.start_time
-          );
+          const psDate = ps.actual_date;
+          const psTime = ps.start_time.substring(0, 5); // HH:MM
+          
+          return !absences.some(a => {
+            const aDate = a.date; // YYYY-MM-DD string from DATE_FORMAT
+            if (!a.start_time) return false; // Ignore absences without a specific start time
+            const aTime = a.start_time.substring(0, 5); // HH:MM
+            
+            return Number(a.teacher_id) === Number(ps.teacher_id) && 
+                   aDate === psDate && 
+                   aTime === psTime;
+          });
         });
 
         // Sort by date desc
