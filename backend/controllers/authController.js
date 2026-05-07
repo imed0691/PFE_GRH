@@ -206,7 +206,7 @@ exports.getTeachers = (req, res) => {
   const userId = req.user.id;
   const userRole = req.user.role ? req.user.role.toUpperCase().replace(/\s/g, '_') : '';
 
-  let query = "SELECT id, nom, prenom, department_id FROM users WHERE role IN ('TEACHER', 'ENSEIGNANT')";
+  let query = "SELECT id, nom, prenom, department_id FROM users WHERE LOWER(role) IN ('teacher', 'enseignant')";
   
   if (userRole === 'DEPARTMENT_HEAD' || userRole === 'CHEF_DEPARTEMENT') {
     db.query('SELECT department_id FROM users WHERE id = ?', [userId], (err, deptRes) => {
@@ -271,6 +271,7 @@ exports.deleteProfileImage = (req, res) => {
     });
   });
 };
+
 // Get current user profile
 exports.getProfile = (req, res) => {
   const userId = req.user.id;

@@ -59,6 +59,9 @@ const en = {
     details: 'Details',
     close: 'Close',
     validate: 'Validate',
+    allMonths: 'All Year',
+    timeSlot: 'Time Slot',
+    modify: 'Modify',
   },
 
   // ── Login ──
@@ -490,6 +493,13 @@ const en = {
     accepted: 'Accepted',
     rejected: 'Rejected',
     attachmentLabel: 'Attachment (PDF, Image)',
+    replacementScheduled: 'Replacement scheduled',
+    replacementCancelled: 'Replacement session cancelled',
+    planReplacement: 'Schedule Replacement',
+    planReplacementDesc: 'Choose the date and time for the replacement session.',
+    errorPastDate: 'Cannot choose a past date.',
+    errorFriday: 'Friday is a holiday, no classes scheduled.',
+    confirmCancelReplacement: 'Are you sure you want to cancel this replacement session?',
     historyDeleted: 'Absence history cleared',
     allUpToDate: 'All absences are up to date.',
     historyDesc: 'View and manage previous absence records.',

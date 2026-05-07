@@ -61,6 +61,13 @@ const fr = {
     details: 'Détails',
     close: 'Fermer',
     validate: 'Valider',
+    allMonths: "Toute l'année",
+    timeSlot: 'Tranche Horaire',
+    modify: 'Modifier',
+    allTeachers: 'Tous les enseignants',
+    searchTeacher: 'Rechercher un enseignant...',
+    selectTeacher: 'Sélectionner un enseignant...',
+    staffMember: 'Membre du personnel',
   },
 
   // ── Connexion ──
@@ -343,7 +350,7 @@ const fr = {
     unreadNotif: 'Vous avez {count} notification(s) non lue(s)',
     adminMessages: '{count} message(s) de l\'administration',
     absenceUpdates: '{count} mise(s) à jour d\'absence',
-    lecture: 'Cours',
+    lecture: 'COURS',
     tutorial: 'TD',
     practical: 'TP',
     loadingDashboard: 'Chargement de votre tableau de bord...',
@@ -488,6 +495,15 @@ const fr = {
     accepted: 'Acceptée',
     rejected: 'Rejetée',
     attachmentLabel: 'Pièce jointe (PDF, Image)',
+    replacementScheduled: 'Remplacement programmé',
+    replacementCancelled: 'Séance de remplacement annulée',
+    planReplacement: 'Planifier le remplacement',
+    planReplacementDesc: "Choisissez la date et l'heure de la séance de remplacement.",
+    errorPastDate: 'Impossible de choisir une date passée.',
+    errorFriday: 'Le vendredi est un jour férié, pas de cours.',
+    confirmCancelReplacement: 'Voulez-vous vraiment annuler cette séance de remplacement ?',
+    viewByTeacher: 'Vue par Enseignant',
+    viewByTeacherDesc: 'Sélectionnez un prof pour filtrer les séances et absences ci-dessous',
   },
 
   // ── Gestion des départements ──

@@ -3,7 +3,7 @@ const db = require('../config/db');
 // Chef Département: Marquer une absence
 exports.markAbsence = (req, res) => {
   const sender_id = req.user.id;
-  const { teacher_id, date, reason, start_time, end_time, is_extra } = req.body;
+  const { teacher_id, date, reason, start_time, end_time, is_extra, catchup_id_missed } = req.body;
   
   if (!teacher_id || !date || !reason) {
     return res.status(400).json({ message: "Tous les champs sont requis." });
@@ -21,11 +21,13 @@ exports.markAbsence = (req, res) => {
 
   const query = `
     INSERT INTO absences 
-    (teacher_id, date, reason, start_time, end_time, is_extra, status, justification_status, has_justification, is_caught_up, is_read_by_teacher, is_read_by_admin, created_at) 
-    VALUES (?, ?, ?, ?, ?, ?, 'Approved', 'None', FALSE, FALSE, FALSE, TRUE, NOW())
+    (teacher_id, date, reason, start_time, end_time, is_extra, catchup_id_missed, status, justification_status, has_justification, is_caught_up, is_read_by_teacher, is_read_by_admin, created_at) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'Approved', ?, FALSE, FALSE, FALSE, TRUE, NOW())
   `;
   
-  db.query(query, [teacher_id, date, reason, start_time, end_time, is_extra ? 1 : 0], (err, result) => {
+  const justStatus = catchup_id_missed ? 'Rejected' : 'None';
+
+  db.query(query, [teacher_id, date, reason, start_time, end_time, is_extra ? 1 : 0, catchup_id_missed || null, justStatus], (err, result) => {
     if (err) {
       console.error("Error marking absence:", err);
       return res.status(500).json({ error: err.message });
@@ -51,13 +53,13 @@ exports.getAllAbsences = (req, res) => {
   const userId = req.user.id;
 
   let query = `
-    SELECT a.id, a.date, a.reason, a.status, a.has_justification, a.justification_status, a.is_caught_up, 
+    SELECT a.id, a.teacher_id, a.date, a.reason, a.status, a.has_justification, a.justification_status, a.is_caught_up, 
            a.justification_text, a.justification_file, a.catchup_date, a.catchup_start_time, a.catchup_end_time,
-           a.created_at, a.is_read_by_admin, a.is_read_by_teacher, a.is_extra, a.start_time,
+           a.created_at, a.is_read_by_admin, a.is_read_by_teacher, a.is_extra, a.start_time, a.catchup_id_missed,
            u.nom, u.prenom, u.department_id 
      FROM absences a
      JOIN users u ON a.teacher_id = u.id
-     WHERE a.is_cleared = FALSE
+     WHERE a.is_cleared = FALSE AND a.is_extra = FALSE
   `;
 
   if (req.query.filter === 'week') {
@@ -106,7 +108,7 @@ exports.getAllAbsences = (req, res) => {
 // Dept Head/RH: Mettre à jour Justification ou Rattrapage
 exports.updateAbsenceStatus = (req, res) => {
   const { id } = req.params;
-  const { status, has_justification, is_caught_up, justification_status } = req.body;
+  const { status, has_justification, is_caught_up, justification_status, catchup_date, catchup_start_time, catchup_end_time } = req.body;
   const adminId = req.user.id;
 
   let updateFields = [];
@@ -116,28 +118,88 @@ exports.updateAbsenceStatus = (req, res) => {
   if (has_justification !== undefined) { updateFields.push("has_justification = ?"); values.push(has_justification); }
   if (is_caught_up !== undefined) { updateFields.push("is_caught_up = ?"); values.push(is_caught_up); }
   if (justification_status !== undefined) { updateFields.push("justification_status = ?"); values.push(justification_status); }
+  
+  if (catchup_date !== undefined) { updateFields.push("catchup_date = ?"); values.push(catchup_date); }
+  if (catchup_start_time !== undefined) { updateFields.push("catchup_start_time = ?"); values.push(catchup_start_time); }
+  if (catchup_end_time !== undefined) { updateFields.push("catchup_end_time = ?"); values.push(catchup_end_time); }
+  
+  if (catchup_date && catchup_start_time) {
+    updateFields.push("is_caught_up = TRUE");
+  }
 
   if (updateFields.length === 0) return res.status(400).json({ message: "No fields to update." });
 
-  values.push(id);
-  const query = `UPDATE absences SET ${updateFields.join(", ")}, is_read_by_teacher = FALSE WHERE id = ?`;
+  const performUpdate = () => {
+    const finalValues = [...values, id];
+    const query = `UPDATE absences SET ${updateFields.join(", ")}, is_read_by_teacher = FALSE WHERE id = ?`;
 
-  db.query(query, values, (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    db.query(query, finalValues, (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
 
-    // Si on a changé le statut de justification, on notifie le prof
-    if (justification_status) {
-      db.query('SELECT teacher_id, date FROM absences WHERE id = ?', [id], (err, row) => {
-        if (!err && row.length > 0) {
-          const msg = `Votre justification pour l'absence du ${new Date(row[0].date).toLocaleDateString()} a été ${justification_status === 'Accepted' ? 'ACCEPTÉE' : 'REFUSÉE'}.`;
+      // Notification logic
+      db.query('SELECT teacher_id, date FROM absences WHERE id = ?', [id], (err, rows) => {
+        if (err || rows.length === 0) return;
+        const teacher_id = rows[0].teacher_id;
+        const absDate = new Date(rows[0].date).toLocaleDateString();
+        
+        let msg = "";
+        if (justification_status === 'Accepted') msg = `Justification acceptée pour l'absence du ${absDate}.`;
+        else if (justification_status === 'Rejected') msg = `Justification refusée pour l'absence du ${absDate}.`;
+        else if (catchup_date === null && is_caught_up === false) msg = `Rattrapage annulé pour l'absence du ${absDate}.`;
+        else if (catchup_date && catchup_start_time) {
+          msg = `Rattrapage programmé le ${new Date(catchup_date).toLocaleDateString()} à ${catchup_start_time.substring(0,5)}.`;
+        }
+
+        if (msg) {
           db.query('INSERT INTO reminders (teacher_id, sender_id, message, type) VALUES (?, ?, ?, ?)', 
-            [row[0].teacher_id, adminId, msg, justification_status === 'Accepted' ? 'info' : 'warning']);
+            [teacher_id, adminId, msg, 'info']);
         }
       });
-    }
 
-    res.json({ message: "Absence mise à jour avec succès." });
-  });
+      res.json({ message: "Absence mise à jour avec succès.", id });
+    });
+  };
+
+  // --- CONFLICT DETECTION ---
+  if (catchup_date && catchup_start_time) {
+    db.query('SELECT teacher_id FROM absences WHERE id = ?', [id], (err, rows) => {
+      if (err || rows.length === 0) return res.status(404).json({ message: "Absence non trouvée" });
+      const tId = rows[0].teacher_id;
+      
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const day = days[new Date(catchup_date).getDay()];
+
+      // Check regular/supp sessions
+      const checkReg = `
+        SELECT module_name FROM academic_sessions 
+        WHERE teacher_id = ? AND day_of_week = ? AND TIME(start_time) = TIME(?)
+        AND (session_date IS NULL OR DATE(session_date) = DATE(?))
+      `;
+      db.query(checkReg, [tId, day, catchup_start_time, catchup_date], (err, regs) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (regs.length > 0) {
+          return res.status(409).json({ message: `CONFLIT : L'enseignant a déjà une séance (${regs[0].module_name}) à ce créneau.` });
+        }
+
+        // Check other catch-ups
+        const checkCatch = `
+          SELECT reason FROM absences 
+          WHERE teacher_id = ? AND DATE(catchup_date) = DATE(?) AND TIME(catchup_start_time) = TIME(?)
+          AND id != ? AND is_caught_up = TRUE
+        `;
+        db.query(checkCatch, [tId, catchup_date, catchup_start_time, id], (err, catches) => {
+          if (err) return res.status(500).json({ error: err.message });
+          if (catches.length > 0) {
+            return res.status(409).json({ message: `CONFLIT : Un autre rattrapage est déjà prévu à ce créneau.` });
+          }
+
+          performUpdate();
+        });
+      });
+    });
+  } else {
+    performUpdate();
+  }
 };
 
 // Enseignant: Soumettre une justification pour une absence
@@ -154,6 +216,10 @@ exports.submitJustification = (req, res) => {
   db.query('SELECT * FROM absences WHERE id = ? AND teacher_id = ?', [id, teacherId], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     if (results.length === 0) return res.status(404).json({ message: "Absence non trouvée." });
+    
+    if (results[0].catchup_id_missed) {
+      return res.status(403).json({ message: "Impossible de justifier une absence à une séance de rattrapage." });
+    }
 
     const justificationFile = req.file ? req.file.filename : null;
     const query = `UPDATE absences SET justification_text = ?, justification_file = ?, has_justification = TRUE, justification_status = 'Pending', is_read_by_admin = FALSE WHERE id = ?`;
@@ -189,6 +255,10 @@ exports.submitCatchup = (req, res) => {
   db.query('SELECT * FROM absences WHERE id = ? AND teacher_id = ?', [id, teacherId], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     if (results.length === 0) return res.status(404).json({ message: "Absence non trouvée." });
+
+    if (results[0].catchup_id_missed) {
+      return res.status(403).json({ message: "On ne peut pas rattraper un rattrapage manqué." });
+    }
 
     const query = `UPDATE absences SET catchup_date = ?, catchup_start_time = ?, catchup_end_time = ?, is_caught_up = TRUE, is_read_by_admin = FALSE WHERE id = ?`;
     db.query(query, [catchup_date, catchup_start_time, catchup_end_time, id], (err, result) => {

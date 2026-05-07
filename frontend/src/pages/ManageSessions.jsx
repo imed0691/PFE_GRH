@@ -295,6 +295,7 @@ function ManageSessions() {
                 <tr>
                   <th style={{ width: '120px' }}>{t('sessions.day') || 'Jour'}</th>
                   <th style={{ width: '140px' }}>{t('sessions.time') || 'Horaire'}</th>
+                  <th style={{ width: '110px' }}>{t('common.date') || 'Date'}</th>
                   <th>{t('sessions.module') || 'Module'}</th>
                   <th style={{ width: '100px' }}>{t('sessions.level') || 'Niveau'}</th>
                   <th style={{ width: '120px' }}>{t('sessions.type') || 'Type'}</th>
@@ -308,7 +309,13 @@ function ManageSessions() {
                   <tr key={s.id} className="table-row-animate">
                     <td><div style={{ fontWeight: '800', color: 'var(--p-indigo)', textTransform: 'capitalize' }}>{t('days.' + s.day_of_week) || s.day_of_week}</div></td>
                     <td><div style={{ fontWeight: '700', color: '#1e293b', background: '#f8fafc', padding: '6px 10px', borderRadius: '8px', display: 'inline-block', fontSize: '13px' }}>{s.start_time.substring(0,5)} - {s.end_time.substring(0,5)}</div></td>
-                    <td><div style={{ fontWeight: '800', color: '#0f172a' }}>{s.module_name}</div></td>
+                    <td><div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>{s.session_date ? new Date(s.session_date).toLocaleDateString() : '---'}</div></td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ fontWeight: '800', color: '#0f172a' }}>{s.module_name}</div>
+                        {s.is_extra === 1 && <span className="badge-pro" style={{ background: '#fff7ed', color: '#c2410c', border: '1px solid #ffedd5', fontSize: '10px', padding: '2px 6px' }}>SUPP</span>}
+                      </div>
+                    </td>
                     <td><span className="badge-pro badge-pro-info" style={{ fontWeight: '800', borderRadius: '8px' }}>{s.study_level}</span></td>
                     <td><span style={{ fontWeight: '700', fontSize: '12px', color: '#64748b', background: '#f1f5f9', padding: '4px 10px', borderRadius: '20px' }}>{s.session_type}</span></td>
                     <td>

@@ -1,5 +1,5 @@
-const db = require('./config/db');
 require('dotenv').config();
+const db = require('./config/db');
 
 db.query('DESCRIBE documents', (err, results) => {
     if (err) {

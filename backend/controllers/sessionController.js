@@ -30,40 +30,23 @@ exports.createSession = (req, res) => {
     return res.status(400).json({ message: "All fields are required." });
   }
 
-  // --- SUPP SESSION VALIDATION ---
   if (is_extra && !session_date) {
     return res.status(400).json({ message: "Une date est strictement requise pour une séance supplémentaire." });
   }
 
-  // --- PAST DATE VALIDATION (TEMPORARILY DISABLED FOR TESTING) ---
-  /*
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (session_date) {
-    const sDate = new Date(session_date);
-    sDate.setHours(0, 0, 0, 0);
-    if (sDate < today) {
-      return res.status(400).json({ message: "Impossible de créer une séance à une date passée." });
-    }
-  }
-  */
-
-  // --- CONFLICT DETECTION LOGIC (TOTAL LOCKDOWN) ---
   const tId = Number(teacher_id);
   const sDate = session_date ? session_date : null;
 
-  console.log(`[LOCKDOWN] Checking: Prof:${tId}, Day:${day_of_week}, Time:${start_time}`);
-
-  // Query to find ANY session that blocks this slot for this teacher
+  // --- CONFLICT DETECTION ---
   const conflictQuery = `
     SELECT id, module_name FROM academic_sessions 
     WHERE teacher_id = ? 
       AND day_of_week = ? 
       AND TIME(start_time) = TIME(?)
       AND (
-        (session_date IS NULL AND is_extra = FALSE)     -- Existing is a REAL recurring session
-        OR (DATE(session_date) = DATE(?))                -- Existing is on the same specific date
-        OR (? IS NULL AND (session_date IS NULL OR 1=1)) -- New is recurring (blocks all)
+        (session_date IS NULL) -- Hebdo
+        OR (DATE(session_date) = DATE(?)) -- Same date
+        OR (? IS NULL) -- If new is hebdo, block EVERYTHING on that day/time
       )
   `;
 
@@ -71,31 +54,40 @@ exports.createSession = (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
 
     if (results.length > 0) {
-      console.log(`[LOCKDOWN] REJECTED: Conflict with ${results[0].module_name}`);
       return res.status(409).json({ 
-        message: `ARRÊT CRITIQUE : Ce créneau (${day_of_week} à ${start_time}) est DÉJÀ RÉSERVÉ pour ce professeur (Cours: ${results[0].module_name}).` 
+        message: `ARRÊT CRITIQUE : Ce créneau est DÉJÀ RÉSERVÉ (Séance: ${results[0].module_name}). Impossible de chevaucher.` 
       });
     }
 
-    const query = "INSERT INTO academic_sessions (module_name, session_type, study_level_id, teacher_id, department_id, day_of_week, start_time, end_time, section_id, group_id, is_extra, session_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    
-    db.query(query, [module_name, session_type, study_level_id, tId, department_id, day_of_week, start_time, end_time, section_id || null, group_id || null, is_extra || false, sDate], (err, result) => {
+    // Check for Catch-ups
+    const catchupConflictQuery = `
+      SELECT id FROM absences 
+      WHERE teacher_id = ? AND DATE(catchup_date) = DATE(?) AND TIME(catchup_start_time) = TIME(?) AND is_caught_up = TRUE
+    `;
+
+    db.query(catchupConflictQuery, [tId, sDate, start_time], (err, catchResults) => {
       if (err) return res.status(500).json({ error: err.message });
+      if (catchResults.length > 0 && sDate) {
+        return res.status(409).json({ message: "CONFLIT : L'enseignant a déjà un RATTRAPAGE prévu à ce créneau." });
+      }
 
-      // Notification logic
-      const sender_id = req.user ? req.user.id : null;
-      const dateStr = sDate ? new Date(sDate).toLocaleDateString() : day_of_week;
-      const timeStr = `${start_time.substring(0, 5)} - ${end_time.substring(0, 5)}`;
-      const sessionTypeLabel = session_type === 'Lecture' ? 'COURS' : (session_type === 'Tutorial' ? 'TD' : 'TP');
-      
-      const notificationMessage = `Nouvelle séance : ${module_name} (${sessionTypeLabel}) le ${dateStr} à ${timeStr}.`;
-      
-      const reminderQuery = "INSERT INTO reminders (teacher_id, sender_id, message, type) VALUES (?, ?, ?, ?)";
-      db.query(reminderQuery, [tId, sender_id, notificationMessage, 'info'], (remErr) => {
-        if (remErr) console.error("Error creating automated reminder:", remErr);
+      const query = "INSERT INTO academic_sessions (module_name, session_type, study_level_id, teacher_id, department_id, day_of_week, start_time, end_time, section_id, group_id, is_extra, session_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+      db.query(query, [module_name, session_type, study_level_id, tId, department_id, day_of_week, start_time, end_time, section_id || null, group_id || null, is_extra || false, sDate], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        // Notification logic
+        const sender_id = req.user ? req.user.id : null;
+        const dateStr = sDate ? new Date(sDate).toLocaleDateString() : day_of_week;
+        const timeStr = `${start_time.substring(0, 5)} - ${end_time.substring(0, 5)}`;
+        const sessionTypeLabel = session_type === 'Lecture' ? 'COURS' : (session_type === 'Tutorial' ? 'TD' : 'TP');
+        const notificationMessage = `Nouvelle séance : ${module_name} (${sessionTypeLabel}) le ${dateStr} à ${timeStr}.`;
+        
+        db.query("INSERT INTO reminders (teacher_id, sender_id, message, type) VALUES (?, ?, ?, ?)", [tId, sender_id, notificationMessage, 'info'], (remErr) => {
+          if (remErr) console.error("Error creating automated reminder:", remErr);
+        });
+
+        res.status(201).json({ id: result.insertId, message: "Séance créée avec succès" });
       });
-
-      res.status(201).json({ id: result.insertId, message: "Séance créée avec succès" });
     });
   });
 };
@@ -263,12 +255,28 @@ exports.getTeacherDashboardData = (req, res) => {
             return res.status(500).json({ error: err.message });
           }
 
-          // Subtract ONLY unjustified absences from the regular sessions done
-          let actualDone = completedSessionsCount - (teacherStats.unjustified_count || 0);
+          // NEW LOGIC: sessions_done = (Regular Passed) - (Total Regular Absences) + (Passed Catchups not missed)
+          
+          // 1. All regular absences (is_extra = 0 AND not a catchup-missed record)
+          const totalRegularAbsences = absencesResult.filter(a => !a.is_extra && !a.catchup_id_missed).length;
+          
+          // 2. All passed catchups (is_caught_up = 1 AND date <= today AND not marked as missed)
+          const passedCatchupsCount = absencesResult.filter(a => {
+            if (a.is_caught_up !== 1 || !a.catchup_date) return false;
+            const cDate = new Date(a.catchup_date);
+            if (cDate > today) return false; // Future catchup
+            
+            // Check if this specific catchup was marked as missed
+            const isMissed = absencesResult.some(missed => missed.catchup_id_missed === a.id);
+            return !isMissed;
+          }).length;
+
+          let actualDone = completedSessionsCount - totalRegularAbsences + passedCatchupsCount;
           if (actualDone < 0) actualDone = 0;
 
-          // Extra sessions done = completed - unjustified extra absences
-          let actualExtraDone = completedExtraCount - (teacherStats.extra_unjustified_count || 0);
+          // Extra sessions: remains as completed - extra absences
+          const totalExtraAbsences = absencesResult.filter(a => a.is_extra).length;
+          let actualExtraDone = completedExtraCount - totalExtraAbsences;
           if (actualExtraDone < 0) actualExtraDone = 0;
 
           const annualTarget = teacherStats.volume_horaire || 0;
@@ -284,8 +292,29 @@ exports.getTeacherDashboardData = (req, res) => {
             }
           };
 
+          // 3. Add catchup sessions to the "all_sessions" list for the schedule UI
+          const catchupSessions = (absencesResult || [])
+            .filter(a => a.is_caught_up && a.catchup_date)
+            .map(a => {
+              const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+              const dayName = days[new Date(a.catchup_date).getDay()];
+              return {
+                id: `catchup-${a.id}`,
+                module_name: a.reason.replace(/Absence au cours de /i, '').replace(/Absent from /i, '').replace(/ session/i, '') || 'Rattrapage',
+                session_type: 'Replacement',
+                day_of_week: dayName,
+                start_time: a.catchup_start_time,
+                end_time: a.catchup_end_time,
+                is_extra: false, 
+                session_date: a.catchup_date,
+                is_catchup: true // Match frontend property name
+              };
+            });
+
+          const finalSessions = [...sessions, ...catchupSessions];
+
           res.json({
-            all_sessions: sessions,
+            all_sessions: finalSessions,
             academic_stats: dashboardStats,
             reminders: remindersResult,
             my_absences: absencesResult
@@ -383,6 +412,7 @@ exports.getRecentPastSessions = (req, res) => {
 
         let occ;
         if (s.session_date) {
+          if (s.is_extra) return; // Skip SUPP sessions entirely for absence marking
           occ = new Date(s.session_date);
         } else {
           if (s.is_extra) return; // SUPP sessions are not recurring
@@ -398,11 +428,16 @@ exports.getRecentPastSessions = (req, res) => {
         sessionCreatedAt.setDate(sessionCreatedAt.getDate() - daysSinceSat);
         sessionCreatedAt.setHours(0,0,0,0);
         
-        const isToday = occ.toDateString() === now.toDateString();
-        const isPast = occ < now || (isToday && sessionEndHour < currentHour);
+        const occWithEndTime = new Date(occ);
+        occWithEndTime.setHours(eh, em, 0, 0);
+        const isPast = occWithEndTime < now;
         const isAfterValid = occ >= teacherJoinDate && occ >= sessionCreatedAt;
         
-        if (isPast && isAfterValid) {
+        const requestedMonth = req.query.month && req.query.month !== 'all' ? parseInt(req.query.month) : null;
+        const occMonth = occ.getMonth() + 1;
+        const isMonthMatch = !requestedMonth || requestedMonth === occMonth;
+        
+        if (isPast && isAfterValid && isMonthMatch) {
           const y = occ.getFullYear();
           const m = String(occ.getMonth() + 1).padStart(2, '0');
           const d = String(occ.getDate()).padStart(2, '0');
@@ -413,34 +448,55 @@ exports.getRecentPastSessions = (req, res) => {
         }
       });
 
-      // 3. Filter out those that already have an absence record
-      if (pastSessions.length === 0) return res.json([]);
+      // 3. Get all passed catch-up sessions that haven't been marked as "missed" yet
+      const catchupQuery = `
+        SELECT a.id as absence_id, a.teacher_id, a.reason, a.catchup_date as actual_date, 
+               a.catchup_start_time as start_time, a.catchup_end_time as end_time,
+               u.nom as teacher_nom, u.prenom as teacher_prenom
+        FROM absences a
+        JOIN users u ON a.teacher_id = u.id
+        WHERE a.is_caught_up = 1 AND a.catchup_date <= CURDATE()
+      `;
 
-      // Select teacher_id, date and start_time to identify already marked sessions
-      // We don't filter by is_cleared here because even cleared absences should prevent remounting
-      const checkAbsenceQuery = "SELECT teacher_id, DATE_FORMAT(date, '%Y-%m-%d') as date, start_time FROM absences";
-      db.query(checkAbsenceQuery, (err, absences) => {
-        if (err) return res.status(500).json({ error: err.message });
-
-        const filtered = pastSessions.filter(ps => {
-          const psDate = ps.actual_date;
-          const psTime = ps.start_time.substring(0, 5); // HH:MM
-          
-          return !absences.some(a => {
-            const aDate = a.date; // YYYY-MM-DD string from DATE_FORMAT
-            if (!a.start_time) return false; // Ignore absences without a specific start time
-            const aTime = a.start_time.substring(0, 5); // HH:MM
-            
-            return Number(a.teacher_id) === Number(ps.teacher_id) && 
-                   aDate === psDate && 
-                   aTime === psTime;
+      db.query(catchupQuery, (err, catchups) => {
+        if (!err) {
+          catchups.forEach(c => {
+            pastSessions.push({
+              ...c,
+              module_name: c.reason.replace(/Absence au cours de /i, '').replace(/Absent from /i, '').replace(/ session/i, '') || 'Rattrapage',
+              session_type: 'Replacement',
+              is_catchup: true
+            });
           });
-        });
+        }
 
-        // Sort by date desc
-        filtered.sort((a, b) => new Date(b.actual_date) - new Date(a.actual_date));
-        
-        res.json(filtered.slice(0, 20)); // Limit to last 20 sessions
+        // 4. Filter out those that already have an absence record (or missed catchup)
+        if (pastSessions.length === 0) return res.json([]);
+
+        const checkAbsenceQuery = "SELECT teacher_id, DATE_FORMAT(date, '%Y-%m-%d') as date, start_time, catchup_id_missed FROM absences";
+        db.query(checkAbsenceQuery, (err, absences) => {
+          if (err) return res.status(500).json({ error: err.message });
+
+          const filtered = pastSessions.filter(ps => {
+            // If it's a catch-up, check if we already marked it as missed
+            if (ps.is_catchup) {
+              return !absences.some(a => a.catchup_id_missed === ps.absence_id);
+            }
+
+            const psDate = ps.actual_date;
+            const psTime = ps.start_time.substring(0, 5);
+            
+            return !absences.some(a => {
+              const aDate = a.date;
+              if (!a.start_time) return false;
+              const aTime = a.start_time.substring(0, 5);
+              return Number(a.teacher_id) === Number(ps.teacher_id) && aDate === psDate && aTime === psTime;
+            });
+          });
+
+          filtered.sort((a, b) => new Date(b.actual_date) - new Date(a.actual_date));
+          res.json(filtered.slice(0, 20));
+        });
       });
     });
   });

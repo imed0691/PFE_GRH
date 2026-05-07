@@ -18,6 +18,7 @@ const getSessionColor = (type) => {
   if (t.includes('lecture') || t.includes('cours')) return 'linear-gradient(135deg, #60a5fa, #3b82f6)';
   if (t.includes('tutorial') || t.includes('td')) return 'linear-gradient(135deg, #a78bfa, #8b5cf6)';
   if (t.includes('practical') || t.includes('tp')) return 'linear-gradient(135deg, #34d399, #10b981)';
+  if (t.includes('replacement')) return 'linear-gradient(135deg, #fb7185, #e11d48)';
   return 'linear-gradient(135deg, #94a3b8, #64748b)';
 };
 
@@ -67,16 +68,16 @@ function DashboardTeacher({ user, onLogout }) {
     const teacherCreated = stats.teacher_created_at ? new Date(stats.teacher_created_at) : janFirst;
     teacherCreated.setHours(0,0,0,0);
 
-    // Helper to check if a session at a specific date/time was an unjustified absence
-    const isUnjustifiedAbsence = (sessionId, dateStr, startTime) => {
-      return absences.find(a => {
+    // Helper to check if a session at a specific date/time was marked as an absence (of any kind)
+    const isAbsence = (sessionId, dateStr, startTime) => {
+      return absences.some(a => {
         const aTime = a.start_time ? a.start_time.substring(0, 5) : null;
         const sTime = startTime ? startTime.substring(0, 5) : null;
         
+        // Match by teacher, date and time
         return Number(a.teacher_id) === Number(user.id) &&
                a.date === dateStr &&
-               (aTime === sTime || !aTime) &&
-               a.justification_status !== 'Accepted';
+               (aTime === sTime || !aTime);
       });
     };
 
@@ -90,20 +91,17 @@ function DashboardTeacher({ user, onLogout }) {
         const d = new Date(s.session_date);
         const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         
-        // Match Backend: If detailView is 'extra', only show current month
         if (detailView === 'extra') {
           const isCurrentMonth = d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
           if (!isCurrentMonth) return;
         }
 
-        if (isSessionPassed(s) && !isUnjustifiedAbsence(s.id, dateStr, s.start_time)) {
+        if (isSessionPassed(s) && !isAbsence(s.id, dateStr, s.start_time)) {
           history.push(s);
         }
       } else {
-        if (isExtra) return; // SUPP sessions should never be counted as recurring
+        if (isExtra) return; 
         
-        // CRITICAL: Aligned with Backend - Count from max(teacherCreated, sessionCreatedAt, janFirst)
-        // Session creation date is rounded back to Saturday to allow current week counting
         let sessionCreatedAt = s.created_at ? new Date(s.created_at) : teacherCreated;
         const dayS = sessionCreatedAt.getDay();
         const daysSinceSat = (dayS + 1) % 7;
@@ -122,7 +120,7 @@ function DashboardTeacher({ user, onLogout }) {
           if (tempDate.getDay() === targetDayIndex) {
             const dateStr = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
             const occ = { ...s, session_date: dateStr };
-            if (isSessionPassed(occ) && !isUnjustifiedAbsence(s.id, dateStr, s.start_time)) {
+            if (isSessionPassed(occ) && !isAbsence(s.id, dateStr, s.start_time)) {
               history.push(occ);
             }
           }
@@ -316,8 +314,9 @@ function DashboardTeacher({ user, onLogout }) {
                         endOfWeek.setDate(startOfWeek.getDate() + 6);
                         endOfWeek.setHours(23, 59, 59, 999);
 
-                        const currentWeekSchedule = schedule.filter(s => {
-                          if (!s.is_extra) return true;
+                        const allPossibleSessions = schedule;
+                        const currentWeekSchedule = allPossibleSessions.filter(s => {
+                          if (!s.is_extra && !s.is_catchup) return true;
                           if (!s.session_date) return false;
                           const sDate = new Date(s.session_date);
                           return sDate >= startOfWeek && sDate <= endOfWeek;
@@ -383,7 +382,25 @@ function DashboardTeacher({ user, onLogout }) {
                                         boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
                                       }}
                                     >
-                                      {s.is_extra ? (
+                                      {s.is_catchup ? (
+                                        <div style={{ 
+                                          position: 'absolute',
+                                          top: '-8px',
+                                          left: '-4px',
+                                          fontSize: '8px', 
+                                          background: 'linear-gradient(135deg, #e11d48, #be123c)', 
+                                          color: 'white', 
+                                          padding: '2px 8px', 
+                                          borderRadius: '6px', 
+                                          fontWeight: '900', 
+                                          boxShadow: '0 4px 10px rgba(225, 29, 72, 0.5)',
+                                          border: '1px solid rgba(255,255,255,0.4)',
+                                          zIndex: 3,
+                                          letterSpacing: '0.5px'
+                                        }}>
+                                          RATTRAPAGE
+                                        </div>
+                                      ) : s.is_extra ? (
                                         <div style={{ 
                                           position: 'absolute',
                                           top: '-8px',
@@ -403,7 +420,7 @@ function DashboardTeacher({ user, onLogout }) {
                                         </div>
                                       ) : null}
                                       <div style={{ fontWeight: '900', textTransform: 'uppercase', opacity: 0.9, fontSize: '9px', letterSpacing: '0.8px', marginBottom: '4px' }}>
-                                        {s.session_type === 'Lecture' ? t('sessions.lecture') : s.session_type === 'Tutorial' ? t('sessions.tutorialTD') : t('sessions.practicalTP')}
+                                        {s.is_catchup ? 'RATTRAPAGE' : (s.session_type === 'Lecture' ? t('sessions.lecture') : s.session_type === 'Tutorial' ? t('sessions.tutorialTD') : t('sessions.practicalTP'))}
                                       </div>
                                       <div style={{ fontWeight: '800', fontSize: '13px', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                       {s.module_name}
