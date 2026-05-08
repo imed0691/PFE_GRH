@@ -23,18 +23,29 @@ function useNotificationBadges() {
   }, []);
 
   const markSeen = useCallback(async (section) => {
+    // 1. Optimistic Update: Clear locally first for instant feedback
+    setBadges(prev => {
+      const next = { ...prev, [section]: 0 };
+      // If viewing absences, also clear reminders badge as they are synced in backend
+      if (section === 'absences') next.reminders = 0;
+      return next;
+    });
+
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:5000/api/notifications/seen/${section}`, {
+      const res = await fetch(`http://localhost:5000/api/notifications/seen/${section}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      // Clear badge locally
-      setBadges(prev => ({ ...prev, [section]: 0 }));
+      
+      if (res.ok) {
+        // Just to be safe, fetch fresh counts after a small delay
+        setTimeout(fetchBadges, 2000);
+      }
     } catch (e) {
       console.error('Error marking section as seen:', e);
     }
-  }, []);
+  }, [fetchBadges]);
 
   useEffect(() => {
     fetchBadges();

@@ -18,7 +18,6 @@ const getSessionColor = (type) => {
   if (t.includes('lecture') || t.includes('cours')) return 'linear-gradient(135deg, #60a5fa, #3b82f6)';
   if (t.includes('tutorial') || t.includes('td')) return 'linear-gradient(135deg, #a78bfa, #8b5cf6)';
   if (t.includes('practical') || t.includes('tp')) return 'linear-gradient(135deg, #34d399, #10b981)';
-  if (t.includes('replacement')) return 'linear-gradient(135deg, #fb7185, #e11d48)';
   return 'linear-gradient(135deg, #94a3b8, #64748b)';
 };
 
@@ -34,6 +33,7 @@ function DashboardTeacher({ user, onLogout }) {
   const [view, setViewRaw] = useState(localStorage.getItem('teacher_dashboard_view') || 'overview');
   const [loading, setLoading] = useState(true);
   const [detailView, setDetailView] = useState(null);
+  const [weekOffset, setWeekOffset] = useState(0);
   const { badges, markSeen } = useNotificationBadges();
   const { t } = useLanguage();
   const lastClearedView = useRef(null);
@@ -282,6 +282,106 @@ function DashboardTeacher({ user, onLogout }) {
                       <h3 className="serif" style={{ margin: 0, fontSize: '26px', color: '#0f172a' }}>{t('teacher.weeklySchedule')}</h3>
                       <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '4px 0 0 0' }}>{t('topbar.myCurrentSchedule')}</p>
                     </div>
+
+                    {/* Week Navigator */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#f8fafc', padding: '8px 16px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                      <button 
+                        onClick={() => {
+                          const today = new Date();
+                          const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                          const currentAcademicIndex = toAcademicIndex(today.getDay());
+                          const start = new Date(today);
+                          start.setDate(today.getDate() - currentAcademicIndex + (weekOffset * 7));
+                          const refDate = new Date(2025, 8, 20);
+                          if (start > refDate) setWeekOffset(prev => prev - 1);
+                        }}
+                        style={{ 
+                          background: 'white', border: '1px solid #e2e8f0', borderRadius: '10px', width: '36px', height: '36px', 
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s',
+                          opacity: (() => {
+                              const today = new Date();
+                              const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                              const start = new Date(today);
+                              start.setDate(today.getDate() - toAcademicIndex(today.getDay()) + (weekOffset * 7));
+                              return start <= new Date(2025, 8, 20) ? 0.3 : 1;
+                          })(),
+                          pointerEvents: (() => {
+                              const today = new Date();
+                              const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                              const start = new Date(today);
+                              start.setDate(today.getDate() - toAcademicIndex(today.getDay()) + (weekOffset * 7));
+                              return start <= new Date(2025, 8, 20) ? 'none' : 'auto';
+                          })()
+                        }}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                      </button>
+                      
+                      <div style={{ textAlign: 'center', minWidth: '200px' }}>
+                        {(() => {
+                          const today = new Date();
+                          const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                          const currentAcademicIndex = toAcademicIndex(today.getDay());
+                          const start = new Date(today);
+                          start.setDate(today.getDate() - currentAcademicIndex + (weekOffset * 7));
+                          const end = new Date(start);
+                          end.setDate(start.getDate() + 6);
+                          
+                          const refDate = new Date(2025, 8, 20); // Sept 20, 2025
+                          const endDate = new Date(2026, 5, 27); // June 27, 2026
+                          
+                          const diffTime = start.getTime() - refDate.getTime();
+                          const weekNum = Math.floor(diffTime / (7 * 24 * 60 * 60 * 1000)) + 1;
+
+                          return (
+                            <>
+                              <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--p-indigo)', textTransform: 'uppercase' }}>
+                                {weekOffset === 0 ? "Semaine Actuelle" : `Semaine ${weekNum}`}
+                              </div>
+                              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>
+                                {start.toLocaleDateString()} - {end.toLocaleDateString()}
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+
+                      <button 
+                        onClick={() => {
+                          const today = new Date();
+                          const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                          const currentAcademicIndex = toAcademicIndex(today.getDay());
+                          const start = new Date(today);
+                          start.setDate(today.getDate() - currentAcademicIndex + (weekOffset * 7));
+                          const end = new Date(start);
+                          end.setDate(start.getDate() + 6);
+                          const endDate = new Date(2026, 5, 27);
+                          if (end < endDate) setWeekOffset(prev => prev + 1);
+                        }}
+                        style={{ 
+                          background: 'white', border: '1px solid #e2e8f0', borderRadius: '10px', width: '36px', height: '36px', 
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s',
+                          opacity: (() => {
+                              const today = new Date();
+                              const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                              const start = new Date(today);
+                              start.setDate(today.getDate() - toAcademicIndex(today.getDay()) + (weekOffset * 7));
+                              const end = new Date(start); end.setDate(start.getDate() + 6);
+                              return end >= new Date(2026, 5, 27) ? 0.3 : 1;
+                          })(),
+                          pointerEvents: (() => {
+                              const today = new Date();
+                              const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                              const start = new Date(today);
+                              start.setDate(today.getDate() - toAcademicIndex(today.getDay()) + (weekOffset * 7));
+                              const end = new Date(start); end.setDate(start.getDate() + 6);
+                              return end >= new Date(2026, 5, 27) ? 'none' : 'auto';
+                          })()
+                        }}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                      </button>
+                    </div>
                   </div>
                   
                   <div className="schedule-grid-container" style={{ background: '#f8fafc', borderRadius: '24px', padding: '24px', border: '1px solid #e2e8f0', overflowX: 'auto' }}>
@@ -304,20 +404,31 @@ function DashboardTeacher({ user, onLogout }) {
                       {/* Time Slots & Cells */}
                       {(() => {
                         const today = new Date();
-                        today.setHours(0,0,0,0);
-                        const currentJsDay = today.getDay();
-                        const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
-                        const currentAcademicIndex = toAcademicIndex(currentJsDay);
                         const startOfWeek = new Date(today);
-                        startOfWeek.setDate(today.getDate() - currentAcademicIndex);
+                        const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                        const currentAcademicIndex = toAcademicIndex(today.getDay());
+                        
+                        startOfWeek.setDate(today.getDate() - currentAcademicIndex + (weekOffset * 7));
+                        startOfWeek.setHours(0, 0, 0, 0);
+                        
                         const endOfWeek = new Date(startOfWeek);
                         endOfWeek.setDate(startOfWeek.getDate() + 6);
                         endOfWeek.setHours(23, 59, 59, 999);
 
                         const allPossibleSessions = schedule;
                         const currentWeekSchedule = allPossibleSessions.filter(s => {
-                          if (!s.is_extra && !s.is_catchup) return true;
-                          if (!s.session_date) return false;
+                          // Check if session was created AFTER this week ended
+                          const createdAt = new Date(s.created_at);
+                          if (createdAt > endOfWeek) return false;
+
+                          // Check if session ended BEFORE this week started
+                          if (s.end_date) {
+                            const endDate = new Date(s.end_date);
+                            endDate.setHours(23, 59, 59, 999);
+                            if (endDate < startOfWeek) return false;
+                          }
+
+                          if (!s.session_date) return true; // Hebdo
                           const sDate = new Date(s.session_date);
                           return sDate >= startOfWeek && sDate <= endOfWeek;
                         });
@@ -373,6 +484,7 @@ function DashboardTeacher({ user, onLogout }) {
                                         background: getSessionColor(s.session_type),
                                         position: 'relative',
                                         flex: 1,
+                                        minHeight: '110px',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         justifyContent: 'center',
@@ -411,7 +523,7 @@ function DashboardTeacher({ user, onLogout }) {
                                           padding: '2px 8px', 
                                           borderRadius: '6px', 
                                           fontWeight: '900', 
-                                          boxShadow: '0 4px 10px rgba(217, 119, 6, 0.5)',
+                                          boxShadow: '0 4px 10px rgba(225, 29, 72, 0.5)',
                                           border: '1px solid rgba(255,255,255,0.4)',
                                           zIndex: 3,
                                           letterSpacing: '0.5px'
@@ -420,7 +532,7 @@ function DashboardTeacher({ user, onLogout }) {
                                         </div>
                                       ) : null}
                                       <div style={{ fontWeight: '900', textTransform: 'uppercase', opacity: 0.9, fontSize: '9px', letterSpacing: '0.8px', marginBottom: '4px' }}>
-                                        {s.is_catchup ? 'RATTRAPAGE' : (s.session_type === 'Lecture' ? t('sessions.lecture') : s.session_type === 'Tutorial' ? t('sessions.tutorialTD') : t('sessions.practicalTP'))}
+                                        {s.is_catchup || s.session_type === 'Replacement' ? 'RATTRAPAGE' : (s.session_type === 'Lecture' ? t('sessions.lecture') : s.session_type === 'Tutorial' ? t('sessions.tutorialTD') : t('sessions.practicalTP'))}
                                       </div>
                                       <div style={{ fontWeight: '800', fontSize: '13px', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                       {s.module_name}
@@ -428,16 +540,13 @@ function DashboardTeacher({ user, onLogout }) {
                                     <div style={{ fontSize: '11px', opacity: 0.8, fontWeight: '600' }}>
                                       {s.section && `S: ${s.section}`} {s.groupe && `G: ${s.groupe}`}
                                     </div>
-                                    <div style={{ fontSize: '11px', fontWeight: '800', opacity: 0.9, marginTop: '4px' }}>
-                                      {s.start_time.substring(0,5)} - {s.end_time.substring(0,5)}
-                                    </div>
                                   </div>
                                 ))}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ));
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))
                       })()}
                     </div>
                   </div>

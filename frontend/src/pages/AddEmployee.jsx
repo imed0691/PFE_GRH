@@ -5,7 +5,12 @@ import './DashboardHR.css';
 
 function AddEmployee({ onCancel, onSuccess }) {
   const { t } = useLanguage();
-  const [formData, setFormData] = useState({ nom: '', prenom: '', email: '', password: '', role: 'TEACHER', department_id: '', grade: 'Teacher', hourly_rate: '', absence_penalty: '', volume_horaire: '192', base_salary: '' });
+  const [formData, setFormData] = useState({ 
+    nom: '', prenom: '', email: '', password: '', role: 'TEACHER', 
+    department_id: '', grade: 'Teacher', hourly_rate: '', absence_penalty: '', 
+    volume_horaire: '192', base_salary: '',
+    created_at: new Date().toISOString().split('T')[0] 
+  });
   const [departments, setDepartments] = useState([]);
 
   useEffect(() => {
@@ -67,7 +72,7 @@ function AddEmployee({ onCancel, onSuccess }) {
               <span style={{ width: '20px', height: '2px', background: 'var(--p-indigo)', borderRadius: '2px' }}></span>
               {t('addEmployee.personalInfo') || 'Informations Personnelles'}
             </h4>
-            <div className="mnadm-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            <div className="mnadm-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px' }}>
               <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
                 <label className="mnadm-label">{t('addEmployee.lastName')}</label>
                 <input type="text" className="mnadm-input" name="nom" value={formData.nom} onChange={handleChange} required placeholder="Doe" style={{ borderRadius: '12px', fontWeight: '700' }} />
@@ -75,6 +80,10 @@ function AddEmployee({ onCancel, onSuccess }) {
               <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
                 <label className="mnadm-label">{t('addEmployee.firstName')}</label>
                 <input type="text" className="mnadm-input" name="prenom" value={formData.prenom} onChange={handleChange} required placeholder="John" style={{ borderRadius: '12px', fontWeight: '700' }} />
+              </div>
+              <div className="mnadm-form-group" style={{ marginBottom: 0 }}>
+                <label className="mnadm-label">Date de Recrutement</label>
+                <input type="date" className="mnadm-input" name="created_at" value={formData.created_at} onChange={handleChange} required style={{ borderRadius: '12px', fontWeight: '700' }} />
               </div>
             </div>
           </div>

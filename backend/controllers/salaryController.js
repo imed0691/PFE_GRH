@@ -92,9 +92,9 @@ exports.calculateSalaries = (req, res) => {
 
           // 2. Get Absences this month
           const absQuery = `
-            SELECT is_extra, date, justification_status, is_caught_up
+            SELECT is_extra, date, start_time, justification_status, is_caught_up
             FROM absences 
-            WHERE teacher_id = ? 
+            WHERE teacher_id = ? AND is_cleared = FALSE
               AND date <= DATE(?) 
           `;
           db.query(absQuery, [t.id, now], (err, absences) => {
@@ -107,11 +107,16 @@ exports.calculateSalaries = (req, res) => {
             const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
             absences.forEach(a => {
-              const aDate = new Date(a.date);
-              const isCurrentMonth = aDate.getMonth() === currentMonth && aDate.getFullYear() === currentYear;
-              const isPrevMonthGrace = now.getDate() < 15 && aDate.getMonth() === prevMonth && aDate.getFullYear() === prevYear;
+              const aDateTime = new Date(a.date);
+              if (a.start_time) {
+                const [ah, am] = a.start_time.split(':').map(Number);
+                aDateTime.setHours(ah, am, 0, 0);
+              }
+              const isCurrentMonth = aDateTime.getMonth() === currentMonth && aDateTime.getFullYear() === currentYear;
+              const isPassed = aDateTime <= now;
+              const isPrevMonthGrace = now.getDate() < 15 && aDateTime.getMonth() === prevMonth && aDateTime.getFullYear() === prevYear;
 
-              if (isCurrentMonth || isPrevMonthGrace) {
+              if ((isCurrentMonth && isPassed) || isPrevMonthGrace) {
                 if (a.justification_status !== 'Accepted' && !a.is_caught_up) {
                   if (a.is_extra) extraUnjustified++;
                   else regUnjustified++;
@@ -192,9 +197,9 @@ const calculateSalaryForMonth = (teacher, month, year, sessions, now) => {
 
   return new Promise((resolve, reject) => {
     const absQuery = `
-      SELECT is_extra, date, justification_status, is_caught_up
+      SELECT id, is_extra, date, start_time, justification_status, is_caught_up, reason
       FROM absences 
-      WHERE teacher_id = ? 
+      WHERE teacher_id = ? AND is_cleared = FALSE
     `;
     db.query(absQuery, [teacher.id], (err, absences) => {
       if (err) {
@@ -210,7 +215,12 @@ const calculateSalaryForMonth = (teacher, month, year, sessions, now) => {
         absences.forEach(a => {
           if (!a.date) return;
           const aDate = new Date(a.date);
-          if (aDate.getMonth() === month && aDate.getFullYear() === year) {
+          const aDateTime = new Date(a.date);
+          if (a.start_time) {
+            const [ah, am] = a.start_time.split(':').map(Number);
+            aDateTime.setHours(ah, am, 0, 0);
+          }
+          if (aDate.getMonth() === month && aDate.getFullYear() === year && aDateTime <= now) {
             if (a.justification_status !== 'Accepted' && !a.is_caught_up) {
               if (a.is_extra) {
                 extraUnjustified++;

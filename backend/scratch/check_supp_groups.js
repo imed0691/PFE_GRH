@@ -10,7 +10,14 @@ const db = mysql.createConnection({
 
 db.connect();
 
-const query = "SELECT id, message, created_at FROM reminders WHERE teacher_id = 22 ORDER BY id DESC LIMIT 10";
+const query = `
+    SELECT s.id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.session_date, s.is_extra,
+           sec.name as section, sg.name as groupe
+    FROM academic_sessions s
+    LEFT JOIN sections sec ON s.section_id = sec.id
+    LEFT JOIN student_groups sg ON s.group_id = sg.id
+    WHERE s.id IN (120, 124)
+`;
 
 db.query(query, (err, results) => {
   if (err) {

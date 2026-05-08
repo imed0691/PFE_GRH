@@ -37,10 +37,13 @@ exports.createSession = (req, res) => {
   const tId = Number(teacher_id);
   const sDate = session_date ? session_date : null;
 
-  // --- CONFLICT DETECTION ---
+  // --- CONFLICT DETECTION (Teacher OR Group) ---
   const conflictQuery = `
-    SELECT id, module_name FROM academic_sessions 
-    WHERE teacher_id = ? 
+    SELECT id, module_name, teacher_id FROM academic_sessions 
+    WHERE (
+        teacher_id = ? 
+        OR (section_id = ? AND (group_id = ? OR group_id IS NULL OR ? IS NULL))
+      )
       AND day_of_week = ? 
       AND TIME(start_time) = TIME(?)
       AND (
@@ -50,25 +53,35 @@ exports.createSession = (req, res) => {
       )
   `;
 
-  db.query(conflictQuery, [tId, day_of_week, start_time, sDate, sDate], (err, results) => {
+  db.query(conflictQuery, [tId, section_id, group_id, group_id, day_of_week, start_time, sDate, sDate], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
 
     if (results.length > 0) {
-      return res.status(409).json({ 
-        message: `ARRÊT CRITIQUE : Ce créneau est DÉJÀ RÉSERVÉ (Séance: ${results[0].module_name}). Impossible de chevaucher.` 
-      });
+      const isTeacherConflict = results.some(r => r.teacher_id === tId);
+      const msg = isTeacherConflict 
+        ? `Conflit : Cet enseignant est déjà occupé (${results[0].module_name}).`
+        : `Conflit : Ce groupe est déjà occupé (${results[0].module_name}).`;
+      
+      return res.status(409).json({ message: msg });
     }
 
-    // Check for Catch-ups
+    // Check for Catch-ups (in absences table)
     const catchupConflictQuery = `
-      SELECT id FROM absences 
-      WHERE teacher_id = ? AND DATE(catchup_date) = DATE(?) AND TIME(catchup_start_time) = TIME(?) AND is_caught_up = TRUE
+      SELECT id, catchup_date FROM absences 
+      WHERE teacher_id = ? 
+      AND is_caught_up = TRUE 
+      AND TIME(catchup_start_time) = TIME(?)
+      AND (
+        (DATE(catchup_date) = DATE(?)) -- Same date for SUPP sessions
+        OR (? IS NULL AND DAYNAME(catchup_date) = ?) -- Hebdo session vs any catchup on that day of week
+      )
     `;
 
-    db.query(catchupConflictQuery, [tId, sDate, start_time], (err, catchResults) => {
+    db.query(catchupConflictQuery, [tId, start_time, sDate, sDate, day_of_week], (err, catchResults) => {
       if (err) return res.status(500).json({ error: err.message });
-      if (catchResults.length > 0 && sDate) {
-        return res.status(409).json({ message: "CONFLIT : L'enseignant a déjà un RATTRAPAGE prévu à ce créneau." });
+      if (catchResults.length > 0) {
+        const conflictDate = catchResults[0].catchup_date ? new Date(catchResults[0].catchup_date).toLocaleDateString() : '';
+        return res.status(409).json({ message: `CONFLIT : L'enseignant a déjà un RATTRAPAGE prévu à ce créneau (le ${conflictDate}).` });
       }
 
       const query = "INSERT INTO academic_sessions (module_name, session_type, study_level_id, teacher_id, department_id, day_of_week, start_time, end_time, section_id, group_id, is_extra, session_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -95,13 +108,38 @@ exports.createSession = (req, res) => {
 // Delete a session
 exports.deleteSession = (req, res) => {
   const sessionId = req.params.id;
-  const query = "DELETE FROM academic_sessions WHERE id = ?";
-  
-  db.query(query, [sessionId], (err, result) => {
+
+  if (sessionId.startsWith('catchup-')) {
+    const absenceId = sessionId.replace('catchup-', '');
+    const query = "UPDATE absences SET is_caught_up = FALSE, catchup_date = NULL, catchup_start_time = NULL, catchup_end_time = NULL WHERE id = ?";
+    db.query(query, [absenceId], (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: "Catch-up session cancelled successfully" });
+    });
+  } else {
+    const query = "DELETE FROM academic_sessions WHERE id = ?";
+    db.query(query, [sessionId], (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (result.affectedRows === 0) return res.status(404).json({ message: "Session not found" });
+      res.json({ message: "Session deleted successfully" });
+    });
+  }
+};
+
+// Deactivate a session (set end_date)
+exports.deactivateSession = (req, res) => {
+  const sessionId = req.params.id;
+  const { end_date } = req.body; // The date when the session should stop
+
+  if (!end_date) {
+    return res.status(400).json({ message: "End date is required to deactivate a session." });
+  }
+
+  const query = "UPDATE academic_sessions SET end_date = ? WHERE id = ?";
+  db.query(query, [end_date, sessionId], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
     if (result.affectedRows === 0) return res.status(404).json({ message: "Session not found" });
-    
-    res.json({ message: "Session deleted successfully" });
+    res.json({ message: "Séance archivée avec succès. Elle ne sera plus visible dans le futur." });
   });
 };
 
@@ -112,7 +150,7 @@ exports.getTeacherDashboardData = (req, res) => {
 
   // 1. Get ALL sessions for the teacher
   const sessionsQuery = `
-    SELECT s.id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.end_time, s.is_extra, s.session_date, s.created_at,
+    SELECT s.id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.end_time, s.is_extra, s.session_date, s.end_date, s.created_at,
            sl.name as study_level, sec.name as section, sg.name as groupe,
            d.name as department_name
     FROM academic_sessions s
@@ -131,9 +169,9 @@ exports.getTeacherDashboardData = (req, res) => {
   // 2. Get teacher stats (absences and target volume)
   const statsQuery = `
     SELECT u.volume_horaire, u.created_at, 
-           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted') AND is_extra = 0 AND date >= DATE(u.created_at)) as total_reg_absences,
-           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted') AND is_extra = 0 AND date >= DATE(u.created_at)) as unjustified_count,
-           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted') AND is_extra = 1 AND MONTH(date) = MONTH(CURRENT_DATE()) AND YEAR(date) = YEAR(CURRENT_DATE())) as extra_unjustified_count
+           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND is_cleared = FALSE AND COALESCE(is_extra, 0) = 0 AND date >= DATE(u.created_at) AND (date < CURRENT_DATE() OR (date = CURRENT_DATE() AND start_time <= CURRENT_TIME()))) as total_reg_absences,
+           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted') AND is_caught_up = FALSE AND is_cleared = FALSE AND COALESCE(is_extra, 0) = 0 AND date >= DATE(u.created_at) AND (date < CURRENT_DATE() OR (date = CURRENT_DATE() AND start_time <= CURRENT_TIME()))) as unjustified_count,
+           (SELECT COUNT(*) FROM absences WHERE teacher_id = u.id AND (justification_status IS NULL OR justification_status != 'Accepted') AND is_caught_up = FALSE AND is_cleared = FALSE AND COALESCE(is_extra, 0) = 1 AND MONTH(date) = MONTH(CURRENT_DATE()) AND YEAR(date) = YEAR(CURRENT_DATE()) AND (date < CURRENT_DATE() OR (date = CURRENT_DATE() AND start_time <= CURRENT_TIME()))) as extra_unjustified_count
     FROM users u WHERE u.id = ?
   `;
 
@@ -156,7 +194,7 @@ exports.getTeacherDashboardData = (req, res) => {
   `;
 
   // 4. Get absences
-  const absencesQuery = "SELECT id, teacher_id, DATE_FORMAT(date, '%Y-%m-%d') as date, reason, status, has_justification, is_extra, start_time, justification_status, justification_file, is_caught_up, is_read_by_teacher, justification_text, catchup_date, catchup_start_time, catchup_end_time FROM absences WHERE teacher_id = ? AND is_cleared = FALSE ORDER BY created_at DESC";
+  const absencesQuery = "SELECT id, teacher_id, DATE_FORMAT(date, '%Y-%m-%d') as date, reason, status, has_justification, is_extra, start_time, justification_status, justification_file, is_caught_up, is_read_by_teacher, justification_text, catchup_date, catchup_start_time, catchup_end_time FROM absences WHERE teacher_id = ? AND is_cleared = FALSE AND (date < CURDATE() OR (date = CURDATE() AND start_time <= CURRENT_TIME())) ORDER BY created_at DESC";
 
   db.query(sessionsQuery, [teacherId], (err, sessions) => {
     if (err) {
@@ -211,10 +249,6 @@ exports.getTeacherDashboardData = (req, res) => {
         } else {
           if (s.is_extra) return; // SUPP sessions should never be counted as recurring
           
-          // CRITICAL: A session should only be counted from the LATER of:
-          // 1. Teacher joining date
-          // 2. Session creation date (rounded back to Saturday to allow current week counting)
-          // 3. Semester start
           let sessionCreatedAt = new Date(s.created_at);
           const dayS = sessionCreatedAt.getDay();
           const daysSinceSat = (dayS + 1) % 7;
@@ -226,9 +260,15 @@ exports.getTeacherDashboardData = (req, res) => {
           
           const targetDayIndex = daysOfWeek.indexOf(s.day_of_week);
           let tempDate = new Date(sessionActualStart);
-          tempDate.setHours(0, 0, 0, 0); // Start at the beginning of the day
+          tempDate.setHours(0, 0, 0, 0); 
+
+          const sessionEndDate = s.end_date ? new Date(s.end_date) : null;
+          if (sessionEndDate) sessionEndDate.setHours(23, 59, 59, 999);
 
           while (tempDate <= today) {
+            // Check if the session was still active at this tempDate
+            if (sessionEndDate && tempDate > sessionEndDate) break;
+
             if (tempDate.getDay() === targetDayIndex) {
               if (tempDate.toDateString() === today.toDateString()) {
                 if (sessionEndHour <= currentHour) {
@@ -298,16 +338,34 @@ exports.getTeacherDashboardData = (req, res) => {
             .map(a => {
               const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
               const dayName = days[new Date(a.catchup_date).getDay()];
+              
+              // Try to find the original session type to preserve color
+              let originalType = 'Replacement';
+              const moduleNameFromReason = a.reason.replace(/Absence au cours de /i, '').replace(/Absent from /i, '').replace(/ session/i, '').trim().toLowerCase();
+              
+              const originalSession = (sessions || []).find(s => {
+                const sName = (s.module_name || '').trim().toLowerCase();
+                const sTime = (s.start_time || '').substring(0, 5);
+                const aTime = (a.start_time || '').substring(0, 5);
+                return sName === moduleNameFromReason && sTime === aTime;
+              });
+
+              if (originalSession) {
+                originalType = originalSession.session_type;
+              }
+
               return {
                 id: `catchup-${a.id}`,
-                module_name: a.reason.replace(/Absence au cours de /i, '').replace(/Absent from /i, '').replace(/ session/i, '') || 'Rattrapage',
-                session_type: 'Replacement',
+                module_name: moduleNameFromReason || 'Rattrapage',
+                session_type: originalType,
                 day_of_week: dayName,
                 start_time: a.catchup_start_time,
                 end_time: a.catchup_end_time,
                 is_extra: false, 
                 session_date: a.catchup_date,
-                is_catchup: true // Match frontend property name
+                end_date: null,
+                is_catchup: true,
+                original_type: 'Replacement' // Keep this for badge logic if needed
               };
             });
 
@@ -376,7 +434,7 @@ exports.getRecentPastSessions = (req, res) => {
 
     // 2. Query ALL sessions that could have occurred recently
     let sessionsQuery = `
-      SELECT s.id, s.teacher_id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.end_time, s.session_date, s.is_extra, s.created_at,
+      SELECT s.id, s.teacher_id, s.module_name, s.session_type, s.day_of_week, s.start_time, s.end_time, s.session_date, s.end_date, s.is_extra, s.created_at,
              u.nom as teacher_nom, u.prenom as teacher_prenom, u.created_at as teacher_created_at,
              sl.name as study_level, sec.name as section, sg.name as groupe
       FROM academic_sessions s
@@ -412,10 +470,9 @@ exports.getRecentPastSessions = (req, res) => {
 
         let occ;
         if (s.session_date) {
-          if (s.is_extra) return; // Skip SUPP sessions entirely for absence marking
           occ = new Date(s.session_date);
         } else {
-          if (s.is_extra) return; // SUPP sessions are not recurring
+          if (s.is_extra) return; // Should not happen for recurring, but just in case
           occ = getLastOccurrence(s.day_of_week);
         }
 
@@ -426,18 +483,26 @@ exports.getRecentPastSessions = (req, res) => {
         const dayS = sessionCreatedAt.getDay();
         const daysSinceSat = (dayS + 1) % 7;
         sessionCreatedAt.setDate(sessionCreatedAt.getDate() - daysSinceSat);
-        sessionCreatedAt.setHours(0,0,0,0);
+        sessionCreatedAt.setHours(0, 0, 0, 0);
         
         const occWithEndTime = new Date(occ);
         occWithEndTime.setHours(eh, em, 0, 0);
         const isPast = occWithEndTime < now;
         const isAfterValid = occ >= teacherJoinDate && occ >= sessionCreatedAt;
         
+        // Check if session was still active (end_date)
+        let isStillActive = true;
+        if (s.end_date) {
+            const ed = new Date(s.end_date);
+            ed.setHours(23, 59, 59, 999);
+            if (occ > ed) isStillActive = false;
+        }
+
         const requestedMonth = req.query.month && req.query.month !== 'all' ? parseInt(req.query.month) : null;
         const occMonth = occ.getMonth() + 1;
         const isMonthMatch = !requestedMonth || requestedMonth === occMonth;
         
-        if (isPast && isAfterValid && isMonthMatch) {
+        if (isPast && isAfterValid && isStillActive && isMonthMatch) {
           const y = occ.getFullYear();
           const m = String(occ.getMonth() + 1).padStart(2, '0');
           const d = String(occ.getDate()).padStart(2, '0');
@@ -452,7 +517,8 @@ exports.getRecentPastSessions = (req, res) => {
       const catchupQuery = `
         SELECT a.id as absence_id, a.teacher_id, a.reason, a.catchup_date as actual_date, 
                a.catchup_start_time as start_time, a.catchup_end_time as end_time,
-               u.nom as teacher_nom, u.prenom as teacher_prenom
+               u.nom as teacher_nom, u.prenom as teacher_prenom,
+               a.is_extra
         FROM absences a
         JOIN users u ON a.teacher_id = u.id
         WHERE a.is_caught_up = 1 AND a.catchup_date <= CURDATE()

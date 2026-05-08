@@ -6,7 +6,7 @@ const path = require('path');
 
 // Signup logic
 exports.signup = async (req, res) => {
-  const { nom, prenom, role, email, password, department_id, grade, hourly_rate, absence_penalty, volume_horaire, base_salary } = req.body;
+  const { nom, prenom, role, email, password, department_id, grade, hourly_rate, absence_penalty, volume_horaire, base_salary, created_at } = req.body;
   
   // Unique role validation (Dean, Rector, Vice-Dean, Vice-Rector), case-insensitive
   const roleLower = role ? role.toLowerCase() : '';
@@ -58,13 +58,13 @@ exports.signup = async (req, res) => {
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const query = "INSERT INTO users (nom, prenom, role, email, password, department_id, grade, hourly_rate, absence_penalty, volume_horaire, base_salary) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    const query = "INSERT INTO users (nom, prenom, role, email, password, department_id, grade, hourly_rate, absence_penalty, volume_horaire, base_salary, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
     const gradeVal = grade || 'Teacher';
     const hrVal = roleLower === 'teacher' ? (hourly_rate || 0) : 0;
     const apVal = roleLower === 'teacher' ? (absence_penalty || 0) : 0;
 
-    db.query(query, [nom, prenom, role, email, hashedPassword, department_id || null, gradeVal, hrVal, apVal, volume_horaire || 192, base_salary || 0], (err, result) => {
+    db.query(query, [nom, prenom, role, email, hashedPassword, department_id || null, gradeVal, hrVal, apVal, volume_horaire || 192, base_salary || 0, created_at || new Date()], (err, result) => {
       if (err) {
         console.error("Signup DB Error:", err);
         if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: "This email already exists" });
@@ -117,7 +117,7 @@ exports.login = (req, res) => {
 // Get all users
 exports.getAllUsers = (req, res) => {
   const query = `
-    SELECT u.id, u.nom, u.prenom, u.email, u.role, u.department_id, u.grade, d.name as department_name 
+    SELECT u.id, u.nom, u.prenom, u.email, u.role, u.department_id, u.grade, u.created_at, d.name as department_name 
     FROM users u 
     LEFT JOIN departments d ON u.department_id = d.id 
     ORDER BY u.id DESC
@@ -275,7 +275,7 @@ exports.deleteProfileImage = (req, res) => {
 // Get current user profile
 exports.getProfile = (req, res) => {
   const userId = req.user.id;
-  const query = "SELECT id, nom, prenom, role, department_id, grade, profile_image FROM users WHERE id = ?";
+  const query = "SELECT id, nom, prenom, role, department_id, grade, profile_image, created_at FROM users WHERE id = ?";
   
   db.query(query, [userId], (err, results) => {
     if (err || results.length === 0) return res.status(500).json({ message: "User not found" });

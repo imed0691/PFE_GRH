@@ -98,18 +98,16 @@ function ManageSessions() {
       });
 
       const data = await res.json();
-      toast.dismiss(loadToast);
 
       if (res.ok) {
-        toast.success(t('sessions.successAdd') || 'Session planifiée');
+        toast.success(t('sessions.successAdd') || 'Session planifiée', { id: loadToast });
         setFormData({ ...formData, module_name: '', section: '', groupe: '' });
         fetchData();
       } else {
-        toast.error(data.message || t('common.error'));
+        toast.error(data.message || t('common.error'), { id: loadToast });
       }
     } catch (error) {
-      toast.dismiss(loadToast);
-      toast.error(t('common.serverError'));
+      toast.error(t('common.serverError'), { id: loadToast });
     }
   };
 

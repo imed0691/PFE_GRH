@@ -20,6 +20,7 @@ function DashboardDeptHead({ user, onLogout }) {
   const [teacherSchedule, setTeacherSchedule] = useState([]);
   const [selectedTeacherName, setSelectedTeacherName] = useState('');
   const { badges, markSeen } = useNotificationBadges();
+  const [weekOffset, setWeekOffset] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const { t } = useLanguage();
   const lastClearedView = useRef(null);
@@ -112,6 +113,42 @@ function DashboardDeptHead({ user, onLogout }) {
         if (selectedTeacher) fetchTeacherSchedule(selectedTeacher);
       } else {
         toast.error(t('sessions.failedDelete'));
+      }
+    } catch (error) {
+      toast.error(t('common.serverError'));
+    } finally {
+      setShowConfirmModal(false);
+      setSessionToDelete(null);
+    }
+  };
+
+  const handleDeactivateSession = async () => {
+    if (!sessionToDelete) return;
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Calculate the end of the current week viewed in the grid
+      const todayDate = new Date();
+      const toAcademicIndex = (day) => (day === 6 ? 0 : day + 1);
+      const currentAcademicIndex = toAcademicIndex(todayDate.getDay());
+      const endOfWeekDate = new Date(todayDate);
+      endOfWeekDate.setDate(todayDate.getDate() - currentAcademicIndex + (weekOffset * 7) + 6);
+      const formattedEndDate = endOfWeekDate.toISOString().split('T')[0];
+
+      const res = await fetch(`http://localhost:5000/api/sessions/${sessionToDelete}/deactivate`, { 
+        method: 'PUT', 
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ end_date: formattedEndDate })
+      });
+
+      if (res.ok) {
+        toast.success("Séance archivée avec succès");
+        if (selectedTeacher) fetchTeacherSchedule(selectedTeacher);
+      } else {
+        toast.error("Erreur lors de l'archivage");
       }
     } catch (error) {
       toast.error(t('common.serverError'));
@@ -215,25 +252,24 @@ function DashboardDeptHead({ user, onLogout }) {
     let calculatedSessionDate = null;
     if (quickAddForm.is_extra) {
       const todayDate = new Date();
-      const currentJsDay = todayDate.getDay();
+      const baseDate = new Date(todayDate);
       
-      const daysJsMap = {
-        'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6
-      };
-      const targetJsDay = daysJsMap[addSlotDay];
-
-      // Convert standard JS day index to Academic week index (Saturday = 0, Sunday = 1, ... Friday = 6)
+      // 1. Find the start of the week for the week currently displayed (today + offset)
       const toAcademicIndex = (day) => (day === 6 ? 0 : day + 1);
+      const currentAcademicIndex = toAcademicIndex(todayDate.getDay());
       
-      const currentAcademicIndex = toAcademicIndex(currentJsDay);
-      const targetAcademicIndex = toAcademicIndex(targetJsDay);
+      // Move to the Saturday of the current REAL week
+      baseDate.setDate(todayDate.getDate() - currentAcademicIndex);
       
-      // Calculate how many days to add/subtract to stay in the SAME academic week
-      const distance = targetAcademicIndex - currentAcademicIndex;
-      const targetDate = new Date(todayDate);
-      targetDate.setDate(todayDate.getDate() + distance);
+      // Apply the week offset from navigation
+      baseDate.setDate(baseDate.getDate() + (weekOffset * 7));
       
-      calculatedSessionDate = targetDate.toISOString().split('T')[0];
+      // 2. Add the day offset from the grid (addSlotDay)
+      const daysJsMap = { 'Saturday': 0, 'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4, 'Thursday': 5, 'Friday': 6 };
+      const targetOffset = daysJsMap[addSlotDay];
+      
+      baseDate.setDate(baseDate.getDate() + targetOffset);
+      calculatedSessionDate = baseDate.toISOString().split('T')[0];
     }
 
     try {
@@ -309,9 +345,125 @@ function DashboardDeptHead({ user, onLogout }) {
              view === 'teacher-schedule' ? (            <div className="card-academic" style={{ borderTop: '4px solid var(--p-indigo)', padding: '32px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                 <div>
-                  <h3 className="serif" style={{ margin: 0, fontSize: '26px', color: '#0f172a' }}>{selectedTeacherName}</h3>
+                  <h3 className="serif" style={{ margin: 0, fontSize: '26px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {selectedTeacherName}
+                    {selectedTeacher?.created_at && (
+                      <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#64748b', padding: '4px 10px', borderRadius: '20px', fontWeight: '700', border: '1px solid #e2e8f0', textTransform: 'uppercase' }}>
+                         Recruté(e) le {new Date(selectedTeacher.created_at).toLocaleDateString()}
+                      </span>
+                    )}
+                  </h3>
                   <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '4px 0 0 0' }}>{t('topbar.teacherSchedule')}</p>
                 </div>
+
+                {/* Week Navigator */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#f8fafc', padding: '8px 16px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                    <button 
+                      onClick={() => {
+                        const today = new Date();
+                        const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                        const currentAcademicIndex = toAcademicIndex(today.getDay());
+                        const start = new Date(today);
+                        start.setDate(today.getDate() - currentAcademicIndex + (weekOffset * 7));
+                        const refDate = new Date(2025, 8, 20);
+                        if (start > refDate) setWeekOffset(prev => prev - 1);
+                      }}
+                      style={{ 
+                        background: 'white', border: '1px solid #e2e8f0', borderRadius: '10px', width: '36px', height: '36px', 
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s',
+                        opacity: (() => {
+                            const today = new Date();
+                            const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                            const start = new Date(today);
+                            start.setDate(today.getDate() - toAcademicIndex(today.getDay()) + (weekOffset * 7));
+                            return start <= new Date(2025, 8, 20) ? 0.3 : 1;
+                        })(),
+                        pointerEvents: (() => {
+                            const today = new Date();
+                            const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                            const start = new Date(today);
+                            start.setDate(today.getDate() - toAcademicIndex(today.getDay()) + (weekOffset * 7));
+                            return start <= new Date(2025, 8, 20) ? 'none' : 'auto';
+                        })()
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    </button>
+                    
+                    <div style={{ textAlign: 'center', minWidth: '200px' }}>
+                      {(() => {
+                        const today = new Date();
+                        const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                        const currentAcademicIndex = toAcademicIndex(today.getDay());
+                        const start = new Date(today);
+                        start.setDate(today.getDate() - currentAcademicIndex + (weekOffset * 7));
+                        const end = new Date(start);
+                        end.setDate(start.getDate() + 6);
+                        
+                        // Academic Year Boundaries
+                        const refDate = new Date(2025, 8, 20); // Sept 20, 2025
+                        const endDate = new Date(2026, 5, 27); // June 27, 2026
+                        
+                        const diffTime = start.getTime() - refDate.getTime();
+                        const weekNum = Math.floor(diffTime / (7 * 24 * 60 * 60 * 1000)) + 1;
+
+                        const isFirstWeek = start <= refDate;
+                        const isLastWeek = end >= endDate;
+
+                        return (
+                          <>
+                            <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--p-indigo)', textTransform: 'uppercase' }}>
+                              {weekOffset === 0 ? "Semaine Actuelle" : `Semaine ${weekNum}`}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>
+                              {start.toLocaleDateString()} - {end.toLocaleDateString()}
+                            </div>
+                            <div style={{ display: 'none' }}>{/* Hidden flags for buttons */}
+                                <span id="is-first-week">{isFirstWeek.toString()}</span>
+                                <span id="is-last-week">{isLastWeek.toString()}</span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        const today = new Date();
+                        const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                        const currentAcademicIndex = toAcademicIndex(today.getDay());
+                        const start = new Date(today);
+                        start.setDate(today.getDate() - currentAcademicIndex + (weekOffset * 7));
+                        const end = new Date(start);
+                        end.setDate(start.getDate() + 6);
+                        const endDate = new Date(2026, 5, 27);
+                        if (end < endDate) setWeekOffset(prev => prev + 1);
+                      }}
+                      style={{ 
+                        background: 'white', border: '1px solid #e2e8f0', borderRadius: '10px', width: '36px', height: '36px', 
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s',
+                        opacity: (() => {
+                            const today = new Date();
+                            const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                            const start = new Date(today);
+                            start.setDate(today.getDate() - toAcademicIndex(today.getDay()) + (weekOffset * 7));
+                            const end = new Date(start); end.setDate(start.getDate() + 6);
+                            return end >= new Date(2026, 5, 27) ? 0.3 : 1;
+                        })(),
+                        pointerEvents: (() => {
+                            const today = new Date();
+                            const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                            const start = new Date(today);
+                            start.setDate(today.getDate() - toAcademicIndex(today.getDay()) + (weekOffset * 7));
+                            const end = new Date(start); end.setDate(start.getDate() + 6);
+                            return end >= new Date(2026, 5, 27) ? 'none' : 'auto';
+                        })()
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                  </div>
+
                 <button onClick={() => setView('list')} className="btn-cancel-pro" style={{ padding: '10px 24px', fontSize: '14px', borderRadius: '14px' }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                   {t('common.backToList')}
@@ -336,19 +488,31 @@ function DashboardDeptHead({ user, onLogout }) {
 
                   {(() => {
                     const today = new Date();
-                    today.setHours(0,0,0,0);
-                    const currentJsDay = today.getDay();
-                    const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
-                    const currentAcademicIndex = toAcademicIndex(currentJsDay);
                     const startOfWeek = new Date(today);
-                    startOfWeek.setDate(today.getDate() - currentAcademicIndex);
+                    const toAcademicIndex = (d) => (d === 6 ? 0 : d + 1);
+                    const currentAcademicIndex = toAcademicIndex(today.getDay());
+                    
+                    startOfWeek.setDate(today.getDate() - currentAcademicIndex + (weekOffset * 7));
+                    startOfWeek.setHours(0, 0, 0, 0);
+                    
                     const endOfWeek = new Date(startOfWeek);
                     endOfWeek.setDate(startOfWeek.getDate() + 6);
                     endOfWeek.setHours(23, 59, 59, 999);
 
-                    const currentWeekSchedule = teacherSchedule.filter(s => {
-                      if (!s.is_extra) return true;
-                      if (!s.session_date) return false;
+                    const allPossibleSessions = teacherSchedule;
+                    const currentWeekSchedule = allPossibleSessions.filter(s => {
+                      // Check if session was created AFTER this week ended
+                      const createdAt = new Date(s.created_at);
+                      if (createdAt > endOfWeek) return false;
+
+                      // Check if session ended BEFORE this week started
+                      if (s.end_date) {
+                        const endDate = new Date(s.end_date);
+                        endDate.setHours(23, 59, 59, 999);
+                        if (endDate < startOfWeek) return false;
+                      }
+
+                      if (!s.session_date) return true; // Hebdo (modèle)
                       const sDate = new Date(s.session_date);
                       return sDate >= startOfWeek && sDate <= endOfWeek;
                     });
@@ -409,6 +573,7 @@ function DashboardDeptHead({ user, onLogout }) {
                                     background: getSessionColor(s.session_type),
                                     position: 'relative',
                                     flex: 1,
+                                    minHeight: '110px',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     justifyContent: 'center',
@@ -430,7 +595,25 @@ function DashboardDeptHead({ user, onLogout }) {
                                   >
                                     ✕
                                   </button>
-                                    {s.is_extra ? (
+                                    {s.is_catchup ? (
+                                      <div style={{ 
+                                        position: 'absolute',
+                                        top: '-8px',
+                                        left: '-4px',
+                                        fontSize: '8px', 
+                                        background: 'linear-gradient(135deg, #e11d48, #be123c)', 
+                                        color: 'white', 
+                                        padding: '2px 8px', 
+                                        borderRadius: '6px', 
+                                        fontWeight: '900', 
+                                        boxShadow: '0 4px 10px rgba(225, 29, 72, 0.5)',
+                                        border: '1px solid rgba(255,255,255,0.4)',
+                                        zIndex: 3,
+                                        letterSpacing: '0.5px'
+                                      }}>
+                                        RATTRAPAGE
+                                      </div>
+                                    ) : s.is_extra ? (
                                       <div style={{ 
                                         position: 'absolute',
                                         top: '-8px',
@@ -450,16 +633,16 @@ function DashboardDeptHead({ user, onLogout }) {
                                       </div>
                                     ) : null}
                                     <div style={{ fontWeight: '900', textTransform: 'uppercase', opacity: 0.9, fontSize: '9px', letterSpacing: '0.8px', marginBottom: '4px' }}>
-                                      {s.session_type === 'Lecture' ? t('sessions.lecture') : s.session_type === 'Tutorial' ? t('sessions.tutorialTD') : t('sessions.practicalTP')}
+                                      {s.session_type === 'Lecture' ? t('sessions.lecture') : 
+                                       s.session_type === 'Tutorial' ? t('sessions.tutorialTD') : 
+                                       s.session_type === 'Replacement' ? 'RATTRAPAGE' : 
+                                       t('sessions.practicalTP')}
                                     </div>
                                     <div style={{ fontWeight: '800', fontSize: '13px', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {s.module_name}
                                   </div>
                                   <div style={{ fontSize: '11px', opacity: 0.8, fontWeight: '600' }}>
                                     {s.section && `S: ${s.section}`} {s.groupe && `G: ${s.groupe}`}
-                                  </div>
-                                  <div style={{ fontSize: '11px', fontWeight: '800', opacity: 0.9, marginTop: '4px' }}>
-                                    {s.start_time.substring(0,5)} - {s.end_time.substring(0,5)}
                                   </div>
                                 </div>
                               ))}
@@ -560,34 +743,46 @@ function DashboardDeptHead({ user, onLogout }) {
             alignItems: 'center', zIndex: 9999, backdropFilter: 'blur(4px)'
           }}>
             <div className="card-academic animate-slide-up" style={{
-              width: '400px', textAlign: 'center', padding: '40px',
+              width: '450px', textAlign: 'center', padding: '40px',
               borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.2)'
             }}>
               <div style={{
-                width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fee2e2',
+                width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fef3c7',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px',
-                color: '#ef4444'
+                color: '#f59e0b'
               }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m11 17 2 2 4-4"></path><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
               </div>
-              <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '12px' }}>{t('common.confirm')}</h3>
+              <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '12px' }}>Gestion de la Séance</h3>
               <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '14px', lineHeight: '1.6' }}>
-                {t('common.confirmDelete')}
+                Que souhaitez-vous faire avec cette séance ?
               </p>
-              <div style={{ display: 'flex', gap: '12px' }}>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <button 
+                  className="btn-confirm-pro" 
+                  style={{ width: '100%', padding: '14px', fontSize: '14px', backgroundColor: 'var(--p-indigo)', borderColor: 'var(--p-indigo)' }}
+                  onClick={handleDeactivateSession}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '8px'}}><path d="M12 20v-6M9 20v-4M15 20v-2M18 20v-8M6 20v-2M3 20v-4M21 20v-6"></path><path d="M3 10l9-7 9 7"></path></svg>
+                  Arrêter ce cours (Archiver pour le futur)
+                </button>
+
+                <button 
+                  className="btn-confirm-pro" 
+                  style={{ width: '100%', padding: '14px', fontSize: '14px', backgroundColor: '#ef4444', borderColor: '#ef4444' }}
+                  onClick={handleCancelSession}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '8px'}}><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                  Supprimer définitivement (Erreur de saisie)
+                </button>
+
                 <button 
                   className="btn-cancel-pro" 
-                  style={{ flex: 1, padding: '12px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '14px', fontSize: '14px', marginTop: '8px' }}
                   onClick={() => setShowConfirmModal(false)}
                 >
                   {t('common.cancel')}
-                </button>
-                <button 
-                  className="btn-confirm-pro" 
-                  style={{ flex: 1, padding: '12px', fontSize: '14px', backgroundColor: '#ef4444', borderColor: '#ef4444' }}
-                  onClick={handleCancelSession}
-                >
-                  {t('common.delete')}
                 </button>
               </div>
             </div>
@@ -606,10 +801,32 @@ function DashboardDeptHead({ user, onLogout }) {
                 <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
               </div>
               
-              <div style={{ marginBottom: '20px', padding: '12px', background: 'var(--p-indigo-light)', borderRadius: '12px', border: '1px solid var(--p-indigo-soft)' }}>
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--p-indigo)', fontWeight: '700' }}>
+              <div style={{ marginBottom: '20px', padding: '16px', background: 'var(--p-indigo-light)', borderRadius: '16px', border: '1px solid var(--p-indigo-soft)', textAlign: 'center' }}>
+                <div style={{ fontSize: '13px', color: 'var(--p-indigo)', fontWeight: '800', marginBottom: '4px' }}>
                    {t(`days.${addSlotDay}`)} @ {addSlotTime}
-                </p>
+                </div>
+                <div style={{ fontSize: '15px', color: '#0f172a', fontWeight: '900', letterSpacing: '-0.2px' }}>
+                  {(() => {
+                    const todayDate = new Date();
+                    const baseDate = new Date(todayDate);
+                    const toAcademicIndex = (day) => (day === 6 ? 0 : day + 1);
+                    const currentAcademicIndex = toAcademicIndex(todayDate.getDay());
+                    baseDate.setDate(todayDate.getDate() - currentAcademicIndex + (weekOffset * 7));
+                    const daysJsMap = { 'Saturday': 0, 'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4, 'Thursday': 5, 'Friday': 6 };
+                    baseDate.setDate(baseDate.getDate() + daysJsMap[addSlotDay]);
+                    
+                    const refDate = new Date(2025, 8, 6);
+                    const diffTime = baseDate.getTime() - refDate.getTime();
+                    const weekNum = Math.floor(diffTime / (7 * 24 * 60 * 60 * 1000)) + 1;
+                    
+                    return (
+                      <>
+                        <span style={{ color: 'var(--p-indigo)', marginRight: '8px' }}>S{weekNum} •</span>
+                        {baseDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </>
+                    );
+                  })()}
+                </div>
               </div>
 
               <form onSubmit={handleQuickAddSubmit}>

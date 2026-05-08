@@ -59,7 +59,7 @@ exports.getAllAbsences = (req, res) => {
            u.nom, u.prenom, u.department_id 
      FROM absences a
      JOIN users u ON a.teacher_id = u.id
-     WHERE a.is_cleared = FALSE AND a.is_extra = FALSE
+     WHERE a.is_cleared = FALSE AND a.is_extra = FALSE AND a.date <= CURDATE()
   `;
 
   if (req.query.filter === 'week') {
@@ -72,6 +72,9 @@ exports.getAllAbsences = (req, res) => {
   }
 
   if (userRole === 'TEACHER' || userRole === 'ENSEIGNANT') {
+    // Automatically mark all as read when the teacher fetches their list
+    db.query("UPDATE absences SET is_read_by_teacher = TRUE WHERE teacher_id = ?", [userId]);
+    
     query += " AND a.teacher_id = ? ORDER BY a.created_at DESC";
     db.query(query, [userId], (err, results) => {
       if (err) return res.status(500).json({ error: err.message });

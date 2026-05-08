@@ -504,6 +504,8 @@ const fr = {
     confirmCancelReplacement: 'Voulez-vous vraiment annuler cette séance de remplacement ?',
     viewByTeacher: 'Vue par Enseignant',
     viewByTeacherDesc: 'Sélectionnez un prof pour filtrer les séances et absences ci-dessous',
+    waitingJustification: 'En attente de justification',
+    justificationUnderReview: 'Justification en cours d\'examen',
   },
 
   // ── Gestion des départements ──

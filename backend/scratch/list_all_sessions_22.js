@@ -10,13 +10,14 @@ const db = mysql.createConnection({
 
 db.connect();
 
-const query = "SELECT id, message, created_at FROM reminders WHERE teacher_id = 22 ORDER BY id DESC LIMIT 10";
+const query = "SELECT id, module_name, session_type, day_of_week, start_time, session_date, is_extra FROM academic_sessions WHERE teacher_id = 22";
 
 db.query(query, (err, results) => {
   if (err) {
     console.error(err);
     process.exit(1);
   }
+  console.log("--- TOUTES LES SÉANCES DU PROF 22 ---");
   console.table(results);
   process.exit(0);
 });

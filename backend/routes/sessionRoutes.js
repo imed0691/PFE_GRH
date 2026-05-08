@@ -7,6 +7,7 @@ const verifyToken = require('../middlewares/authMiddleware');
 router.get('/sessions', verifyToken, sessionController.getAllSessions);
 router.post('/sessions', verifyToken, sessionController.createSession);
 router.delete('/sessions/:id', verifyToken, sessionController.deleteSession);
+router.put('/sessions/:id/deactivate', verifyToken, sessionController.deactivateSession);
 router.get('/modules', verifyToken, sessionController.getModules);
 
 // Teacher dashboard route

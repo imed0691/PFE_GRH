@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import ConfirmModal from '../components/ConfirmModal';
@@ -19,6 +19,23 @@ function Settings({ user, onProfileUpdate }) {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [freshUser, setFreshUser] = useState(user);
+
+  useEffect(() => {
+    const fetchFreshProfile = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/profile', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setFreshUser(data);
+          setProfileData({ nom: data.nom, prenom: data.prenom });
+        }
+      } catch (err) { console.error("Error refreshing profile:", err); }
+    };
+    fetchFreshProfile();
+  }, []);
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
@@ -105,11 +122,11 @@ function Settings({ user, onProfileUpdate }) {
               
               <div className="profile-image-section" style={{ marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '32px' }}>
                 <div style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', border: '4px solid white', boxShadow: '0 8px 16px rgba(0,0,0,0.08)', position: 'relative', background: 'linear-gradient(135deg, var(--p-indigo), #6366f1)' }}>
-                  {user.profile_image ? (
-                    <img src={`http://localhost:5000${user.profile_image}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {freshUser.profile_image ? (
+                    <img src={`http://localhost:5000${freshUser.profile_image}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '42px', fontWeight: '800' }}>
-                      {user.nom[0]}{user.prenom[0]}
+                      {freshUser.nom[0]}{freshUser.prenom[0]}
                     </div>
                   )}
                   {uploadingImage && (
@@ -144,6 +161,28 @@ function Settings({ user, onProfileUpdate }) {
                     <label className="mnadm-label">{t('addEmployee.firstName')}</label>
                     <input type="text" className="mnadm-input" value={profileData.prenom} onChange={(e) => setProfileData({ ...profileData, prenom: e.target.value })} required />
                   </div>
+                </div>
+
+                <div className="mnadm-form-group" style={{ marginBottom: '32px' }}>
+                  <label className="mnadm-label" style={{ opacity: 0.7 }}>Date de Recrutement Officielle</label>
+                  <div style={{ 
+                    padding: '16px 20px', 
+                    background: 'var(--p-indigo-light)', 
+                    color: 'var(--p-indigo)', 
+                    borderRadius: '16px', 
+                    fontSize: '14px', 
+                    fontWeight: '800',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    border: '1px solid var(--p-indigo-soft)'
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    {freshUser.created_at ? new Date(freshUser.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px', fontWeight: '500' }}>
+                    * Cette date détermine le début de votre historique de séances et de paie.
+                  </p>
                 </div>
                 <button type="submit" className="btn-confirm-pro" disabled={loadingProfile} style={{ height: '48px', minWidth: '200px', borderRadius: '14px' }}>
                   {loadingProfile ? t('common.loading') : t('settings.updateInfo')}

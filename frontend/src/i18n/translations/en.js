@@ -505,6 +505,8 @@ const en = {
     historyDesc: 'View and manage previous absence records.',
     justifyDesc: 'Provide justifications for marked absences.',
     reasonPlaceholder: 'Reason for absence...',
+    waitingJustification: 'Waiting for Justification',
+    justificationUnderReview: 'Justification Under Review',
   },
 
   // ── Manage Departments ──

@@ -209,7 +209,17 @@ exports.markSeen = (req, res) => {
     if (section === 'absences') {
       const userRole = req.user.role ? req.user.role.toUpperCase().replace(/[\s-]/g, '_') : '';
       if (userRole === 'TEACHER' || userRole === 'ENSEIGNANT') {
-        db.query("UPDATE absences SET is_read_by_teacher = TRUE WHERE teacher_id = ?", [userId]);
+        db.query("UPDATE absences SET is_read_by_teacher = TRUE WHERE teacher_id = ?", [userId], (err) => {
+          if (err) console.error("Error updating teacher absence read status:", err);
+        });
+        // Sync reminders: Use INSERT ON DUPLICATE KEY to ensure it works even if no previous view exists
+        db.query(`
+          INSERT INTO user_section_views (user_id, section_name, last_viewed_at) 
+          VALUES (?, 'reminders', NOW()) 
+          ON DUPLICATE KEY UPDATE last_viewed_at = NOW()
+        `, [userId], (err) => {
+          if (err) console.error("Error syncing reminders on absence view:", err);
+        });
       } else {
         // Managers mark as read items in their department or all if HR/Admin
         db.query(`
@@ -218,7 +228,9 @@ exports.markSeen = (req, res) => {
           SET a.is_read_by_admin = TRUE
           WHERE (u.department_id = (SELECT department_id FROM (SELECT department_id FROM users WHERE id = ?) as tmp)
           OR ? IN ('ADMIN', 'HR', 'RH', 'HR_MANAGER', 'RH_MANAGER'))
-        `, [userId, userRole]);
+        `, [userId, userRole], (err) => {
+          if (err) console.error("Error updating manager absence read status:", err);
+        });
       }
     }
 

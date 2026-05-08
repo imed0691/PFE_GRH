@@ -444,10 +444,15 @@ function ManageAbsences({ user: propUser }) {
                       </td>
                       <td>
                         <div style={{ fontWeight: '800', color: '#0f172a' }}>{s.module_name}</div>
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
                           <span className="badge-pro" style={{ fontSize: '10px', padding: '2px 8px' }}>
                             {s.session_type === 'Lecture' ? 'COURS' : s.session_type === 'Tutorial' ? 'TD' : s.session_type === 'Practical' ? 'TP' : s.session_type}
                           </span>
+                          {s.is_extra && (
+                            <span className="badge-pro" style={{ fontSize: '10px', padding: '2px 8px', background: 'var(--p-indigo)', color: 'white', border: 'none' }}>
+                              SUPP
+                            </span>
+                          )}
                           <span className="badge-pro badge-pro-info" style={{ fontSize: '10px', padding: '2px 8px' }}>{s.study_level}</span>
                         </div>
                       </td>
@@ -509,20 +514,22 @@ function ManageAbsences({ user: propUser }) {
             <tbody>
               {absences.filter(a => filterTeacherId === 'all' || Number(a.teacher_id) === Number(filterTeacherId)).map((a) => (
                 <tr key={a.id} className="table-row-animate">
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ fontWeight: '800', color: '#0f172a' }}>{new Date(a.date).toLocaleDateString()}</div>
-                      {a.is_extra === 1 && (
-                        <span style={{ 
-                          fontSize: '9px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', 
-                          padding: '2px 8px', borderRadius: '6px', fontWeight: '900', boxShadow: '0 2px 4px rgba(217, 119, 6, 0.2)', letterSpacing: '0.05em'
-                        }}>SUPP</span>
-                      )}
+                  <td style={{ verticalAlign: 'middle' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ fontWeight: '800', color: '#0f172a' }}>{new Date(a.date).toLocaleDateString()}</div>
+                        {a.is_extra === 1 && (
+                          <span style={{ 
+                            fontSize: '9px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', 
+                            padding: '2px 8px', borderRadius: '6px', fontWeight: '900', boxShadow: '0 2px 4px rgba(217, 119, 6, 0.2)', letterSpacing: '0.05em'
+                          }}>SUPP</span>
+                        )}
+                      </div>
+                      {a.start_time && <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>{a.start_time.substring(0,5)}</div>}
                     </div>
-                    {a.start_time && <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginTop: '4px' }}>{a.start_time.substring(0,5)}</div>}
                   </td>
                   {!isTeacher && (
-                    <td>
+                    <td style={{ verticalAlign: 'middle' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '36px', height: '36px', borderRadius: '10px', fontSize: '12px', background: 'linear-gradient(135deg, var(--p-indigo), #818cf8)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
                           {a.nom[0]}{a.prenom[0]}
@@ -531,81 +538,74 @@ function ManageAbsences({ user: propUser }) {
                       </div>
                     </td>
                   )}
-                  <td>
-                    <div style={{ fontWeight: '700', color: '#1e293b', marginBottom: '8px' }}>{a.reason}</div>
-                    {a.justification_text && (
-                      <div style={{ fontSize: '13px', background: '#f8fafc', padding: '16px', borderRadius: '18px', border: '1px solid #e2e8f0', color: '#475569', lineHeight: '1.6', position: 'relative' }}>
-                        <div style={{ fontStyle: 'italic', fontWeight: '500' }}>"{a.justification_text}"</div>
-                        {a.justification_file && (
-                          <a href={`http://localhost:5000/uploads/justifications/${a.justification_file}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '16px', color: 'var(--p-indigo)', fontWeight: '800', textDecoration: 'none', fontSize: '11px', background: 'white', padding: '8px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', transition: 'transform 0.2s ease' }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-                            {t('absences.viewAttachment') || 'VOIR JUSTIFICATIF'}
-                          </a>
-                        )}
-                      </div>
-                    )}
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <span className={`badge-pro ${a.justification_status === 'Accepted' ? 'badge-pro-success' : (a.justification_status === 'Pending' || a.justification_status === 'None') ? 'badge-pro-warning' : 'badge-pro-danger'}`} style={{ padding: '8px 16px', borderRadius: '12px', fontSize: '11px', fontWeight: '800' }}>
-                      {(a.justification_status === 'Pending' || a.justification_status === 'None') ? (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                          <span className="status-pulse" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }}></span>
-                          {a.justification_status === 'None' ? (t('absences.waitingJustification') || 'En traitement (Initial)') : t('absences.pending')}
-                        </span>
-                      ) : a.justification_status === 'Accepted' ? t('absences.accepted') : t('absences.rejected')}
-                    </span>
-                    {a.is_caught_up === 1 && a.catchup_date && (
-                      <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <div style={{ fontSize: '10px', color: 'var(--p-indigo)', fontWeight: '800', background: 'var(--p-indigo-light)', padding: '4px 8px', borderRadius: '8px', display: 'inline-block' }}>
-                          {t('absences.replacementScheduled') || 'Remplacement le'} : {new Date(a.catchup_date).toLocaleDateString()} {a.catchup_start_time ? `à ${a.catchup_start_time.substring(0,5)}` : ''}
+                  <td style={{ verticalAlign: 'middle' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', justifyContent: 'center' }}>
+                      <div style={{ fontWeight: '700', color: '#1e293b' }}>{a.reason}</div>
+                      {a.justification_text && (
+                        <div style={{ fontSize: '13px', background: '#f8fafc', padding: '16px', borderRadius: '18px', border: '1px solid #e2e8f0', color: '#475569', lineHeight: '1.6', position: 'relative', marginTop: '4px' }}>
+                          <div style={{ fontStyle: 'italic', fontWeight: '500' }}>"{a.justification_text}"</div>
+                          {a.justification_file && (
+                            <a href={`http://localhost:5000/uploads/justifications/${a.justification_file}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '16px', color: 'var(--p-indigo)', fontWeight: '800', textDecoration: 'none', fontSize: '11px', background: 'white', padding: '8px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', transition: 'transform 0.2s ease' }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                              {t('absences.viewAttachment') || 'VOIR JUSTIFICATIF'}
+                            </a>
+                          )}
                         </div>
-                        {(isDeptHead || isHR || isAdmin) && (
-                          <div style={{ display: 'flex', gap: '4px' }}>
-                            <button 
-                              onClick={() => handleModifyCatchup(a)}
-                              style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #dcfce7', borderRadius: '6px', padding: '2px 6px', fontSize: '10px', cursor: 'pointer', fontWeight: '800' }}
-                              title={t('common.modify') || 'Modifier'}
-                            >
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                            </button>
-                            <button 
-                              onClick={() => handleCancelCatchup(a.id)}
-                              style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fee2e2', borderRadius: '6px', padding: '2px 6px', fontSize: '10px', cursor: 'pointer', fontWeight: '800' }}
-                              title={t('common.cancel') || 'Annuler'}
-                            >✕</button>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                      {isTeacher && a.justification_status !== 'Accepted' && !a.catchup_id_missed && (
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                  <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                      {a.is_extra ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '10px', background: 'var(--p-orange-light)', color: 'var(--p-orange)', padding: '6px 14px', borderRadius: '12px', fontWeight: '800', border: '1px solid var(--p-orange-soft)' }}>
+                            SÉANCE SUPP
+                          </span>
+                          <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '700' }}>
+                            Non pénalisé
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          <span className={`badge-pro ${a.justification_status === 'Accepted' ? 'badge-pro-success' : (a.justification_status === 'Pending' || a.justification_status === 'None') ? 'badge-pro-warning' : 'badge-pro-danger'}`} style={{ padding: '8px 16px', borderRadius: '12px', fontSize: '11px', fontWeight: '800' }}>
+                            {(a.justification_status === 'Pending' || a.justification_status === 'None') ? (
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                                <span className="status-pulse" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }}></span>
+                                {a.justification_status === 'None' ? (t('absences.waitingJustification') || 'En attente') : t('absences.pending')}
+                              </span>
+                            ) : a.justification_status === 'Accepted' ? t('absences.accepted') : t('absences.rejected')}
+                          </span>
+                          {a.is_caught_up === 1 && a.catchup_date && (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', width: '100%' }}>
+                              <div style={{ fontSize: '10px', color: 'var(--p-indigo)', fontWeight: '800', background: 'var(--p-indigo-light)', padding: '6px 10px', borderRadius: '8px', textAlign: 'center', maxWidth: '200px' }}>
+                                {t('absences.replacementScheduled') || 'Remplacement le'} :<br/>
+                                <span style={{ fontSize: '11px' }}>{new Date(a.catchup_date).toLocaleDateString()} {a.catchup_start_time ? `à ${a.catchup_start_time.substring(0,5)}` : ''}</span>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </td>
+                  <td style={{ verticalAlign: 'middle' }}>
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
+                      {isTeacher && !a.is_extra && a.justification_status !== 'Accepted' && (
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           <button 
                             onClick={() => {
                               setActiveJustifyId(a.id);
                               if (a.justification_status === 'Pending') setJustificationText(a.justification_text || '');
+                              setJustifyModal(true);
                             }} 
                             className="btn-confirm-pro" 
                             style={{ padding: '10px 20px', fontSize: '12px', borderRadius: '12px', fontWeight: '800' }}
                           >
                             {a.justification_status === 'Pending' ? (t('absences.updateJustification') || 'MODIFIER') : (t('absences.justify') || 'JUSTIFIER')}
                           </button>
-                          {a.justification_status === 'Pending' && (
-                            <button 
-                              onClick={() => setConfirmModal({ isOpen: true, id: a.id, type: 'cancel' })}
-                              className="btn-cancel-pro"
-                              style={{ padding: '10px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                              title={t('common.cancel')}
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </button>
-                          )}
                         </div>
                       )}
                       {(isDeptHead || isHR || isAdmin) && a.justification_status === 'Pending' && (
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           <button 
                             onClick={() => {
                               if (a.catchup_id_missed) handleJustificationStatus(a.id, 'Accepted', null, null, null);
@@ -628,8 +628,8 @@ function ManageAbsences({ user: propUser }) {
                           </button>
                         </div>
                       )}
-                      {(isDeptHead || isHR || isAdmin) && (a.justification_status === 'Accepted' || a.justification_status === 'Rejected') && (
-                        <button onClick={() => setConfirmModal({ isOpen: true, id: a.id, type: 'delete' })} className="btn-delete-pro" style={{ padding: '10px', borderRadius: '10px' }}>
+                      {(isDeptHead || isHR || isAdmin) && (a.justification_status === 'Accepted' || a.justification_status === 'Rejected' || a.is_extra) && (
+                        <button onClick={() => setConfirmModal({ isOpen: true, id: a.id, type: 'delete' })} className="btn-delete-pro" style={{ padding: '10px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         </button>
                       )}
